@@ -10,7 +10,11 @@ This is a repo for my bachelor exam.
 
 # TODO List
 
-* deploy a simple deployment
-* script to increase replicas for that pod
-* ai that will increase resources automatically
-* monitoring of pvc
+* Deploy a simple deployment
+* Script to increase replicas for that pod
+* AI that will increase resources automatically
+* Monitoring of pvc
+* Increase size of PVC andmigrate data
+* Monitor resources for each pod
+* Create a job from existing cron
+* Web interface with a simple replicas increase
