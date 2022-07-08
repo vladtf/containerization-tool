@@ -1,0 +1,11 @@
+# Lucrare de licenta 2024
+
+This is a repo for my bachelor exam.
+
+# Table Of Contents
+
+- [Lucrare de licenta 2024](#lucrare-de-licenta-2024)
+- [Table Of Contents](#table-of-contents)
+- [TODO List](#todo-list)
+
+# TODO List
