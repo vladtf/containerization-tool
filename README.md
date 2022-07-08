@@ -19,3 +19,4 @@ This is a repo for my bachelor exam.
 * Create a job from existing cron
 * Web interface with a simple replicas increase
 * Monitor shall also be able to connect to a remote kubernetes cluster
+* Chesum on certificate 
