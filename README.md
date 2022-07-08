@@ -9,3 +9,8 @@ This is a repo for my bachelor exam.
 - [TODO List](#todo-list)
 
 # TODO List
+
+* deploy a simple deployment
+* script to increase replicas for that pod
+* ai that will increase resources automatically
+* monitoring of pvc
