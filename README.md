@@ -1,22 +1,17 @@
-# Lucrare de licenta 2024
+# Containerization Tool
 
-This is a repo for my bachelor exam.
+## Table of Contents
 
-# Table Of Contents
+- [Containerization Tool](#containerization-tool)
+  - [Table of Contents](#table-of-contents)
+  - [Description](#description)
 
-- [Lucrare de licenta 2024](#lucrare-de-licenta-2024)
-- [Table Of Contents](#table-of-contents)
-- [TODO List](#todo-list)
 
-# TODO List
+## Description
 
-* Deploy a simple deployment
-* Script to increase replicas for that pod
-* AI that will increase resources automatically
-* Monitoring of pvc
-* Increase size of PVC andmigrate data
-* Monitor resources for each pod
-* Create a job from existing cron
-* Web interface with a simple replicas increase
-* Monitor shall also be able to connect to a remote kubernetes cluster
-* Chesum on certificate 
+Because most of the issue of containerization of an application comes from networking mapping, 
+this tool is designed to help developers to install the application in a container and run it.
+
+By monitoring the network traffic of the application, the tool will create reports of the incoming and outgoing traffic of the application.
+The developer can see the report in an web interface and decide how to map the network traffic of the application.
+
