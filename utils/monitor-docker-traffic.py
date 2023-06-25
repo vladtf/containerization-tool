@@ -2,6 +2,8 @@ import binascii
 import pyshark
 import subprocess
 import re
+from confluent_kafka import Producer
+
 
 def get_docker_interface(docker_network_name):
     # Run the "docker network ls" command
@@ -18,12 +20,23 @@ def get_docker_interface(docker_network_name):
 
     return None
 
+def kakfa_producer(message):
+    bootstrap_servers = 'localhost:29092'
+    topic = 'monitor-docker-traffic'
+
+    producer = Producer({'bootstrap.servers': bootstrap_servers})
+
+    producer.produce(topic, key='my_key', value=message)
+
+    producer.flush()
+
 def packet_callback(pkt):
     # print(pkt)
 
     if 'ip' in pkt:
         # Print the source and destination IP addresses
         print(f"{pkt.ip.src} -> {pkt.ip.dst} (ip)")
+        kakfa_producer(f"{pkt.ip.src} -> {pkt.ip.dst} (ip)")
 
         # If the packet contains HTTP information, print the request and response
         # if 'http' in pkt:

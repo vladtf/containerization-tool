@@ -2,7 +2,7 @@ from confluent_kafka import Consumer, KafkaException
 
 # Kafka broker configuration
 bootstrap_servers = 'localhost:29092'
-topic = 'my_topic'
+topic = 'monitor-docker-traffic'
 group_id = 'my_group'
 
 # Create Kafka Consumer instance
