@@ -1,2 +1,5 @@
 # ignore python env
 utils/myenv
+
+# ignore .vscode
+.vscode/
