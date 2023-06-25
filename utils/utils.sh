@@ -15,3 +15,6 @@ docker network inspect bridge
 
 # dump docker network
 sudo tcpdump -i docker0
+
+# source virtualenv 
+source myenv/bin/activate
