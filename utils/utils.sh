@@ -18,3 +18,6 @@ sudo tcpdump -i docker0
 
 # source virtualenv 
 source myenv/bin/activate
+
+# show network interfaces
+ip link show

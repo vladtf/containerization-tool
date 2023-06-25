@@ -3,4 +3,8 @@
     "editor.insertSpaces": true,
     "editor.wordWrap": "on",
     "python.defaultInterpreterPath": "${workspaceFolder}/utils/myenv/bin/python",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none",
 }

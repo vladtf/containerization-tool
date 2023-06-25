@@ -3,16 +3,18 @@ import pyshark
 import subprocess
 import re
 
-def get_docker_interface():
-    # Run the "docker network inspect" command to get network information
-    command = ['docker', 'network', 'inspect', 'vta-ip-project_app_network']
+def get_docker_interface(docker_network_name):
+    # Run the "docker network ls" command
+    command = ['docker', 'network', 'ls', '--filter', f"name={docker_network_name}"]
     result = subprocess.run(command, capture_output=True, text=True)
 
-    # Extract the interface name from the command output using regular expressions
-    match = re.search(r'"Name": "(.*?)",', result.stdout)
+
+    # Get the id of the Docker network
+    match = re.search(r"(\w{12})", result.stdout)
+    
     if match:
-        interface_name = match.group(1)
-        return interface_name
+        interface_id = match.group(1)
+        return "br-" + interface_id
 
     return None
 
@@ -41,9 +43,12 @@ def packet_callback(pkt):
     else:
         print("Unknown packet type")
 
+# Docker network name
+docker_network_name = 'vta-ip-project_app_network'
+
 # Get the Docker network interface name
-# interface = get_docker_interface()
-interface = "br-518cfbfe4d4f"
+interface = get_docker_interface(docker_network_name)
+
 
 
 # Print the interface name
