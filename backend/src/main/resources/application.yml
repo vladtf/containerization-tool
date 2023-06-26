@@ -1,3 +1,6 @@
+server:
+  port: 8180
+
 spring:
   kafka:
     bootstrap-servers: localhost:29092
@@ -6,3 +9,4 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
