@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Container } from "react-bootstrap";
+import { Container, ListGroup, Alert } from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 
 const MessagesPage = () => {
   const [messages, setMessages] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -12,7 +13,7 @@ const MessagesPage = () => {
         const response = await axios.get("http://localhost:8180/messages/all");
         setMessages(response.data);
       } catch (error) {
-        console.log(error);
+        setError("Failed to fetch messages.");
       }
     };
 
@@ -24,11 +25,17 @@ const MessagesPage = () => {
       <CustomNavbar />
       <div>
         <h1>Messages Page</h1>
-        <ul>
-          {messages.map((message, index) => (
-            <li key={index}>{message.message}</li>
-          ))}
-        </ul>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {messages.length === 0 && !error && (
+          <Alert variant="info">No messages available.</Alert>
+        )}
+        {messages.length > 0 && (
+          <ListGroup>
+            {messages.map((message, index) => (
+              <ListGroup.Item key={index}>{message.message}</ListGroup.Item>
+            ))}
+          </ListGroup>
+        )}
       </div>
     </Container>
   );

@@ -13,6 +13,7 @@ public class KafkaMonitoringConsumer {
 
     private final List<String> messageBuffer = new ArrayList<>();
     private Timer bufferTimer;
+    private Timer logToConsoleTimer;
 
     @KafkaListener(topics = "monitor-docker-traffic", groupId = "my_group")
     public void listen(String message) {
@@ -22,6 +23,16 @@ public class KafkaMonitoringConsumer {
         if (bufferTimer == null) {
             bufferTimer = new Timer();
             bufferTimer.schedule(new BufferFlushTask(), 10000); // Schedule the task to run after 10 seconds
+        }
+
+        if (logToConsoleTimer == null) {
+            logToConsoleTimer = new Timer();
+            logToConsoleTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    System.out.println("Buffer size: " + messageBuffer.size());
+                }
+            }, 1000, 1000);
         }
     }
 
