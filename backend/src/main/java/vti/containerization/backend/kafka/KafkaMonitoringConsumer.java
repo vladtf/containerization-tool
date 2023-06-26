@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 
 @Component
 public class KafkaMonitoringConsumer {
+    private static final Logger LOGGER = Logger.getLogger(KafkaMonitoringConsumer.class.getName());
 
     private final List<String> messageBuffer = new ArrayList<>();
     private Timer bufferTimer;
@@ -17,12 +19,23 @@ public class KafkaMonitoringConsumer {
 
     @KafkaListener(topics = "monitor-docker-traffic", groupId = "my_group")
     public void listen(String message) {
-//        System.out.println("Received Message in group my_group: " + message);
+        LOGGER.fine("Received message: " + message);
         messageBuffer.add(message);
 
         if (bufferTimer == null) {
             bufferTimer = new Timer();
-            bufferTimer.schedule(new BufferFlushTask(), 10000); // Schedule the task to run after 10 seconds
+            bufferTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    // Process the messages in the buffer
+                    LOGGER.info("Buffer flush task running");
+
+                    // Clear the buffer
+                    messageBuffer.clear();
+                    bufferTimer.cancel();
+                    bufferTimer = null;
+                }
+            }, 10000); // Schedule the task to run after 10 seconds
         }
 
         if (logToConsoleTimer == null) {
@@ -30,7 +43,7 @@ public class KafkaMonitoringConsumer {
             logToConsoleTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    System.out.println("Buffer size: " + messageBuffer.size());
+                    LOGGER.info("Buffer size: " + messageBuffer.size());
                 }
             }, 1000, 1000);
         }
@@ -40,16 +53,4 @@ public class KafkaMonitoringConsumer {
         return messageBuffer;
     }
 
-    private class BufferFlushTask extends TimerTask {
-        @Override
-        public void run() {
-            // Process the messages in the buffer
-            System.out.println("Flushing buffer of size " + messageBuffer.size());
-
-            // Clear the buffer
-            messageBuffer.clear();
-            bufferTimer.cancel();
-            bufferTimer = null;
-        }
-    }
 }
