@@ -21,3 +21,7 @@ source myenv/bin/activate
 
 # show network interfaces
 ip link show
+
+
+# show iptables
+docker exec -u root -it 8e80272f9e78 iptables -t nat -L
