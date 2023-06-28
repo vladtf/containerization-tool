@@ -23,7 +23,7 @@ This document is intended to provide a description of the implementation of the 
 
 ## Flows
 
-![](svg/simple-flow.svg)
+![](svg/general-flow.svg)
 
 
 ## Monitoring
