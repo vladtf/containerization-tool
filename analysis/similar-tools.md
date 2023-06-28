@@ -10,6 +10,7 @@
     - [tcpdump](#tcpdump)
     - [Traefik](#traefik)
     - [Docker Network Configuration](#docker-network-configuration)
+    - [Cisco Packet Tracer](#cisco-packet-tracer)
 
 ## Scope
 
@@ -42,3 +43,10 @@ similar functionality to the Containerization Tool I'm developing.
 - can be used to inspect the network traffic of a container
 - can be use to configure forwarding of ports
 - docker native solution
+
+
+### Cisco Packet Tracer
+
+- network simulation
+- similar web interface
+- doesn't support containers
