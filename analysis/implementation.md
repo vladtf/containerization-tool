@@ -6,6 +6,7 @@
   - [Table of Contents](#table-of-contents)
   - [Scope](#scope)
   - [Design](#design)
+  - [Flows](#flows)
   - [Monitoring](#monitoring)
   - [Traffic Forwarding](#traffic-forwarding)
   - [Web Interface](#web-interface)
@@ -19,6 +20,10 @@ This document is intended to provide a description of the implementation of the 
 ## Design
 
 ![](svg/containerization-tool-design.svg)
+
+## Flows
+
+![](svg/simple-flow.svg)
 
 
 ## Monitoring
