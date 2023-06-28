@@ -5,6 +5,7 @@
 - [Implementation](#implementation)
   - [Table of Contents](#table-of-contents)
   - [Scope](#scope)
+  - [Design](#design)
   - [Monitoring](#monitoring)
   - [Traffic Forwarding](#traffic-forwarding)
   - [Web Interface](#web-interface)
@@ -14,6 +15,11 @@
 ## Scope
 
 This document is intended to provide a description of the implementation of the Containerization Tool.
+
+## Design
+
+![](svg/containerization-tool-design.svg)
+
 
 ## Monitoring
 
