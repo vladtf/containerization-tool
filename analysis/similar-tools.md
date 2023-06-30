@@ -50,3 +50,10 @@ similar functionality to the Containerization Tool I'm developing.
 - network simulation
 - similar web interface
 - doesn't support containers
+
+
+suricata, snort, ntopng, ntop, wireshark, tcpdump, packetbeat, traefik, docker network inspect, cisco packet tracer
+
+iptables
+
+tool care sa genereze Dockerfile/docker-compose.yml
