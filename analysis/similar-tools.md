@@ -11,6 +11,8 @@
     - [Traefik](#traefik)
     - [Docker Network Configuration](#docker-network-configuration)
     - [Cisco Packet Tracer](#cisco-packet-tracer)
+    - [starter](#starter)
+    - [heroku buildpacks](#heroku-buildpacks)
 
 ## Scope
 
@@ -50,6 +52,18 @@ similar functionality to the Containerization Tool I'm developing.
 - network simulation
 - similar web interface
 - doesn't support containers
+
+
+### starter
+
+- https://github.com/cloud66-oss/starter
+- generate Dockerfile/docker-compose.yml
+- working only with known frameworks
+
+
+### heroku buildpacks
+
+- similar to starter
 
 
 suricata, snort, ntopng, ntop, wireshark, tcpdump, packetbeat, traefik, docker network inspect, cisco packet tracer
