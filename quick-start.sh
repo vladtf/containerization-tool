@@ -12,10 +12,12 @@ fi
 # Container name
 test_container="my-ubuntu"
 
-# Color codes
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# Source prepare.sh
+source "$BIN_DIR/prepare.sh"
+if [ $? -ne 0 ]; then
+    echo "failed to source prepare.sh"
+    exit 1
+fi
 
 # check if kafka is running
 docker inspect kafka > /dev/null 2>&1
@@ -23,7 +25,7 @@ if [ $? -ne 0 ]; then
     # start kafka
     docker-compose -f "$BIN_DIR/docker-compose.yaml" up -d
 else
-    echo -e "${GREEN}kafka already running${NC}"
+    log_success "kafka already running"
 fi
 
 # check if test network exists
@@ -32,43 +34,43 @@ if [ $? -ne 0 ]; then
     # create test network
     docker network create mynetwork
 else
-    echo -e "${GREEN}mynetwork already exists${NC}"
+    log_success "mynetwork already exists"
 fi
 
 # check if test container exists
 docker inspect "$test_container" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     # remove test container
-    docker rm -f "$test_container"
+    docker rm -f "$test_container" > /dev/null 2>&1
 else
-    echo -e "${GREEN}$test_container does not exist${NC}"
+    log_success "$test_container does not exist"
 fi
 
 # build test container
 build_logs=$(docker build -t my-ubuntu -f "$BIN_DIR/test/ubuntu/Dockerfile" "$BIN_DIR/test/ubuntu" 2>&1)
 if [ $? -ne 0 ]; then
-    echo -e "${RED}build failed${NC}"
-    echo -e "$build_logs"
+    log_error "build failed"
+    log_error "$build_logs"
     exit 1
 else
-    echo -e "${GREEN}build succeeded${NC}"
+    log_success "build succeeded"
 fi
 
 # start test container
 run_logs=$(docker run -d --network=mynetwork --name "$test_container" my-ubuntu 2>&1)
 if [ $? -ne 0 ]; then
-    echo -e "${RED}run failed${NC}"
-    echo -e "$run_logs"
+    log_error "run failed"
+    log_error "$run_logs"
     exit 1
 else
-    echo -e "${GREEN}run succeeded${NC}"
+    log_success "run succeeded"
 fi
 
 # check if test container is running
 docker inspect "$test_container" | grep '"Running": true' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo -e "${RED}$test_container is not running${NC}"
+    log_error "$test_container is not running"
     exit 1
 else
-    echo -e "${GREEN}$test_container is running${NC}"
+    log_success "$test_container is running"
 fi
