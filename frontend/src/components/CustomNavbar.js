@@ -38,6 +38,10 @@ const CustomNavbar = () => {
             <IoChatbox size={20} style={{ marginRight: "5px" }} />
             Messages
           </Nav.Link>
+          <Nav.Link as={Link} to="/forwarding-rules" className={isActive("/forwarding-rules")}>
+            <IoChatbox size={20} style={{ marginRight: "5px" }} />
+            Forwarding Rules
+          </Nav.Link>
         </Nav>
       </Navbar.Collapse>
     </Navbar>
