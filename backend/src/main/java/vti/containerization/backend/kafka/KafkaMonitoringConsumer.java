@@ -12,30 +12,19 @@ import java.util.logging.Logger;
 @Component
 public class KafkaMonitoringConsumer {
     private static final Logger LOGGER = Logger.getLogger(KafkaMonitoringConsumer.class.getName());
+    private static final int MAX_BUFFER_SIZE = 20;
 
     private final List<String> messageBuffer = new ArrayList<>();
-    private Timer bufferTimer;
     private Timer logToConsoleTimer;
 
     @KafkaListener(topics = "monitor-docker-traffic", groupId = "my_group")
-    public void listen(String message) {
+    public synchronized void listen(String message) {
         LOGGER.fine("Received message: " + message);
         messageBuffer.add(message);
 
-        if (bufferTimer == null) {
-            bufferTimer = new Timer();
-            bufferTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    // Process the messages in the buffer
-                    LOGGER.info("Buffer flush task running");
-
-                    // Clear the buffer
-                    messageBuffer.clear();
-                    bufferTimer.cancel();
-                    bufferTimer = null;
-                }
-            }, 10000); // Schedule the task to run after 10 seconds
+        // Remove the oldest message if buffer exceeds the maximum size
+        if (messageBuffer.size() > MAX_BUFFER_SIZE) {
+            messageBuffer.remove(0);
         }
 
         if (logToConsoleTimer == null) {
@@ -52,5 +41,4 @@ public class KafkaMonitoringConsumer {
     public List<String> getMessages() {
         return messageBuffer;
     }
-
 }

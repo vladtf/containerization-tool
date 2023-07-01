@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Navbar, Nav } from "react-bootstrap";
-import { IoHome, IoChatbox } from "react-icons/io5";
+import { IoHome, IoChatbox, IoSettingsSharp } from "react-icons/io5";
 
 const CustomNavbar = () => {
   const location = useLocation();
@@ -39,7 +39,7 @@ const CustomNavbar = () => {
             Messages
           </Nav.Link>
           <Nav.Link as={Link} to="/forwarding-rules" className={isActive("/forwarding-rules")}>
-            <IoChatbox size={20} style={{ marginRight: "5px" }} />
+            <IoSettingsSharp size={20} style={{ marginRight: "5px" }} />
             Forwarding Rules
           </Nav.Link>
         </Nav>
