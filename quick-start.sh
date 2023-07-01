@@ -4,7 +4,6 @@
 BIN_DIR=$(dirname "$0")
 
 # Script variables
-prepare_script="$BIN_DIR/prepare.sh"
 kafka_compose_file="$BIN_DIR/docker-compose.yaml"
 test_container_name="my-ubuntu"
 test_network_name="mynetwork"
@@ -19,26 +18,26 @@ kafka_compose_file_path="$BIN_DIR/docker-compose.yaml"
 test_container_path="$BIN_DIR/test/ubuntu"
 test_container_dockerfile_path="$test_container_path/Dockerfile"
 
-# Log script start
-log_info "Starting script"
-
 # Check if prepare.sh was sourced
 if [ -z "$PREPARE_SH_SOURCED" ]; then
-    log_error "prepare.sh must be sourced before running this script"
+    echo "prepare.sh must be sourced before running this script"
     exit 1
 fi
 
 # Source prepare.sh
-log_info "Sourcing prepare.sh"
+echo "Sourcing prepare.sh"
 source "$prepare_script_path"
 if [ $? -ne 0 ]; then
-    log_error "failed to source prepare.sh"
+    echo "Failed to source prepare.sh"
     exit 1
 fi
 
+# Log script start
+log_info "Starting script"
+
 # Check if Kafka is running
 log_info "Checking Kafka status"
-docker-compose -f "$kafka_compose_file_path" ps kafka > /dev/null 2>&1
+docker-compose -f "$kafka_compose_file_path" ps kafka >/dev/null 2>&1
 if [ $? -ne 0 ]; then
     # Start Kafka
     log_info "Starting Kafka"
@@ -49,7 +48,7 @@ fi
 
 # Check if the test network exists
 log_info "Checking test network"
-docker network inspect "$test_network_name" > /dev/null 2>&1
+docker network inspect "$test_network_name" >/dev/null 2>&1
 if [ $? -ne 0 ]; then
     # Create the test network
     log_info "Creating test network"
@@ -60,11 +59,11 @@ fi
 
 # Check if the test container exists
 log_info "Checking test container"
-docker inspect "$test_container_name" > /dev/null 2>&1
+docker inspect "$test_container_name" >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     # Remove the test container
     log_info "Removing existing test container"
-    docker rm -f "$test_container_name" > /dev/null 2>&1
+    docker rm -f "$test_container_name" >/dev/null 2>&1
 else
     log_success "$test_container_name does not exist"
 fi
@@ -93,7 +92,7 @@ fi
 
 # Check if the test container is running
 log_info "Checking test container status"
-docker inspect "$test_container_name" | grep '"Running": true' > /dev/null 2>&1
+docker inspect "$test_container_name" | grep '"Running": true' >/dev/null 2>&1
 if [ $? -ne 0 ]; then
     log_error "$test_container_name is not running"
     exit 1
