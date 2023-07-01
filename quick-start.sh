@@ -3,14 +3,27 @@
 # save current directory
 BIN_DIR=$(dirname $0)
 
+# check if prepare.sh was sourced
+if [ -z "$PREPARE_SH_SOURCED" ]; then
+    echo "prepare.sh must be sourced before running this script"
+    exit 1
+fi
+
+# Container name
+test_container="my-ubuntu"
+
+# Color codes
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
 # check if kafka is running
 docker inspect kafka > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     # start kafka
-    docker-compose -f $BIN_DIR/docker-compose.yaml up -d
+    docker-compose -f "$BIN_DIR/docker-compose.yaml" up -d
 else
-    echo "kafka already running"
+    echo -e "${GREEN}kafka already running${NC}"
 fi
 
 # check if test network exists
@@ -19,44 +32,43 @@ if [ $? -ne 0 ]; then
     # create test network
     docker network create mynetwork
 else
-    echo "mynetwork already exists"
+    echo -e "${GREEN}mynetwork already exists${NC}"
 fi
 
 # check if test container exists
-docker inspect my-ubuntu > /dev/null 2>&1
+docker inspect "$test_container" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     # remove test container
-    docker rm -f my-ubuntu
+    docker rm -f "$test_container"
 else
-    echo "my-ubuntu does not exist"
+    echo -e "${GREEN}$test_container does not exist${NC}"
 fi
 
 # build test container
-build_logs=$(docker build -t my-ubuntu -f $BIN_DIR/test/ubuntu/Dockerfile $BIN_DIR/test/ubuntu 2>&1)
+build_logs=$(docker build -t my-ubuntu -f "$BIN_DIR/test/ubuntu/Dockerfile" "$BIN_DIR/test/ubuntu" 2>&1)
 if [ $? -ne 0 ]; then
-    echo "build failed"
-    echo "$build_logs"
+    echo -e "${RED}build failed${NC}"
+    echo -e "$build_logs"
     exit 1
 else
-    echo "build succeeded"
+    echo -e "${GREEN}build succeeded${NC}"
 fi
 
 # start test container
-run_logs=$(docker run -d --network=mynetwork --name my-ubuntu my-ubuntu 2>&1)
+run_logs=$(docker run -d --network=mynetwork --name "$test_container" my-ubuntu 2>&1)
 if [ $? -ne 0 ]; then
-    echo "run failed"
-    echo "$run_logs"
+    echo -e "${RED}run failed${NC}"
+    echo -e "$run_logs"
     exit 1
 else
-    echo "run succeeded"
+    echo -e "${GREEN}run succeeded${NC}"
 fi
 
 # check if test container is running
-docker inspect my-ubuntu | grep '"Running": true' > /dev/null 2>&1
+docker inspect "$test_container" | grep '"Running": true' > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "my-ubuntu is not running"
+    echo -e "${RED}$test_container is not running${NC}"
     exit 1
 else
-    echo "my-ubuntu is running"
+    echo -e "${GREEN}$test_container is running${NC}"
 fi
-

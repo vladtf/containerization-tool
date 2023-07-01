@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# flag to indicate this script was sourced
+export PREPARE_SH_SOURCED=true
+
 # save current directory
 BIN_DIR=$(dirname $0)
 
