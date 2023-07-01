@@ -105,3 +105,4 @@ else
         log_success "Requirements installed"
     fi
 fi
+        log_success "Requirements satisfied"
