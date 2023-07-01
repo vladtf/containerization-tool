@@ -1,14 +1,12 @@
 package vti.containerization.backend.messages;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class MessageModel {
-
-    private final String message;
-
-    public MessageModel(String message) {
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
+    private String message;
 }

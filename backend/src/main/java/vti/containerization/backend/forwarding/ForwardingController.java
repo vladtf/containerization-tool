@@ -1,4 +1,4 @@
-package vti.containerization.backend.messages;
+package vti.containerization.backend.forwarding;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,14 +8,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/messages")
+@RequestMapping("/forwarding-chains")
 @AllArgsConstructor
-public class MessagesController {
+public class ForwardingController {
 
-    private final MessagesService messagesService;
+    private final ForwardingService forwardingService;
 
     @GetMapping("/all")
-    public List<MessageModel> getAllMessages() {
-        return messagesService.getAllMessages();
+    public List<ForwardingChainModel> getAllForwardingChains() {
+        return forwardingService.getAllForwardingChains();
     }
+
 }

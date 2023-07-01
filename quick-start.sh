@@ -37,8 +37,7 @@ log_info "Starting script"
 
 # Check if Kafka is running
 log_info "Checking Kafka status"
-docker-compose -f "$kafka_compose_file_path" ps kafka >/dev/null 2>&1
-if [ $? -ne 0 ]; then
+if ! docker-compose -f "$kafka_compose_file_path" ps kafka | grep "Up" >/dev/null 2>&1; then
     # Start Kafka
     log_info "Starting Kafka"
     docker-compose -f "$kafka_compose_file_path" up -d
@@ -81,7 +80,7 @@ fi
 
 # Start the test container
 log_info "Starting test container"
-run_logs=$(docker run -d --network="$test_network_name" --name "$test_container_name" "$test_container_name" 2>&1)
+run_logs=$(docker run -d --cap-add NET_ADMIN --network="$test_network_name" --name "$test_container_name" "$test_container_name" 2>&1)
 if [ $? -ne 0 ]; then
     log_error "run failed"
     log_error "$run_logs"
