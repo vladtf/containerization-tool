@@ -1,10 +1,12 @@
 FROM ubuntu:latest
 
+# Install basic tools
 RUN apt-get update && \
-    apt-get install -y iptables
+    apt-get install -y iptables iproute2 iputils-ping net-tools tcpdump \
+    vim git curl wget && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Add your application-specific configuration or commands here
 
-CMD ["/bin/bash"]
+CMD ["tail", "-f", "/dev/null"]
 
-ff

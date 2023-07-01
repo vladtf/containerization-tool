@@ -57,7 +57,8 @@ def packet_callback(pkt):
         print("Unknown packet type")
 
 # Docker network name
-docker_network_name = 'vta-ip-project_app_network'
+# docker_network_name = 'vta-ip-project_app_network'
+docker_network_name = 'mynetwork'
 
 # Get the Docker network interface name
 interface = get_docker_interface(docker_network_name)

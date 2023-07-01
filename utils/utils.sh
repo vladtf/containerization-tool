@@ -25,3 +25,9 @@ ip link show
 
 # show iptables
 docker exec -u root -it 8e80272f9e78 iptables -t nat -L
+
+# run dokcer with NET_ADMIN capability
+docker run -it --cap-add NET_ADMIN --network=mynetwork --name my-ubuntu my-ubuntu
+
+# redirect traffic to localhost
+iptables -t nat -A PREROUTING -d 8.8.8.8 -j DNAT --to-destination 9.9.9.9
