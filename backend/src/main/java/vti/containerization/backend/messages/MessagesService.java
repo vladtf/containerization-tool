@@ -14,8 +14,6 @@ public class MessagesService {
     private final KafkaMonitoringConsumer kafkaMonitoringConsumer;
 
     public List<MessageModel> getAllMessages() {
-        return kafkaMonitoringConsumer.getMessages().stream()
-                .map(MessageModel::new)
-                .toList();
+        return kafkaMonitoringConsumer.getMessages();
     }
 }

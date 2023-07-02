@@ -32,7 +32,15 @@ const MessagesPage = () => {
         {messages.length > 0 && (
           <ListGroup>
             {messages.map((message, index) => (
-              <ListGroup.Item key={index}>{message.message}</ListGroup.Item>
+              <ListGroup.Item key={index}>
+                <div>
+                  <p>Protocol: {message.protocol}</p>
+                  <p>Source IP: {message.src_ip}</p>
+                  <p>Destination IP: {message.dst_ip}</p>
+                  <p>Source Port: {message.src_port || "N/A"}</p>
+                  <p>Destination Port: {message.dst_port || "N/A"}</p>
+                </div>
+              </ListGroup.Item>
             ))}
           </ListGroup>
         )}
