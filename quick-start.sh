@@ -1,4 +1,5 @@
 #!/bin/bash
+# Description: This script starts environment required for monitoring
 
 # Save current directory
 BIN_DIR=$(dirname "$0")
@@ -99,9 +100,5 @@ else
     log_success "$test_container_name is running"
 fi
 
-# Start the monitoring script
-log_info "Starting monitoring script"
-python "$BIN_DIR/monitoring/monitor-docker-traffic.py"
-
 # Log script end
-log_info "Script execution completed"
+log_success "Quick start script completed successfully. Have fun!"

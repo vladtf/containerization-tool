@@ -14,7 +14,7 @@ def kakfa_producer(message):
 
     producer.flush()
 
-    print("Message sent to Kafka!")
+    # print("Message sent to Kafka!")
 
 
 def show_nat_table(container_name):

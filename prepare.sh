@@ -1,4 +1,5 @@
 #!/bin/bash
+# Description: This script prepares the environment required for monitoring
 
 # Flag to indicate this script was sourced
 export PREPARE_SH_SOURCED=true
