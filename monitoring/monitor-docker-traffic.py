@@ -80,7 +80,8 @@ def packet_callback(pkt):
         packet_data['protocol'] = 'unknown'
 
     json_message = json.dumps(packet_data)
-    print(json_message)
+    # print(json_message)
+    
     kafka_producer(json_message)
 
 

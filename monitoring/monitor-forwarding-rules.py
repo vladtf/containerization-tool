@@ -1,10 +1,11 @@
 import time
 import json
-from confluent_kafka import Producer
+from confluent_kafka import Producer, Consumer, KafkaError
 import docker
+import threading
 
 
-def kakfa_producer(message):
+def kafka_producer(message):
     bootstrap_servers = 'localhost:29092'
     topic = 'monitor-forwarding-rules'
 
@@ -14,7 +15,39 @@ def kakfa_producer(message):
 
     producer.flush()
 
-    # print("Message sent to Kafka!")2020
+    # print("Message sent to Kafka!")
+
+
+def kafka_consumer():
+    bootstrap_servers = 'localhost:29092'
+    topic = 'add-forwarding-rules'
+    group_id = 'my-group'
+
+    consumer = Consumer({
+        'bootstrap.servers': bootstrap_servers,
+        'group.id': group_id,
+        'auto.offset.reset': 'earliest'
+    })
+
+    consumer.subscribe([topic])
+
+    try:
+        while True:
+            msg = consumer.poll(1.0)
+
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                else:
+                    print("Kafka error: {}".format(msg.error().str()))
+                    break
+
+            print("Received message: {}".format(msg.value().decode()))
+
+    finally:
+        consumer.close()
 
 
 def show_nat_table(container_name):
@@ -61,9 +94,19 @@ container_name = 'my-ubuntu'
 # Set the monitoring interval (in seconds)
 monitoring_interval = 3
 
-while True:
-    nat_table = show_nat_table(container_name)
-    # print(json.dumps(nat_table, indent=4))  # Display NAT table as JSON
-    kakfa_producer(json.dumps(nat_table, indent=4))
 
-    time.sleep(monitoring_interval)
+def monitoring_thread():
+    while True:
+        nat_table = show_nat_table(container_name)
+        # print(json.dumps(nat_table, indent=4))  # Display NAT table as JSON
+        kafka_producer(json.dumps(nat_table, indent=4))
+
+        time.sleep(monitoring_interval)
+
+
+# Start the Kafka consumer in a separate thread
+consumer_thread = threading.Thread(target=kafka_consumer)
+consumer_thread.start()
+
+# Run the monitoring loop in the main thread
+monitoring_thread()

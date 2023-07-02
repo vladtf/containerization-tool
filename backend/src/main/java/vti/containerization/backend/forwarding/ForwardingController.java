@@ -1,9 +1,9 @@
 package vti.containerization.backend.forwarding;
 
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -17,6 +17,21 @@ public class ForwardingController {
     @GetMapping("/all")
     public List<ForwardingChainModel> getAllForwardingChains() {
         return forwardingService.getAllForwardingChains();
+    }
+
+
+    @PostMapping("/add")
+    public void addForwardingRuleToChain(@RequestBody AddForwardingRuleRequest forwardingChainModel) {
+        forwardingService.addForwardingRuleToChain(forwardingChainModel);
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class AddForwardingRuleRequest {
+        private String chainName;
+
+        private ForwardingRuleModel rule;
     }
 
 }
