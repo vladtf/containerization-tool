@@ -8,7 +8,8 @@ from confluent_kafka import Producer
 
 def get_docker_interface(docker_network_name):
     # Run the "docker network ls" command
-    command = ['docker', 'network', 'ls', '--filter', f"name={docker_network_name}"]
+    command = ['docker', 'network', 'ls',
+               '--filter', f"name={docker_network_name}"]
     result = subprocess.run(command, capture_output=True, text=True)
 
     # Get the id of the Docker network
@@ -40,31 +41,35 @@ def packet_callback(pkt):
         packet_data['src_ip'] = pkt.ip.src
         packet_data['dst_ip'] = pkt.ip.dst
 
-        # If the packet contains HTTP information, include the request and response
-        # if 'http' in pkt:
-        #     packet_bytes = binascii.unhexlify(pkt.eth.raw_mode.replace(':', ''))
-        #     packet_data['http_request'] = pkt.http.request_full_uri
-        #     packet_data['http_response'] = pkt.http.response_full_uri
+        if 'tcp' in pkt:
+            packet_data['protocol'] = 'tcp'
+            packet_data['src_port'] = pkt.tcp.srcport
+            packet_data['dst_port'] = pkt.tcp.dstport
+
+        elif 'udp' in pkt:
+            packet_data['protocol'] = 'udp'
+            packet_data['src_port'] = pkt.udp.srcport
+            packet_data['dst_port'] = pkt.udp.dstport
 
     elif 'ipv6' in pkt:
         packet_data['protocol'] = 'ipv6'
         packet_data['src_ip'] = pkt.ipv6.src
         packet_data['dst_ip'] = pkt.ipv6.dst
 
+        if 'tcp' in pkt:
+            packet_data['protocol'] = 'tcp'
+            packet_data['src_port'] = pkt.tcp.srcport
+            packet_data['dst_port'] = pkt.tcp.dstport
+
+        elif 'udp' in pkt:
+            packet_data['protocol'] = 'udp'
+            packet_data['src_port'] = pkt.udp.srcport
+            packet_data['dst_port'] = pkt.udp.dstport
+
     elif 'arp' in pkt:
         packet_data['protocol'] = 'arp'
         packet_data['src_mac'] = pkt.arp.src_hw_mac
         packet_data['dst_mac'] = pkt.arp.dst_hw_mac
-
-    elif 'tcp' in pkt:
-        packet_data['protocol'] = 'tcp'
-        packet_data['src_port'] = pkt.tcp.srcport
-        packet_data['dst_port'] = pkt.tcp.dstport
-
-    elif 'udp' in pkt:
-        packet_data['protocol'] = 'udp'
-        packet_data['src_port'] = pkt.udp.srcport
-        packet_data['dst_port'] = pkt.udp.dstport
 
     elif 'icmp' in pkt:
         packet_data['protocol'] = 'icmp'
@@ -77,6 +82,7 @@ def packet_callback(pkt):
     json_message = json.dumps(packet_data)
     print(json_message)
     kafka_producer(json_message)
+
 
 
 # Docker network name

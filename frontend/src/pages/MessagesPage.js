@@ -20,18 +20,32 @@ const MessagesPage = () => {
     fetchData();
   }, []);
 
+  // Group messages by source and destination
+  const groupedMessages = {};
+  messages.forEach((message) => {
+    const key = `${message.src_ip}-${message.dst_ip}`;
+    if (groupedMessages[key]) {
+      groupedMessages[key].count += 1;
+    } else {
+      groupedMessages[key] = {
+        message,
+        count: 1,
+      };
+    }
+  });
+
   return (
     <Container>
       <CustomNavbar />
       <div>
         <h1>Messages Page</h1>
         {error && <Alert variant="danger">{error}</Alert>}
-        {messages.length === 0 && !error && (
+        {Object.keys(groupedMessages).length === 0 && !error && (
           <Alert variant="info">No messages available.</Alert>
         )}
-        {messages.length > 0 && (
+        {Object.keys(groupedMessages).length > 0 && (
           <ListGroup>
-            {messages.map((message, index) => (
+            {Object.values(groupedMessages).map(({ message, count }, index) => (
               <ListGroup.Item key={index}>
                 <div>
                   <p>Protocol: {message.protocol}</p>
@@ -39,6 +53,7 @@ const MessagesPage = () => {
                   <p>Destination IP: {message.dst_ip}</p>
                   <p>Source Port: {message.src_port || "N/A"}</p>
                   <p>Destination Port: {message.dst_port || "N/A"}</p>
+                  <p>Count: {count}</p>
                 </div>
               </ListGroup.Item>
             ))}

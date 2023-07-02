@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 @Component
 public class KafkaMonitoringConsumer {
     private static final Logger LOGGER = Logger.getLogger(KafkaMonitoringConsumer.class.getName());
-    private static final int MAX_BUFFER_SIZE = 20;
+    private static final int MAX_BUFFER_SIZE = 1000;
 
     private final List<MessageModel> messageBuffer = new ArrayList<>();
     private Timer logToConsoleTimer;
