@@ -16,4 +16,8 @@ public class MessagesService {
     public List<MessageModel> getAllMessages() {
         return kafkaMonitoringConsumer.getMessages();
     }
+
+    public void clearMessages() {
+        kafkaMonitoringConsumer.clearMessages();
+    }
 }

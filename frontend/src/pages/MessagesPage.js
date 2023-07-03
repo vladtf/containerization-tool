@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, ListGroup, Alert } from "react-bootstrap";
+import { Container, ListGroup, Alert, Button } from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 
@@ -8,17 +8,33 @@ const MessagesPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("http://localhost:8180/messages/all");
-        setMessages(response.data);
-      } catch (error) {
-        setError("Failed to fetch messages.");
-      }
-    };
-
     fetchData();
+    const interval = setInterval(fetchData, 5000); // Fetch data every 5 seconds
+
+    return () => {
+      clearInterval(interval); // Clean up the interval on component unmount
+    };
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get("http://localhost:8180/messages/all");
+      setMessages(response.data);
+      setError(null);
+    } catch (error) {
+      setError("Failed to fetch messages.");
+    }
+  };
+
+  const handleClearMessages = async () => {
+    try {
+      await axios.get("http://localhost:8180/messages/clear");
+      setMessages([]);
+      setError(null);
+    } catch (error) {
+      setError("Failed to clear messages.");
+    }
+  };
 
   // Group messages by source and destination
   const groupedMessages = {};
@@ -43,6 +59,10 @@ const MessagesPage = () => {
         {Object.keys(groupedMessages).length === 0 && !error && (
           <Alert variant="info">No messages available.</Alert>
         )}
+        <Button variant="danger" onClick={handleClearMessages}>
+          Clear Messages
+        </Button>
+        
         {Object.keys(groupedMessages).length > 0 && (
           <ListGroup>
             {Object.values(groupedMessages).map(({ message, count }, index) => (

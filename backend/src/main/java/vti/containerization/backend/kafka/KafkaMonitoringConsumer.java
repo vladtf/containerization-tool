@@ -63,4 +63,8 @@ public class KafkaMonitoringConsumer {
     public List<MessageModel> getMessages() {
         return messageBuffer;
     }
+
+    public void clearMessages() {
+        messageBuffer.clear();
+    }
 }

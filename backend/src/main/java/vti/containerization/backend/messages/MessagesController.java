@@ -18,4 +18,10 @@ public class MessagesController {
     public List<MessageModel> getAllMessages() {
         return messagesService.getAllMessages();
     }
+
+
+    @GetMapping("/clear")
+    public void clearMessages() {
+        messagesService.clearMessages();
+    }
 }
