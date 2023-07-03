@@ -15,7 +15,8 @@ def kafka_producer(message):
 
     producer.flush()
 
-    # print("Message sent to Kafka!")
+    # print("Message sent to Kafka: {}".format(message))
+    # print("Message sent to Kafka")
 
 
 def kafka_consumer():
@@ -42,9 +43,11 @@ def kafka_consumer():
                     continue
                 else:
                     print("Kafka error: {}".format(msg.error().str()))
-                    break
+                    continue
 
             print("Received message: {}".format(msg.value().decode()))
+            process_message_from_kafka(msg.value().decode())
+            
 
     finally:
         consumer.close()
@@ -68,7 +71,7 @@ def show_nat_table(container_name):
             nat_table[chain] = {}
         elif chain and not line.startswith('target'):
             parts = line.split()
-            if len(parts) >= 9:
+            if len(parts) >= 8:
                 rule_number = int(parts[0])
                 target = parts[1]
                 prot = parts[2]
@@ -88,6 +91,39 @@ def show_nat_table(container_name):
     return nat_table
 
 
+def process_message_from_kafka(message):
+    try:
+        parsed_message = json.loads(message)
+        chain_name = parsed_message['chainName']
+        rule = parsed_message['rule']
+
+        # Extract the rule details
+        rule_name = rule['name']
+        target = rule['target']
+        protocol = rule['protocol']
+        options = rule['options']
+        source = rule['source']
+        destination = rule['destination']
+        extra = rule['extra']
+
+        # Update iptables with the rule
+        # Replace 'my-ubuntu' with your actual container name
+        container_name = 'my-ubuntu'
+        client = docker.from_env()
+        container = client.containers.get(container_name)
+
+        exec_command = f'iptables -t nat -A {chain_name} -p {protocol} -s {source} -d {destination} -j {target}'
+        container.exec_run(exec_command, privileged=True)
+
+        print(f"Iptables rule added: {exec_command}")
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON: {e}")
+    except KeyError as e:
+        print(f"Key not found in JSON: {e}")
+    except docker.errors.NotFound:
+        print(f"Container '{container_name}' not found.")
+
+
 # Replace 'my-ubuntu' with your actual container name
 container_name = 'my-ubuntu'
 
@@ -99,6 +135,7 @@ def monitoring_thread():
     while True:
         nat_table = show_nat_table(container_name)
         # print(json.dumps(nat_table, indent=4))  # Display NAT table as JSON
+
         kafka_producer(json.dumps(nat_table, indent=4))
 
         time.sleep(monitoring_interval)

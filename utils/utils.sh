@@ -30,4 +30,7 @@ docker exec -u root -it 8e80272f9e78 iptables -t nat -L
 docker run -it --cap-add NET_ADMIN --network=mynetwork --name my-ubuntu my-ubuntu
 
 # redirect traffic to localhost
-iptables -t nat -A PREROUTING -d 8.8.8.8 -j DNAT --to-destination 9.9.9.9
+iptables -t nat -A OUTPUT -d 8.8.8.8 -j DNAT --to-destination 9.9.9.9
+
+# show iptables
+iptables -t nat -L

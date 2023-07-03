@@ -8,24 +8,23 @@ BIN_DIR=$(dirname "$0")
 ###############################################
 
 # Paths
-monitoring_traffic_script_path="$BIN_DIR/monitoring/monitor-docker-traffic.py"
+monitoring_traffic_script_name="monitor-docker-traffic.py"
+monitoring_traffic_script_path="$BIN_DIR/monitoring/$monitoring_traffic_script_name"
 prepare_script_path="$BIN_DIR/prepare.sh"
 
 # Function to start monitoring
 start_monitoring() {
     log_info "Starting monitoring"
     python3 "$monitoring_traffic_script_path" &
-    MONITORING_PID=$!  # Store the PID of the monitoring process
 }
 
 # Function to stop monitoring
 stop_monitoring() {
-    if [[ -n "$MONITORING_PID" ]]; then
-        log_error "Stopping monitoring"
-        kill "$MONITORING_PID"
-        wait "$MONITORING_PID" 2>/dev/null  # Suppress any error messages
-        unset MONITORING_PID
-    fi
+    log_warning "Stopping Docker Traffic Monitoring"
+    for pid in $(ps aux | grep "$monitoring_traffic_script_name" | grep -v grep | awk '{print $2}'); do
+        log_info "Stopping monitoring (PID: $pid)"
+        kill -9 "$pid"
+    done
 }
 
 # Check if prepare.sh was sourced
