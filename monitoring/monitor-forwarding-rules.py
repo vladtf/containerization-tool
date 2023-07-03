@@ -57,38 +57,67 @@ def show_nat_table(container_name):
     client = docker.from_env()
     container = client.containers.get(container_name)
 
-    exec_command = 'iptables -t nat -L -n --line-numbers'
+    exec_command = 'iptables-save -t nat'
     response = container.exec_run(exec_command, privileged=True)
 
     output = response.output.decode()
 
-    nat_table = {}
-    chain = None
-    lines = output.strip().split('\n')
-    for line in lines:
-        if line.startswith('Chain'):
-            chain = line.split()[1]
-            nat_table[chain] = {}
-        elif chain and not line.startswith('target'):
-            parts = line.split()
-            if len(parts) >= 8:
-                rule_number = int(parts[0])
-                target = parts[1]
-                prot = parts[2]
-                opt = parts[3]
-                source = parts[4]
-                destination = parts[5]
-                extra = parts[6:]
-                nat_table[chain][rule_number] = {
-                    'target': target,
-                    'protocol': prot,
-                    'options': opt,
-                    'source': source,
-                    'destination': destination,
-                    'extra': extra
-                }
+    nat_table = parse_iptables_rules(output)
 
     return nat_table
+
+
+def parse_iptables_rules(iptables_output):
+    rules = iptables_output.strip().split('\n')
+    nat_table = {}
+    chain = None
+
+    for rule in rules:
+        rule = rule.strip()
+        if rule.startswith(':'):
+            # Skip the counters line
+            continue
+
+        if rule.startswith('-A'):
+            parts = rule.split(' ')
+            chain = parts[1]
+            rule_spec = parts[2:]
+
+            if chain != 'OUTPUT':
+                continue
+
+            rule_entry = {
+                'command': rule,
+                'chain': chain,
+                'target': None,
+                'protocol': None,
+                'options': None,
+                'source': None,
+                'destination': None
+            }
+
+            # Extracting the target, protocol, options, source, and destination from the rule_spec
+            for i, part in enumerate(rule_spec):
+                if part == '-j':
+                    rule_entry['target'] = rule_spec[i + 1]
+                elif part == '-p':
+                    rule_entry['protocol'] = rule_spec[i + 1]
+                elif part == '-s':
+                    rule_entry['source'] = rule_spec[i + 1]
+                elif part == '-d':
+                    rule_entry['source'] = rule_spec[i + 1]
+                elif part == '--to-destination':
+                    rule_entry['destination'] = rule_spec[i + 1]
+
+
+            nat_table.setdefault(chain, []).append(rule_entry)
+
+            # print rule if PREROUTING chain
+            # if chain == 'OUTPUT':
+            #     print(json.dumps(rule_entry, indent=4))
+
+    return nat_table
+
 
 
 def process_message_from_kafka(message):
@@ -98,13 +127,10 @@ def process_message_from_kafka(message):
         rule = parsed_message['rule']
 
         # Extract the rule details
-        rule_name = rule['name']
         target = rule['target']
         protocol = rule['protocol']
-        options = rule['options']
         source = rule['source']
         destination = rule['destination']
-        extra = rule['extra']
 
         # Update iptables with the rule
         # Replace 'my-ubuntu' with your actual container name
@@ -112,7 +138,8 @@ def process_message_from_kafka(message):
         client = docker.from_env()
         container = client.containers.get(container_name)
 
-        exec_command = f'iptables -t nat -A {chain_name} -p {protocol} -s {source} -d {destination} -j {target}'
+        # iptables -t nat -A OUTPUT -d 8.8.8.8 -j DNAT --to-destination 9.9.9.9
+        exec_command = f'iptables -t nat -A {chain_name} -d {source} -j {target} --to-destination {destination}'
         container.exec_run(exec_command, privileged=True)
 
         print(f"Iptables rule added: {exec_command}")
@@ -128,7 +155,7 @@ def process_message_from_kafka(message):
 container_name = 'my-ubuntu'
 
 # Set the monitoring interval (in seconds)
-monitoring_interval = 3
+monitoring_interval = 5
 
 
 def monitoring_thread():

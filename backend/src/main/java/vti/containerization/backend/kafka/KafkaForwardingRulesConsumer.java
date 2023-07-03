@@ -2,6 +2,7 @@ package vti.containerization.backend.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import vti.containerization.backend.forwarding.ForwardingChainModel;
@@ -36,21 +37,17 @@ public class KafkaForwardingRulesConsumer {
 
                 List<ForwardingRuleModel> rules = new ArrayList<ForwardingRuleModel>();
 
-                Iterator<Map.Entry<String, JsonNode>> fields = field.getValue().fields();
-                while (fields.hasNext()) {
-                    Map.Entry<String, JsonNode> rule = fields.next();
-                    String ruleKey = rule.getKey();
+                ArrayNode nodes = (ArrayNode) field.getValue();
+                for (JsonNode jsonNode : nodes) {
+                    String command = jsonNode.get("command").asText();
+                    String target = jsonNode.get("target").asText();
+                    String chain = jsonNode.get("chain").asText();
+                    String protocol = jsonNode.get("protocol").asText();
+                    String options = jsonNode.get("options").asText();
+                    String source = jsonNode.get("source").asText();
+                    String destination = jsonNode.get("destination").asText();
 
-                    JsonNode ruleValue = rule.getValue();
-
-                    String target = ruleValue.get("target").asText();
-                    String protocol = ruleValue.get("protocol").asText();
-                    String options = ruleValue.get("options").asText();
-                    String source = ruleValue.get("source").asText();
-                    String destination = ruleValue.get("destination").asText();
-                    String[] extra = mapper.convertValue(ruleValue.get("extra"), String[].class);
-
-                    ForwardingRuleModel forwardingRuleModel = new ForwardingRuleModel(ruleKey, target, protocol, options, source, destination, extra);
+                    ForwardingRuleModel forwardingRuleModel = new ForwardingRuleModel(command, target, protocol, options, source, destination);
                     rules.add(forwardingRuleModel);
                 }
 
@@ -69,12 +66,7 @@ public class KafkaForwardingRulesConsumer {
     public void listen(String message) {
         LOGGER.info("Received forwarding rules from Kafka");
 
-        List<ForwardingChainModel> forwardingRules = deserializeForwardingChains(message);
-
-        if (forwardingRules.size() > 0) {
-            this.forwardingChainModels = forwardingRules;
-        }
-
+        this.forwardingChainModels = deserializeForwardingChains(message);
     }
 
     public List<ForwardingChainModel> getForwardingChains() {
