@@ -60,6 +60,19 @@ const ForwardingRulesPage = () => {
     }
   };
 
+  const handleClear = async () => {
+    try {
+      await axios.post("http://localhost:8180/forwarding-chains/clear");
+      // Refresh the data after successful clear request
+      fetchData();
+      setSuccess(true);
+      setError("");
+    } catch (error) {
+      setError("Error clearing forwarding rules");
+      setSuccess(false);
+    }
+  };
+
   const fetchData = async () => {
     try {
       const response = await axios.get(
@@ -165,6 +178,11 @@ const ForwardingRulesPage = () => {
         </Form.Group>
         <Button type="submit">Add Rule</Button>
       </Form>
+
+      <h2>Clear Forwarding Rules</h2>
+      <Button variant="danger" onClick={handleClear}>
+        Clear Rules
+      </Button>
     </Container>
   );
 };

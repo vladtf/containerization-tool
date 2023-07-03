@@ -28,4 +28,8 @@ public class ForwardingService {
         String message = objectMapper.writeValueAsString(forwardingChainModel);
         kafkaForwardingRulesProducer.sendForwardingRules("add-forwarding-rules", message);
     }
+
+    public void clearForwardingRules() {
+        kafkaForwardingRulesProducer.sendForwardingRules("clear-forwarding-rules", "clear-forwarding-rules");
+    }
 }

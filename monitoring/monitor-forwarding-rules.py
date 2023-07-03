@@ -5,9 +5,8 @@ import docker
 import threading
 
 
-def kafka_producer(message):
+def kafka_producer(message, topic):
     bootstrap_servers = 'localhost:29092'
-    topic = 'monitor-forwarding-rules'
 
     producer = Producer({'bootstrap.servers': bootstrap_servers})
 
@@ -15,14 +14,11 @@ def kafka_producer(message):
 
     producer.flush()
 
-    # print("Message sent to Kafka: {}".format(message))
-    # print("Message sent to Kafka")
 
-
-def kafka_consumer():
+def kafka_consumer_add_rules():
     bootstrap_servers = 'localhost:29092'
     topic = 'add-forwarding-rules'
-    group_id = 'my-group'
+    group_id = 'my-group-add-rules'
 
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
@@ -45,9 +41,42 @@ def kafka_consumer():
                     print("Kafka error: {}".format(msg.error().str()))
                     continue
 
-            print("Received message: {}".format(msg.value().decode()))
+            print("Received message on 'add-forwarding-rules' topic: {}".format(msg.value().decode()))
             process_message_from_kafka(msg.value().decode())
-            
+
+    finally:
+        consumer.close()
+
+
+def kafka_consumer_clear_rules():
+    bootstrap_servers = 'localhost:29092'
+    topic = 'clear-forwarding-rules'
+    group_id = 'my-group-clear-rules'
+
+    consumer = Consumer({
+        'bootstrap.servers': bootstrap_servers,
+        'group.id': group_id,
+        'auto.offset.reset': 'earliest'
+    })
+
+    consumer.subscribe([topic])
+
+    try:
+        while True:
+            msg = consumer.poll(1.0)
+
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                else:
+                    print("Kafka error: {}".format(msg.error().str()))
+                    continue
+
+            print("Received message on 'clear-forwarding-rules' topic: {}".format(msg.value().decode()))
+            clear_nat_table()
+            print("NAT table cleared.")
 
     finally:
         consumer.close()
@@ -109,15 +138,20 @@ def parse_iptables_rules(iptables_output):
                 elif part == '--to-destination':
                     rule_entry['destination'] = rule_spec[i + 1]
 
-
             nat_table.setdefault(chain, []).append(rule_entry)
-
-            # print rule if PREROUTING chain
-            # if chain == 'OUTPUT':
-            #     print(json.dumps(rule_entry, indent=4))
 
     return nat_table
 
+
+def clear_nat_table():
+    # Logic to clear the NAT table
+    # Replace 'my-ubuntu' with your actual container name
+    container_name = 'my-ubuntu'
+    client = docker.from_env()
+    container = client.containers.get(container_name)
+
+    exec_command = 'iptables -t nat -F OUTPUT'
+    container.exec_run(exec_command, privileged=True)
 
 
 def process_message_from_kafka(message):
@@ -163,14 +197,17 @@ def monitoring_thread():
         nat_table = show_nat_table(container_name)
         # print(json.dumps(nat_table, indent=4))  # Display NAT table as JSON
 
-        kafka_producer(json.dumps(nat_table, indent=4))
+        kafka_producer(json.dumps(nat_table, indent=4), 'monitor-forwarding-rules')
 
         time.sleep(monitoring_interval)
 
 
-# Start the Kafka consumer in a separate thread
-consumer_thread = threading.Thread(target=kafka_consumer)
-consumer_thread.start()
+# Start the Kafka consumers in separate threads
+consumer_thread_add_rules = threading.Thread(target=kafka_consumer_add_rules)
+consumer_thread_clear_rules = threading.Thread(target=kafka_consumer_clear_rules)
+
+consumer_thread_add_rules.start()
+consumer_thread_clear_rules.start()
 
 # Run the monitoring loop in the main thread
 monitoring_thread()

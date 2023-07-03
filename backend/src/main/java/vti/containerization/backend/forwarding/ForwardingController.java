@@ -25,6 +25,11 @@ public class ForwardingController {
         forwardingService.addForwardingRuleToChain(forwardingChainModel);
     }
 
+    @PostMapping("/clear")
+    public void clearForwardingRules() {
+        forwardingService.clearForwardingRules();
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
