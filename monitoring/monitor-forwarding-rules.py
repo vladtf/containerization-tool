@@ -1,22 +1,39 @@
 import time
 import json
+import logging
 from confluent_kafka import Producer, Consumer, KafkaError
 import docker
 import threading
 from confluent_kafka.admin import AdminClient, NewTopic
+import configparser
+import os
 
-bootstrap_servers = 'localhost:29092'
-container_name = 'my-ubuntu'
-monitoring_interval = 5
+# Configure the logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def kafka_producer(message, topic):
+def load_config():
+    # Get the directory path of the script
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # Construct the absolute path to config.ini
+    config_file_path = os.path.join(script_directory, 'config.ini')
+
+    # Read the configuration file
+    config = configparser.ConfigParser()
+    config.read(config_file_path)
+
+    return config
+
+
+def kafka_producer(message, topic, bootstrap_servers):
     producer = Producer({'bootstrap.servers': bootstrap_servers})
     producer.produce(topic, key='my_key', value=message)
     producer.flush()
 
 
-def kafka_consumer(topic, group_id, callback):
+def kafka_consumer(topic, group_id, callback, bootstrap_servers):
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
@@ -50,11 +67,11 @@ def kafka_consumer(topic, group_id, callback):
                 if msg.error().code() == KafkaError._PARTITION_EOF:
                     continue
                 else:
-                    print("Kafka error: {}".format(msg.error().str()))
+                    logger.error("Kafka error: %s", msg.error().str())
                     continue
 
-            print("Received message on topic '{}': {}".format(
-                topic, msg.value().decode()))
+            logger.info("Received message on topic '%s': %s",
+                        topic, msg.value().decode())
             callback(msg.value().decode())
 
     finally:
@@ -149,31 +166,44 @@ def process_message_from_kafka(message):
         exec_command = f'iptables -t nat -A {chain_name} -d {source} -j {target} --to-destination {destination}'
         container.exec_run(exec_command, privileged=True)
 
-        print(f"Iptables rule added: {exec_command}")
+        logger.info("Iptables rule added: %s", exec_command)
     except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
+        logger.error("Error parsing JSON: %s", e)
     except KeyError as e:
-        print(f"Key not found in JSON: {e}")
+        logger.error("Key not found in JSON: %s", e)
     except docker.errors.NotFound:
-        print(f"Container '{container_name}' not found.")
+        logger.error("Container '%s' not found.", container_name)
 
 
-def monitoring_thread():
+def monitoring_thread(bootstrap_servers, container_name, monitoring_interval):
     while True:
         nat_table = show_nat_table(container_name)
         kafka_producer(json.dumps(nat_table, indent=4),
-                       'monitor-forwarding-rules')
+                       'monitor-forwarding-rules', bootstrap_servers)
         time.sleep(monitoring_interval)
 
 
-# Start the Kafka consumers in separate threads
-consumer_thread_add_rules = threading.Thread(target=kafka_consumer, args=(
-    'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka))
-consumer_thread_clear_rules = threading.Thread(target=kafka_consumer, args=(
-    'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table))
+def main():
+    # Load the configuration
+    config = load_config()
 
-consumer_thread_add_rules.start()
-consumer_thread_clear_rules.start()
+    # Extract configuration values
+    kafka_url = config.get('kafka', 'bootstrap_servers')
+    container_name = 'my-ubuntu'
+    monitoring_interval = 5
 
-# Run the monitoring loop in the main thread
-monitoring_thread()
+    # Start the Kafka consumers in separate threads
+    consumer_thread_add_rules = threading.Thread(target=kafka_consumer, args=(
+        'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka, kafka_url))
+    consumer_thread_clear_rules = threading.Thread(target=kafka_consumer, args=(
+        'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table, kafka_url))
+
+    consumer_thread_add_rules.start()
+    consumer_thread_clear_rules.start()
+
+    # Run the monitoring loop in the main thread
+    monitoring_thread(kafka_url, container_name, monitoring_interval)
+
+
+if __name__ == '__main__':
+    main()
