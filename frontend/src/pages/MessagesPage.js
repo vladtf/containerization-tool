@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, ListGroup, Alert, Button } from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
+import { BACKEND_URL } from "../config/BackendConfiguration";
 
 const MessagesPage = () => {
   const [messages, setMessages] = useState([]);
@@ -18,7 +19,7 @@ const MessagesPage = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get("http://localhost:8180/messages/all");
+      const response = await axios.get(`${BACKEND_URL}/messages/all`);
       setMessages(response.data);
       setError(null);
     } catch (error) {
@@ -28,7 +29,7 @@ const MessagesPage = () => {
 
   const handleClearMessages = async () => {
     try {
-      await axios.get("http://localhost:8180/messages/clear");
+      await axios.get(`${BACKEND_URL}/messages/clear`);
       setMessages([]);
       setError(null);
     } catch (error) {

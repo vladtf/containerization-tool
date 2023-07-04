@@ -1,20 +1,15 @@
-import binascii
-import pyshark
 import subprocess
 import re
 import json
 from confluent_kafka import Producer
+import pyshark
 
 
 def get_docker_interface(docker_network_name):
-    # Run the "docker network ls" command
-    command = ['docker', 'network', 'ls',
-               '--filter', f"name={docker_network_name}"]
+    command = ['docker', 'network', 'ls', '--filter', f"name={docker_network_name}"]
     result = subprocess.run(command, capture_output=True, text=True)
 
-    # Get the id of the Docker network
     match = re.search(r"(\w{12})", result.stdout)
-
     if match:
         interface_id = match.group(1)
         return "br-" + interface_id
@@ -80,14 +75,10 @@ def packet_callback(pkt):
         packet_data['protocol'] = 'unknown'
 
     json_message = json.dumps(packet_data)
-    # print(json_message)
-    
     kafka_producer(json_message)
 
 
-
 # Docker network name
-# docker_network_name = 'vta-ip-project_app_network'
 docker_network_name = 'mynetwork'
 
 # Get the Docker network interface name

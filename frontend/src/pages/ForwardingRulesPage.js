@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, ListGroup, Alert, Form, Button } from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
+import { BACKEND_URL } from "../config/BackendConfiguration";
 
 const ForwardingRulesPage = () => {
   const [data, setData] = useState([]);
@@ -48,7 +49,7 @@ const ForwardingRulesPage = () => {
     e.preventDefault();
 
     try {
-      await axios.post("http://localhost:8180/forwarding-chains/add", newRule);
+      await axios.post(`${BACKEND_URL}/forwarding-chains/add`, newRule);
 
       // Refresh the data after successful POST request
       fetchData();
@@ -62,7 +63,7 @@ const ForwardingRulesPage = () => {
 
   const handleClear = async () => {
     try {
-      await axios.post("http://localhost:8180/forwarding-chains/clear");
+      await axios.post(`${BACKEND_URL}/forwarding-chains/clear`);
       // Refresh the data after successful clear request
       fetchData();
       setSuccess(true);
@@ -76,7 +77,7 @@ const ForwardingRulesPage = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8180/forwarding-chains/all"
+        `${BACKEND_URL}/forwarding-chains/all`
       );
       setData(response.data);
     } catch (error) {
@@ -93,7 +94,7 @@ const ForwardingRulesPage = () => {
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">Request sent successfully!</Alert>}
       <ListGroup>
-        {data.map((chain, chainIndex) => (
+        {data && data.map((chain, chainIndex) => (
           <ListGroup.Item key={chainIndex}>
             <h5>{chain.name}</h5>
             <ul>
