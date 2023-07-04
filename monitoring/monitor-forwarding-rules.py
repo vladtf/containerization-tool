@@ -33,7 +33,7 @@ def kafka_producer(message, topic, bootstrap_servers):
     producer.flush()
 
 
-def kafka_consumer(topic, group_id, callback, bootstrap_servers):
+def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name):
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
@@ -72,7 +72,11 @@ def kafka_consumer(topic, group_id, callback, bootstrap_servers):
 
             logger.info("Received message on topic '%s': %s",
                         topic, msg.value().decode())
-            callback(msg.value().decode())
+
+            if callback.__name__ == 'clear_nat_table':
+                callback(container_name)
+            else:
+                callback(msg.value().decode(), container_name)
 
     finally:
         consumer.close()
@@ -139,7 +143,7 @@ def parse_iptables_rules(iptables_output):
     return nat_table
 
 
-def clear_nat_table():
+def clear_nat_table(container_name):
     client = docker.from_env()
     container = client.containers.get(container_name)
 
@@ -147,7 +151,7 @@ def clear_nat_table():
     container.exec_run(exec_command, privileged=True)
 
 
-def process_message_from_kafka(message):
+def process_message_from_kafka(message, container_name):
     try:
         parsed_message = json.loads(message)
         chain_name = parsed_message['chainName']
@@ -194,9 +198,9 @@ def main():
 
     # Start the Kafka consumers in separate threads
     consumer_thread_add_rules = threading.Thread(target=kafka_consumer, args=(
-        'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka, kafka_url))
+        'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka, kafka_url, container_name))
     consumer_thread_clear_rules = threading.Thread(target=kafka_consumer, args=(
-        'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table, kafka_url))
+        'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table, kafka_url, container_name))
 
     consumer_thread_add_rules.start()
     consumer_thread_clear_rules.start()
