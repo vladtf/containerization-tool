@@ -7,6 +7,7 @@
   - [Scope](#scope)
   - [Design](#design)
   - [Flows](#flows)
+  - [Mockup](#mockup)
   - [Monitoring](#monitoring)
   - [Traffic Forwarding](#traffic-forwarding)
   - [Web Interface](#web-interface)
@@ -24,6 +25,11 @@ This document is intended to provide a description of the implementation of the 
 ## Flows
 
 ![](svg/general-flow.svg)
+
+
+## Mockup
+
+![](svg/traffic-page-mockup.drawio.svg)
 
 
 ## Monitoring
