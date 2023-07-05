@@ -19,7 +19,7 @@ This document is intended to provide a description of the implementation of the 
 
 ## Design
 
-![](svg/containerization-tool-design.svg)
+![](svg/containerization-tool-design.drawio.svg)
 
 ## Flows
 
