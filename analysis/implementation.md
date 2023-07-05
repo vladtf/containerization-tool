@@ -29,8 +29,13 @@ This document is intended to provide a description of the implementation of the 
 
 ## Mockup
 
+Traffic Page:
+
 ![](svg/traffic-page-mockup.drawio.svg)
 
+Forwarding Page:
+
+![](svg/forwarding-page-mockup.drawio.svg)
 
 ## Monitoring
 
