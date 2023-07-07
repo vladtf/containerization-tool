@@ -6,6 +6,8 @@
   - [Table of Contents](#table-of-contents)
   - [Description](#description)
   - [Documentation](#documentation)
+  - [Start](#start)
+    - [Local Environment](#local-environment)
 
 
 ## Description
@@ -21,3 +23,10 @@ The developer can see the report in an web interface and decide how to map the n
 
 * [Similar Tools](analysis/similar-tools.md)
 * [Implementation](analysis/implementation.md)
+
+
+## Start
+
+### Local Environment
+
+TODO
