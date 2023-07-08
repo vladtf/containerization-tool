@@ -29,4 +29,17 @@ The developer can see the report in an web interface and decide how to map the n
 
 ### Local Environment
 
+#### Prerequisites
+
 TODO
+
+#### Start-up scripts
+
+* prepare.sh - TODO
+
+ 
+* quick-start.sh - TODO
+
+
+
+
