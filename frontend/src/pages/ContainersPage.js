@@ -9,6 +9,7 @@ const ContainersPage = () => {
   const [success, setSuccess] = useState(false);
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [containers, setContainers] = useState([]);
 
   useEffect(() => {
     let errorTimeout, successTimeout;
@@ -33,6 +34,7 @@ const ContainersPage = () => {
 
   useEffect(() => {
     fetchUploadedFiles();
+    fetchContainers();
   }, []);
 
   const handleFileChange = (event) => {
@@ -44,7 +46,7 @@ const ContainersPage = () => {
     event.preventDefault();
 
     if (!file) {
-      setError("Please select a JAR or WAR file to upload.");
+      setError("Please select a JAR, WAR, or SH file to upload.");
       return;
     }
 
@@ -77,6 +79,15 @@ const ContainersPage = () => {
     }
   };
 
+  const fetchContainers = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/containers`);
+      setContainers(response.data);
+    } catch (error) {
+      console.error("Failed to fetch containers:", error);
+    }
+  };
+
   return (
     <Container>
       <CustomNavbar />
@@ -85,7 +96,7 @@ const ContainersPage = () => {
 
       <Form onSubmit={handleSubmit}>
         <Form.Group>
-          <Form.Label>Select JAR or WAR File:</Form.Label>
+          <Form.Label>Select JAR, WAR, or SH File:</Form.Label>
           <Form.Control
             type="file"
             accept=".jar,.war,.sh"
@@ -106,6 +117,25 @@ const ContainersPage = () => {
             </div>
             <div>
               <strong>Size:</strong> {file.size}
+            </div>
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
+
+      <ListGroup className="mt-4">
+        {containers.map((container, index) => (
+          <ListGroup.Item key={index}>
+            <div>
+              <strong>ID:</strong> {container.id}
+            </div>
+            <div>
+              <strong>Name:</strong> {container.name}
+            </div>
+            <div>
+              <strong>Status:</strong> {container.status}
+            </div>
+            <div>
+              <strong>Image:</strong> {container.image}
             </div>
           </ListGroup.Item>
         ))}

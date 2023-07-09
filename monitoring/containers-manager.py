@@ -124,7 +124,7 @@ def list_containers_on_network(network_name):
             containers_data.append({
                 "name": container.name,
                 "status": container.status,
-                "ip_address": container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]
+                "ip": container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]
             })
 
         return containers_data
