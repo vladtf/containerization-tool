@@ -2,9 +2,7 @@ package vti.containerization.backend.upload;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vti.containerization.backend.configuration.ContainerizationToolProperties;
 
@@ -13,6 +11,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -39,4 +39,23 @@ public class UploadArtifactService {
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
         log.info("File saved to: " + targetPath.toAbsolutePath());
     }
+
+
+    public List<UploadedFileModel> getUploadedFiles() {
+        File targetDirectory = new File(containerizationToolProperties.getUpload().getDirectory());
+        File[] files = targetDirectory.listFiles();
+        List<UploadedFileModel> uploadedFiles = new ArrayList<>();
+        if (files != null) {
+            for (File file : files) {
+                UploadedFileModel uploadedFileModel = new UploadedFileModel();
+                uploadedFileModel.setName(file.getName());
+                uploadedFileModel.setType(UploadedFileModel.FileType.fromFile(file));
+                uploadedFileModel.setSize(String.valueOf(file.length()));
+                uploadedFiles.add(uploadedFileModel);
+            }
+        }
+
+        return uploadedFiles;
+    }
+
 }

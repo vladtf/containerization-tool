@@ -7,8 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/upload-artifact")
+@RequestMapping("/upload")
 @AllArgsConstructor
 @Log
 public class UploadArtifactController {
@@ -26,4 +28,16 @@ public class UploadArtifactController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload the file: " + e.getMessage());
         }
     }
+
+    @GetMapping("/files")
+    public ResponseEntity<List<UploadedFileModel>> getUploadedFiles() {
+        try {
+            List<UploadedFileModel> uploadedFiles = uploadArtifactService.getUploadedFiles();
+            return ResponseEntity.ok(uploadedFiles);
+        } catch (Exception e) {
+            log.log(java.util.logging.Level.SEVERE, "Failed to retrieve uploaded files: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 }
