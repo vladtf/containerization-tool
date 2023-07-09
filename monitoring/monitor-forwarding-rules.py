@@ -184,6 +184,8 @@ def monitor_forwarding_rules(bootstrap_servers, container_name, monitoring_inter
         nat_table = show_nat_table(container_name)
         kafka_producer(json.dumps(nat_table, indent=4),
                        'monitor-forwarding-rules', bootstrap_servers)
+
+        logger.info("Forwarding rules: %d", len(nat_table))
         time.sleep(monitoring_interval)
 
 

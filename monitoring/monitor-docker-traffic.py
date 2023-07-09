@@ -6,10 +6,15 @@ from confluent_kafka import Producer
 import pyshark
 import configparser
 import os
+import time
+import threading
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Counter variable to keep track of the message count
+message_count = 0
 
 
 def load_config():
@@ -40,6 +45,7 @@ def get_docker_interface(docker_network_name):
 
 
 def kafka_producer(message, bootstrap_servers):
+    global message_count
     topic = 'monitor-docker-traffic'
 
     producer = Producer({'bootstrap.servers': bootstrap_servers})
@@ -47,6 +53,9 @@ def kafka_producer(message, bootstrap_servers):
     producer.produce(topic, key='my_key', value=message)
 
     producer.flush()
+
+    # Increment the message count
+    message_count += 1
 
 
 def packet_callback(pkt, config):
@@ -99,6 +108,16 @@ def packet_callback(pkt, config):
     kafka_url = config.get('kafka', 'bootstrap_servers')
     kafka_producer(json_message, kafka_url)
 
+# Periodically log the message count
+
+
+def log_message_count():
+    global message_count
+    while True:
+        logger.info("Total Messages Sent: %d", message_count)
+        message_count = 0
+        time.sleep(1)
+
 
 def main():
     # Load the configuration
@@ -120,6 +139,10 @@ def main():
         logger.error("Failed to retrieve Docker network interface name.")
 
     if interface:
+        # Start the message count logging thread
+        thread = threading.Thread(target=log_message_count)
+        thread.start()
+
         # Set up the packet capture
         capture = pyshark.LiveCapture(interface=interface)
 
