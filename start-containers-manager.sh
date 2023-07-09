@@ -27,6 +27,12 @@ stop_containers_manager() {
     done
 }
 
+# Function to handle Ctrl+C
+interrupt_handler() {
+    stop_containers_manager
+    exit 0
+}
+
 # Check if prepare.sh was sourced
 if [ -z "$PREPARE_SH_SOURCED" ]; then
     echo "prepare.sh must be sourced before running this script"
@@ -43,6 +49,9 @@ fi
 
 # Start monitoring initially
 start_containers_manager
+
+# Set up interrupt handler for Ctrl+C
+trap interrupt_handler SIGINT
 
 # Watch for changes in the monitoring script and restart it
 while inotifywait -e close_write "$containers_manager_script_path"; do

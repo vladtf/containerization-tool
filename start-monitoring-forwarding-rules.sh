@@ -27,6 +27,12 @@ stop_monitoring() {
     done
 }
 
+# Function to handle Ctrl+C
+interrupt_handler() {
+    stop_monitoring
+    exit 0
+}
+
 # Check if prepare.sh was sourced
 if [ -z "$PREPARE_SH_SOURCED" ]; then
     echo "prepare.sh must be sourced before running this script"
@@ -43,6 +49,9 @@ fi
 
 # Start monitoring initially
 start_monitoring
+
+# Set up interrupt handler for Ctrl+C
+trap interrupt_handler SIGINT
 
 # Watch for changes in the monitoring script and restart it
 while inotifywait -e close_write "$monitoring_forwarding_rules_script_path"; do
