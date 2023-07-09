@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Navbar, Nav } from "react-bootstrap";
-import { IoHome, IoChatbox, IoSettingsSharp } from "react-icons/io5";
+import { IoHome, IoChatbox, IoSettingsSharp, IoCubeOutline } from "react-icons/io5";
 
 const CustomNavbar = () => {
   const location = useLocation();
@@ -48,11 +48,11 @@ const CustomNavbar = () => {
           </Nav.Link>
           <Nav.Link
             as={Link}
-            to="/create-container"
-            className={isActive("/create-container")}
+            to="/containers"
+            className={isActive("/containers")}
           >
-            <IoSettingsSharp size={20} style={{ marginRight: "5px" }} />
-            Create Container
+            <IoCubeOutline size={20} style={{ marginRight: "5px" }} />
+            Containers
           </Nav.Link>
         </Nav>
       </Navbar.Collapse>

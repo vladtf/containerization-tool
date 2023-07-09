@@ -4,7 +4,7 @@ import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 
-const CreateContainerPage = () => {
+const ContainersPage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [file, setFile] = useState(null);
@@ -114,4 +114,4 @@ const CreateContainerPage = () => {
   );
 };
 
-export default CreateContainerPage;
+export default ContainersPage;

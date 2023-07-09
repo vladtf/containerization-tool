@@ -205,8 +205,27 @@ def main():
     consumer_thread_add_rules.start()
     consumer_thread_clear_rules.start()
 
-    # Run the monitoring loop in the main thread
-    monitoring_thread(kafka_url, container_name, monitoring_interval)
+    # Run the monitoring loop in separate thread
+    # monitoring_thread(kafka_url, container_name, monitoring_interval)
+    monitoring_thread = threading.Thread(target=monitoring_thread, args=(
+        kafka_url, container_name, monitoring_interval))
+    monitoring_thread.start()
+
+    # Check if the threads are alive
+    while True:
+        if not consumer_thread_add_rules.is_alive():
+            logger.error(
+                "Consumer thread for 'add-forwarding-rules' topic is dead.")
+            break
+        if not consumer_thread_clear_rules.is_alive():
+            logger.error(
+                "Consumer thread for 'clear-forwarding-rules' topic is dead.")
+            break
+        if not monitoring_thread.is_alive():
+            logger.error("Monitoring thread is dead.")
+            break
+
+        time.sleep(1)
 
 
 if __name__ == '__main__':
