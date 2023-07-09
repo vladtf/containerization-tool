@@ -9,4 +9,11 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 
+containerization-tool:
+  upload:
+    directory: /home/vladtf/repos/containerization-tool/backend/target/upload

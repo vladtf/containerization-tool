@@ -50,7 +50,7 @@ const CreateContainerPage = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(`${BACKEND_URL}/upload`, formData, {
+      await axios.post(`${BACKEND_URL}/upload-artifact`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
