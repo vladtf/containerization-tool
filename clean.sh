@@ -58,3 +58,6 @@ docker rmi "$test_container_name" >/dev/null 2>&1
 
 # Log clean-up completion
 log_info "Clean-up completed"
+
+
+# TODO: stop also frontend and backend
