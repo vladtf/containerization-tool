@@ -47,6 +47,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Stop containers manager if it is already running
+stop_containers_manager
+
 # Start monitoring initially
 start_containers_manager
 

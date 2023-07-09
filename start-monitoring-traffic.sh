@@ -47,6 +47,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Stop monitoring if it is already running
+stop_monitoring
+
 # Start monitoring initially
 start_monitoring
 
