@@ -179,7 +179,7 @@ def process_message_from_kafka(message, container_name):
         logger.error("Container '%s' not found.", container_name)
 
 
-def monitoring_thread(bootstrap_servers, container_name, monitoring_interval):
+def monitor_forwarding_rules(bootstrap_servers, container_name, monitoring_interval):
     while True:
         nat_table = show_nat_table(container_name)
         kafka_producer(json.dumps(nat_table, indent=4),
@@ -207,7 +207,7 @@ def main():
 
     # Run the monitoring loop in separate thread
     # monitoring_thread(kafka_url, container_name, monitoring_interval)
-    monitoring_thread = threading.Thread(target=monitoring_thread, args=(
+    monitoring_thread = threading.Thread(target=monitor_forwarding_rules, args=(
         kafka_url, container_name, monitoring_interval))
     monitoring_thread.start()
 

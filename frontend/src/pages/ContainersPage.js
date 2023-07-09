@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Container, Alert, Form, Button, ListGroup } from "react-bootstrap";
+import {
+  Container,
+  Alert,
+  Form,
+  Button,
+  ListGroup,
+  Card,
+} from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
@@ -94,52 +101,58 @@ const ContainersPage = () => {
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">Request sent successfully!</Alert>}
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group>
-          <Form.Label>Select JAR, WAR, or SH File:</Form.Label>
-          <Form.Control
-            type="file"
-            accept=".jar,.war,.sh"
-            onChange={handleFileChange}
-          />
-        </Form.Group>
-        <Button type="submit">Upload</Button>
-      </Form>
+      <Card className="my-4">
+        <Card.Body>
+          <h3 className="mb-4">Upload File</h3>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group>
+              <Form.Label>Select JAR, WAR, or SH File:</Form.Label>
+              <Form.Control
+                type="file"
+                accept=".jar,.war,.sh"
+                onChange={handleFileChange}
+              />
+            </Form.Group>
+            <Button type="submit">Upload</Button>
+          </Form>
+        </Card.Body>
+      </Card>
 
-      <ListGroup className="mt-4">
-        {uploadedFiles.map((file, index) => (
-          <ListGroup.Item key={index}>
-            <div>
-              <strong>Name:</strong> {file.name}
-            </div>
-            <div>
-              <strong>Type:</strong> {file.type}
-            </div>
-            <div>
-              <strong>Size:</strong> {file.size}
-            </div>
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
+      <Card className="my-4">
+        <Card.Body>
+          <h3 className="mb-4">Uploaded Files</h3>
+          <ListGroup>
+            {uploadedFiles.map((file, index) => (
+              <ListGroup.Item key={index}>
+                <strong>Name:</strong> {file.name}
+                <br />
+                <strong>Type:</strong> {file.type}
+                <br />
+                <strong>Size:</strong> {file.size}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card.Body>
+      </Card>
 
-      <ListGroup className="mt-4">
-        {containers.map((container, index) => (
-          <ListGroup.Item key={index}>
-            <div>
-              <strong>ID:</strong> {container.id}
-            </div>
-            <div>
-              <strong>Name:</strong> {container.name}
-            </div>
-            <div>
-              <strong>Status:</strong> {container.status}
-            </div>
-            <div>
-              <strong>Image:</strong> {container.image}
-            </div>
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
+      <Card className="my-4">
+        <Card.Body>
+          <h3 className="mb-4">Containers</h3>
+          <ListGroup>
+            {containers.map((container, index) => (
+              <ListGroup.Item key={index}>
+                <strong>ID:</strong> {container.id}
+                <br />
+                <strong>Name:</strong> {container.name}
+                <br />
+                <strong>Status:</strong> {container.status}
+                <br />
+                <strong>Image:</strong> {container.image}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card.Body>
+      </Card>
     </Container>
   );
 };

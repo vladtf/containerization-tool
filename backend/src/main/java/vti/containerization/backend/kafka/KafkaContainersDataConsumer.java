@@ -1,12 +1,10 @@
 package vti.containerization.backend.kafka;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import vti.containerization.backend.forwarding.ForwardingChainModel;
-import vti.containerization.backend.forwarding.ForwardingRuleModel;
+import vti.containerization.backend.containers.ContainerDataModel;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -15,61 +13,29 @@ import java.util.logging.Logger;
 public class KafkaContainersDataConsumer {
     private static final Logger LOGGER = Logger.getLogger(KafkaContainersDataConsumer.class.getName());
 
-    private List<ForwardingChainModel> forwardingChainModels;
+    private List<ContainerDataModel> containersData;
     private Timer bufferTimer;
     private Timer logToConsoleTimer;
 
-    private List<ForwardingChainModel> deserializeForwardingChains(String json) {
+    private List<ContainerDataModel> deserializeMessage(String json) {
         try {
-            List<ForwardingChainModel> forwardingChainModels = new ArrayList<ForwardingChainModel>();
-
-            // deserialize the json into JsonNode
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(json);
+            ContainerDataModel[] containerDataModels = mapper.readValue(json, ContainerDataModel[].class);
 
-            // get iterator to all the keys in the json
-            Iterator<Map.Entry<String, JsonNode>> fieldsIterator = root.fields();
-
-            // iterate through all the keys
-            while (fieldsIterator.hasNext()) {
-                Map.Entry<String, JsonNode> field = fieldsIterator.next();
-                String key = field.getKey();
-
-                List<ForwardingRuleModel> rules = new ArrayList<ForwardingRuleModel>();
-
-                ArrayNode nodes = (ArrayNode) field.getValue();
-                for (JsonNode jsonNode : nodes) {
-                    String command = jsonNode.get("command").asText();
-                    String target = jsonNode.get("target").asText();
-                    String chain = jsonNode.get("chain").asText();
-                    String protocol = jsonNode.get("protocol").asText();
-                    String options = jsonNode.get("options").asText();
-                    String source = jsonNode.get("source").asText();
-                    String destination = jsonNode.get("destination").asText();
-
-                    ForwardingRuleModel forwardingRuleModel = new ForwardingRuleModel(command, target, protocol, options, source, destination);
-                    rules.add(forwardingRuleModel);
-                }
-
-                ForwardingChainModel forwardingChainModel = new ForwardingChainModel(key, rules);
-                forwardingChainModels.add(forwardingChainModel);
-            }
-
-            return forwardingChainModels;
-        } catch (Exception e) {
-            LOGGER.severe("Failed to deserialize forwarding rules: " + e.getMessage());
-            return new ArrayList<ForwardingChainModel>();
+            return Arrays.asList(containerDataModels);
+        } catch (JsonProcessingException e) {
+            LOGGER.warning("Failed to deserialize message: " + e.getMessage());
+            return null;
         }
     }
 
-    @KafkaListener(topics = "monitor-forwarding-rules", groupId = "my_group")
+    @KafkaListener(topics = "containers-data", groupId = "my_group")
     public void listen(String message) {
-        LOGGER.info("Received forwarding rules from Kafka");
-
-        this.forwardingChainModels = deserializeForwardingChains(message);
+        LOGGER.info("Received containers data: " + message);
+        this.containersData = deserializeMessage(message);
     }
 
-    public List<ForwardingChainModel> getForwardingChains() {
-        return forwardingChainModels;
+    public List<ContainerDataModel> getContainersData() {
+        return containersData;
     }
 }

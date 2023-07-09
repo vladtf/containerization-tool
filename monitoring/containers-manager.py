@@ -113,8 +113,15 @@ def list_containers_on_network(network_name):
         # Create a Docker client
         client = docker.from_env()
 
+        # Get the network
+        network = client.networks.get(network_name)
+
         # List the containers on the specified network
-        containers = client.containers.list(filters={"network": network_name})
+        containers = network.containers
+
+        # Print number of containers on the network
+        logger.info("Containers on the network '%s': %d",
+                    network_name, len(containers))
 
         # Containers data
         containers_data = []
@@ -147,8 +154,8 @@ def main():
 
     # Extract configuration values
     kafka_url = config.get('kafka', 'bootstrap_servers')
+    network_name = config.get('docker', 'network_name')
     container_name = 'my-container'
-    network_name = 'my-network'
     monitoring_interval = 5
 
     # Start the Kafka consumer in a separate thread

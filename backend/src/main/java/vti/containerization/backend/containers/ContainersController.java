@@ -17,10 +17,8 @@ public class ContainersController {
 
     private final ContainersService containersService;
 
-    @GetMapping("/all")
+    @GetMapping
     public List<ContainerDataModel> getAllContainers() {
         return containersService.getAllContainers();
     }
-
-
 }
