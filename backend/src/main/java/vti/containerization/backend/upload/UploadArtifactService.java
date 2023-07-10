@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -51,11 +52,24 @@ public class UploadArtifactService {
                 uploadedFileModel.setName(file.getName());
                 uploadedFileModel.setType(UploadedFileModel.FileType.fromFile(file));
                 uploadedFileModel.setSize(String.valueOf(file.length()));
+                uploadedFileModel.setPath(file.getAbsolutePath());
                 uploadedFiles.add(uploadedFileModel);
             }
         }
 
         return uploadedFiles;
+    }
+
+    public Optional<UploadedFileModel> getUploadedFileByName(String fileName) {
+        List<UploadedFileModel> uploadedFiles = getUploadedFiles();
+
+        for (UploadedFileModel uploadedFile : uploadedFiles) {
+            if (uploadedFile.getName().equals(fileName)) {
+                return Optional.of(uploadedFile);
+            }
+        }
+
+        return Optional.empty();
     }
 
 }

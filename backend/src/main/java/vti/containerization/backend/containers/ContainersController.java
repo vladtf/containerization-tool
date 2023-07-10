@@ -1,11 +1,10 @@
 package vti.containerization.backend.containers;
 
-
 import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.java.Log;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,5 +19,21 @@ public class ContainersController {
     @GetMapping
     public List<ContainerDataModel> getAllContainers() {
         return containersService.getAllContainers();
+    }
+
+    @PostMapping("/create")
+    public void createContainer(@RequestBody CreateContainerRequest request) {
+        // You can implement the logic to create a container here using the data from the request
+        containersService.createContainer(request);
+        log.info("Container created successfully");
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CreateContainerRequest {
+        private String fileId;
+        private String filePath;
+        private String containerName;
     }
 }

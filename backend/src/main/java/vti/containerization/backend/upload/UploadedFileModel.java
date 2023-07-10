@@ -14,6 +14,7 @@ public class UploadedFileModel {
     private String name;
     private FileType type;
     private String size;
+    private String path;
 
     public enum FileType {
         JAR, ZIP, WAR, SHELL, UNKNOWN;

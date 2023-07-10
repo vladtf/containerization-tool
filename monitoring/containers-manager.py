@@ -7,6 +7,8 @@ import threading
 from confluent_kafka.admin import AdminClient, NewTopic
 import configparser
 import os
+import shutil
+
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +35,7 @@ def kafka_producer(message, topic, bootstrap_servers):
     producer.flush()
 
 
-def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name):
+def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name, base_image_path):
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
@@ -74,7 +76,7 @@ def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name)
                         topic, msg.value().decode())
 
             if callback.__name__ == 'create_docker_container':
-                callback(msg.value().decode(), container_name)
+                callback(msg.value().decode(), base_image_path)
             else:
                 callback(container_name)
 
@@ -82,25 +84,40 @@ def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name)
         consumer.close()
 
 
-def create_docker_container(file_path, container_name):
+def create_docker_container(create_request, base_image_path):
+    logger.info("Creating Docker container from file: %s", create_request)
+
+    # Convert the JSON string to a dictionary
+    create_request = json.loads(create_request)
+
+    # Extract file details from the create_request
+    file_id = create_request["fileId"]
+    file_path = create_request["filePath"]
+    container_name = create_request["containerName"]
+
     try:
         # Create a Docker client
         client = docker.from_env()
 
         # Build the Docker image from the provided file
-        image, _ = client.images.build(path=file_path, tag=container_name)
+        image, _ = client.images.build(
+            path=base_image_path, tag=container_name)
 
         # Start the Docker container with the desired command
         container = client.containers.run(
             image,
             detach=True,
             cap_add=["NET_ADMIN"],
-            network=test_network_name,
-            name=test_container_name
+            network="mynetwork",
+            name=container_name
         )
 
+        # Copy the file to the container
+        container_path = f"/tmp/{file_id}"
+        shutil.copy(file_path, container_path)
+
         # Execute the file inside the container
-        exec_command = f"docker exec -d {container.id} /bin/bash -c 'chmod +x {file_path} && {file_path}'"
+        exec_command = f"docker exec -d {container.id} /bin/bash -c 'chmod +x {container_path} && {container_path}'"
         os.system(exec_command)
 
         logger.info("File executed inside the Docker container: %s", file_path)
@@ -156,11 +173,12 @@ def main():
     kafka_url = config.get('kafka', 'bootstrap_servers')
     network_name = config.get('docker', 'network_name')
     container_name = 'my-container'
+    base_image_path = config.get('docker', 'base_image_path')
     monitoring_interval = 5
 
     # Start the Kafka consumer in a separate thread
     consumer_thread = threading.Thread(target=kafka_consumer, args=(
-        'create-container', 'my-group-create-container', create_docker_container, kafka_url, container_name))
+        'create-container', 'my-group-create-container', create_docker_container, kafka_url, container_name, base_image_path))
     consumer_thread.start()
 
     # List the containers on the network in a separate thread

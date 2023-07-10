@@ -77,6 +77,22 @@ const ContainersPage = () => {
     }
   };
 
+  const handleCreateContainer = async (fileName) => {
+    const requestBody = {
+      fileId: fileName,
+    };
+
+    console.log(requestBody);
+
+    try {
+      await axios.post(`${BACKEND_URL}/containers/create`, requestBody);
+      setSuccess(true);
+      fetchContainers();
+    } catch (error) {
+      setError("Failed to create a new container. Please try again later.");
+    }
+  };
+
   const fetchUploadedFiles = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/upload/files`);
@@ -121,17 +137,27 @@ const ContainersPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3 className="mb-4">Uploaded Files</h3>
-          <ListGroup>
-            {uploadedFiles.map((file, index) => (
-              <ListGroup.Item key={index}>
+          {uploadedFiles.map((file, index) => (
+            <Card className="mb-3" key={index}>
+              <Card.Body>
                 <strong>Name:</strong> {file.name}
                 <br />
                 <strong>Type:</strong> {file.type}
                 <br />
                 <strong>Size:</strong> {file.size}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+              </Card.Body>
+              <Card.Footer>
+                <Button
+                  className="mt-3"
+                  onClick={() => handleCreateContainer(file.name)}
+                  variant="outline-primary"
+                  style={{ borderRadius: "20px" }}
+                >
+                  Create Container
+                </Button>
+              </Card.Footer>
+            </Card>
+          ))}
         </Card.Body>
       </Card>
 
