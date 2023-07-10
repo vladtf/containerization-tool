@@ -25,6 +25,11 @@ stop_monitoring() {
         log_info "Stopping monitoring (PID: $pid)"
         kill -s INT "$pid"
     done
+
+    # Wait for all monitoring processes to stop
+    while ps aux | grep "$monitoring_forwarding_rules_script_name" | grep -v grep > /dev/null; do
+        sleep 1
+    done
 }
 
 # Function to handle Ctrl+C
