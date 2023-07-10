@@ -9,26 +9,14 @@ import os
 import time
 import threading
 
+from monitoring.configuration import config_loader
+
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("monitor-docker-traffic")
 
 # Counter variable to keep track of the message count
 message_count = 0
-
-
-def load_config():
-    # Get the directory path of the script
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-
-    # Construct the absolute path to config.ini
-    config_file_path = os.path.join(script_directory, 'config.ini')
-
-    # Read the configuration file
-    config = configparser.ConfigParser()
-    config.read(config_file_path)
-
-    return config
 
 
 def get_docker_interface(docker_network_name):
@@ -121,7 +109,7 @@ def log_message_count():
 
 def main():
     # Load the configuration
-    config = load_config()
+    config = config_loader.load_config(os.path.abspath(__file__))
 
     # Get Kafka URL from the configuration
     kafka_url = config.get('kafka', 'bootstrap_servers')

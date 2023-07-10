@@ -23,7 +23,7 @@ stop_monitoring() {
     log_warning "Stopping Forwarding Rules Monitoring"
     for pid in $(ps aux | grep "$monitoring_forwarding_rules_script_name" | grep -v grep | awk '{print $2}'); do
         log_info "Stopping monitoring (PID: $pid)"
-        kill -s INT "$pid"
+        kill "$pid"
     done
 }
 

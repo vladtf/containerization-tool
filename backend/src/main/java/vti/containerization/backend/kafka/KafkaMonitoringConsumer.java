@@ -3,13 +3,12 @@ package vti.containerization.backend.kafka;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import vti.containerization.backend.messages.MessageModel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 
 @Component
@@ -18,7 +17,6 @@ public class KafkaMonitoringConsumer {
     private static final int MAX_BUFFER_SIZE = 1000;
 
     private final List<MessageModel> messageBuffer = new ArrayList<>();
-    private Timer logToConsoleTimer;
 
     private MessageModel deserializeMessage(String json) {
         try {
@@ -47,18 +45,11 @@ public class KafkaMonitoringConsumer {
         if (messageBuffer.size() > MAX_BUFFER_SIZE) {
             messageBuffer.remove(0);
         }
+    }
 
-        if (logToConsoleTimer == null) {
-            logToConsoleTimer = new Timer();
-            logToConsoleTimer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    synchronized (KafkaMonitoringConsumer.this) {
-                        LOGGER.info("Buffer size: " + messageBuffer.size());
-                    }
-                }
-            }, 1000, 1000);
-        }
+    @Scheduled(fixedRate = 3000)
+    public void logBufferSize() {
+        LOGGER.info("Message buffer size: " + messageBuffer.size());
     }
 
     public List<MessageModel> getMessages() {

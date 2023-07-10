@@ -23,7 +23,7 @@ stop_monitoring() {
     log_warning "Stopping Docker Traffic Monitoring"
     for pid in $(ps aux | grep "$monitoring_traffic_script_name" | grep -v grep | awk '{print $2}'); do
         log_info "Stopping monitoring (PID: $pid)"
-        kill -s INT "$pid"
+        kill "$pid"
     done
 
 }

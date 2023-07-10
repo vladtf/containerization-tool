@@ -14,18 +14,12 @@ import os
 import shutil
 import tarfile
 
+from monitoring.configuration import config_loader
+
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("containers-manager")
-
-
-def load_config() -> configparser.ConfigParser:
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-    config_file_path = os.path.join(script_directory, 'config.ini')
-    config = configparser.ConfigParser()
-    config.read(config_file_path)
-    return config
 
 
 def kafka_producer(message: str, topic: str, bootstrap_servers: str):
@@ -143,7 +137,7 @@ def monitor_containers_on_network(kafka_url: str, network_name: str, monitoring_
 
 
 def main():
-    config = load_config()
+    config = config_loader.load_config(os.path.abspath(__file__))
     kafka_url = config.get('kafka', 'bootstrap_servers')
     network_name = config.get('docker', 'network_name')
     base_image_path = config.get('docker', 'base_image_path')

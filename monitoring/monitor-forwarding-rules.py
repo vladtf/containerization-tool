@@ -8,6 +8,8 @@ from confluent_kafka.admin import AdminClient, NewTopic
 import configparser
 import os
 
+from monitoring.configuration import config_loader
+
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
@@ -234,7 +236,7 @@ def monitor_forwarding_rules(bootstrap_servers, network_name, monitoring_interva
 
 def main():
     # Load the configuration
-    config = load_config()
+    config = config_loader.load_config(os.path.abspath(__file__))
 
     # Extract configuration values
     kafka_url = config.get('kafka', 'bootstrap_servers')
