@@ -1,3 +1,4 @@
+import io
 import time
 import json
 import logging
@@ -8,6 +9,7 @@ from confluent_kafka.admin import AdminClient, NewTopic
 import configparser
 import os
 import shutil
+import tarfile
 
 
 # Configure the logger
@@ -101,13 +103,16 @@ def create_docker_container(create_request, base_image_path):
         # Create a Docker client
         client = docker.from_env()
 
-        # Build the Docker image from the provided file
-        image, _ = client.images.build(
-            path=base_image_path, tag=container_name)
+        # Create a new image based on the base image
+        new_image, _ = client.images.build(
+            path=base_image_path,
+            dockerfile="Dockerfile",
+            tag=f"{container_name}_image"
+        )
 
-        # Start the Docker container with the desired command
+        # Start the Docker container with the new image
         container = client.containers.run(
-            image,
+            new_image.id,
             detach=True,
             cap_add=["NET_ADMIN"],
             network="mynetwork",
@@ -116,16 +121,21 @@ def create_docker_container(create_request, base_image_path):
 
         # Copy the file to the container
         container_path = f"/tmp/{file_id}"
-        shutil.copy(file_path, container_path)
+        tarstream = io.BytesIO()
+        with tarfile.open(fileobj=tarstream, mode='w') as tar:
+            tar.add(file_path, arcname=file_id)
+        tarstream.seek(0)
+        container.put_archive(path='/tmp', data=tarstream)
 
         # Execute the file inside the container
-        exec_command = f"docker exec -d {container.id} /bin/bash -c 'chmod +x {container_path} && {container_path}'"
-        os.system(exec_command)
+        exec_command = ["bash", "-c", f"chmod +x {container_path} && {container_path}"]
+        exec_result = container.exec_run(cmd=exec_command, privileged=True)
+        if exec_result.exit_code != 0:
+            raise Exception("Failed to execute the file: %s" % exec_result.output)
 
         logger.info("File executed inside the Docker container: %s", file_path)
     except docker.errors.APIError as e:
         logger.error("Failed to start Docker container: %s", e)
-
 
 
 def delete_docker_container(container_id):
@@ -142,9 +152,11 @@ def delete_docker_container(container_id):
         container.stop()
         container.remove()
 
-        logger.info("Docker container with ID %s deleted successfully", container_id)
+        logger.info(
+            "Docker container with ID %s deleted successfully", container_id)
     except docker.errors.APIError as e:
-        logger.error("Failed to delete Docker container with ID %s: %s", container_id, e)
+        logger.error(
+            "Failed to delete Docker container with ID %s: %s", container_id, e)
 
 
 def list_containers_on_network(network_name):
