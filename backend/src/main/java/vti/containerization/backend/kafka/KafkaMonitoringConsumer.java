@@ -30,7 +30,6 @@ public class KafkaMonitoringConsumer {
         }
     }
 
-
     @KafkaListener(topics = "monitor-docker-traffic", groupId = "my_group")
     public synchronized void listen(String message) {
         LOGGER.fine("Received message: " + message);
@@ -51,10 +50,12 @@ public class KafkaMonitoringConsumer {
 
         if (logToConsoleTimer == null) {
             logToConsoleTimer = new Timer();
-            logToConsoleTimer.schedule(new TimerTask() {
+            logToConsoleTimer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    LOGGER.info("Buffer size: " + messageBuffer.size());
+                    synchronized (KafkaMonitoringConsumer.this) {
+                        LOGGER.info("Buffer size: " + messageBuffer.size());
+                    }
                 }
             }, 1000, 1000);
         }
