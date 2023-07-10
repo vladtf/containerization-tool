@@ -101,28 +101,32 @@ const ForwardingRulesPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3>Forwarding Rules</h3>
-          <ListGroup>
-            {data.map((chain, chainIndex) => (
-              <ListGroup.Item key={chainIndex}>
-                <h5>{chain.name}</h5>
-                <ul>
-                  {chain.rules.map((rule, ruleIndex) => (
-                    <li key={ruleIndex}>
-                      <strong>Rule {ruleIndex + 1}</strong>
-                      <ul>
-                        <li>Command: {rule.command}</li>
-                        <li>Target: {rule.target}</li>
-                        <li>Protocol: {rule.protocol}</li>
-                        <li>Options: {rule.options}</li>
-                        <li>Source: {rule.source}</li>
-                        <li>Destination: {rule.destination}</li>
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          {data.length > 0 ? (
+            <ListGroup>
+              {data.map((chain, chainIndex) => (
+                <ListGroup.Item key={chainIndex}>
+                  <h5>{chain.name}</h5>
+                  <ul>
+                    {chain.rules.map((rule, ruleIndex) => (
+                      <li key={ruleIndex}>
+                        <strong>Rule {ruleIndex + 1}</strong>
+                        <ul>
+                          <li>Command: {rule.command}</li>
+                          <li>Target: {rule.target}</li>
+                          <li>Protocol: {rule.protocol}</li>
+                          <li>Options: {rule.options}</li>
+                          <li>Source: {rule.source}</li>
+                          <li>Destination: {rule.destination}</li>
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          ) : (
+            <p>No forwarding rules found.</p>
+          )}
         </Card.Body>
       </Card>
 

@@ -2,10 +2,13 @@ import io
 import time
 import json
 import logging
+from typing import Callable
+from functools import partial
 from confluent_kafka import Producer, Consumer, KafkaError
+from confluent_kafka.admin import AdminClient, NewTopic
 import docker
 import threading
-from confluent_kafka.admin import AdminClient, NewTopic
+from docker.models.containers import Container
 import configparser
 import os
 import shutil
@@ -17,141 +20,94 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def load_config():
-    # Get the directory path of the script
+def load_config() -> configparser.ConfigParser:
     script_directory = os.path.dirname(os.path.abspath(__file__))
-
-    # Construct the absolute path to config.ini
     config_file_path = os.path.join(script_directory, 'config.ini')
-
-    # Read the configuration file
     config = configparser.ConfigParser()
     config.read(config_file_path)
-
     return config
 
 
-def kafka_producer(message, topic, bootstrap_servers):
+def kafka_producer(message: str, topic: str, bootstrap_servers: str):
     producer = Producer({'bootstrap.servers': bootstrap_servers})
     producer.produce(topic, key='my_key', value=message)
     producer.flush()
 
 
-def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name, base_image_path):
+def kafka_consumer(topic: str, group_id: str, callback: Callable[[str], None], bootstrap_servers: str):
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
         'auto.offset.reset': 'earliest'
     })
-
-    # Create an AdminClient for topic management
     admin_client = AdminClient({'bootstrap.servers': bootstrap_servers})
-
-    # Check if the topic exists
     topic_metadata = admin_client.list_topics(timeout=5)
     if topic not in topic_metadata.topics:
-        # Create the topic if it doesn't exist
         new_topic = NewTopic(topic, num_partitions=1, replication_factor=1)
         admin_client.create_topics([new_topic])
-
-        # Wait for topic creation to complete
         while topic not in admin_client.list_topics().topics:
             time.sleep(0.1)
-
-    # Subscribe to the topic
     consumer.subscribe([topic])
-
     try:
         while True:
-            msg = consumer.poll(1.0)
-
-            if msg is None:
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
+            messages = consumer.consume(10, timeout=1.0)
+            for message in messages:
+                if message is None:
                     continue
-                else:
-                    logger.error("Kafka error: %s", msg.error().str())
-                    continue
-
-            logger.info("Received message on topic '%s': %s",
-                        topic, msg.value().decode())
-
-            if callback.__name__ == 'create_docker_container':
-                callback(msg.value().decode(), base_image_path)
-            elif callback.__name__ == 'delete_docker_container':
-                callback(msg.value().decode())
-            else:
-                callback(container_name)
-
+                if message.error():
+                    if message.error().code() == KafkaError._PARTITION_EOF:
+                        continue
+                    else:
+                        logger.error("Kafka error: %s", message.error().str())
+                        continue
+                logger.info("Received message on topic '%s': %s",
+                            topic, message.value().decode())
+                callback(message.value().decode())
     finally:
         consumer.close()
 
 
-def create_docker_container(create_request, base_image_path):
+
+def prepare_docker_callback(callback: Callable[..., None], *args, **kwargs) -> Callable[[str], None]:
+    return partial(callback, *args, **kwargs)
+
+
+def create_docker_container(create_request: str, base_image_path: str):
     logger.info("Creating Docker container from file: %s", create_request)
-
-    # Convert the JSON string to a dictionary
     create_request = json.loads(create_request)
-
-    # Extract file details from the create_request
     file_id = create_request["fileId"]
     file_path = create_request["filePath"]
     container_name = create_request["containerName"]
-
     try:
-        # Create a Docker client
         client = docker.from_env()
-
-        # Create a new image based on the base image
         new_image, _ = client.images.build(
-            path=base_image_path,
-            dockerfile="Dockerfile",
-            tag=f"{container_name}_image"
-        )
-
-        # Start the Docker container with the new image
-        container = client.containers.run(
-            new_image.id,
-            detach=True,
-            cap_add=["NET_ADMIN"],
-            network="mynetwork",
-            name=container_name
-        )
-
-        # Copy the file to the container
+            path=base_image_path, dockerfile="Dockerfile", tag=f"{container_name}_image")
+        container = client.containers.run(new_image.id, detach=True, cap_add=[
+                                          "NET_ADMIN"], network="mynetwork", name=container_name)
         container_path = f"/tmp/{file_id}"
         tarstream = io.BytesIO()
         with tarfile.open(fileobj=tarstream, mode='w') as tar:
             tar.add(file_path, arcname=file_id)
         tarstream.seek(0)
         container.put_archive(path='/tmp', data=tarstream)
-
-        # Execute the file inside the container
-        exec_command = ["bash", "-c", f"chmod +x {container_path} && {container_path}"]
+        exec_command = ["bash", "-c",
+                        f"chmod +x {container_path} && {container_path}"]
         exec_result = container.exec_run(cmd=exec_command, privileged=True)
         if exec_result.exit_code != 0:
-            raise Exception("Failed to execute the file: %s" % exec_result.output)
-
+            raise Exception("Failed to execute the file: %s" %
+                            exec_result.output)
         logger.info("File executed inside the Docker container: %s", file_path)
     except docker.errors.APIError as e:
         logger.error("Failed to start Docker container: %s", e)
 
 
-def delete_docker_container(container_id):
+def delete_docker_container(container_id: str):
     logger.info("Deleting Docker container with ID: %s", container_id)
-
     try:
-        # Create a Docker client
         client = docker.from_env()
-
-        # Get the container
         container = client.containers.get(container_id)
-
-        # Stop and remove the container
         container.stop()
         container.remove()
-
         logger.info(
             "Docker container with ID %s deleted successfully", container_id)
     except docker.errors.APIError as e:
@@ -159,25 +115,12 @@ def delete_docker_container(container_id):
             "Failed to delete Docker container with ID %s: %s", container_id, e)
 
 
-def list_containers_on_network(network_name):
+def list_containers_on_network(network_name: str) -> list[dict]:
     try:
-        # Create a Docker client
         client = docker.from_env()
-
-        # Get the network
-        network = client.networks.get(network_name)
-
-        # List the containers on the specified network
-        containers = network.containers
-
-        # Print number of containers on the network
-        logger.info("Containers on the network '%s': %d",
-                    network_name, len(containers))
-
-        # Containers data
+        containers = client.containers.list(filters={"network": network_name}, all=True)
+        logger.info("Containers on the network '%s': %d", network_name, len(containers))
         containers_data = []
-
-        # Print the container information
         for container in containers:
             containers_data.append({
                 "id": container.id,
@@ -185,60 +128,47 @@ def list_containers_on_network(network_name):
                 "status": container.status,
                 "ip": container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]
             })
-
         return containers_data
     except docker.errors.APIError as e:
         logger.error("Failed to list containers on the network: %s", e)
 
 
-def monitor_containers_on_network(kafka_url, network_name, monitoring_interval):
+def monitor_containers_on_network(kafka_url: str, network_name: str, monitoring_interval: int):
     while True:
         containers_data = list_containers_on_network(network_name)
         kafka_producer(json.dumps(containers_data),
                        'containers-data', kafka_url)
-
         time.sleep(monitoring_interval)
 
 
-def main():
-    # Load the configuration
-    config = load_config()
 
-    # Extract configuration values
+def main():
+    config = load_config()
     kafka_url = config.get('kafka', 'bootstrap_servers')
     network_name = config.get('docker', 'network_name')
-    container_name = 'my-container'
     base_image_path = config.get('docker', 'base_image_path')
     monitoring_interval = 5
-
-    # Start the Kafka consumer in a separate thread
+    create_callback = prepare_docker_callback(
+        create_docker_container, base_image_path=base_image_path)
+    delete_callback = prepare_docker_callback(delete_docker_container)
     consumer_thread = threading.Thread(target=kafka_consumer, args=(
-        'create-container', 'my-group-create-container', create_docker_container, kafka_url, container_name, base_image_path))
+        'create-container', 'my-group-create-container', create_callback, kafka_url))
     consumer_thread.start()
-
-    # List the containers on the network in a separate thread
-    monitor_thread = threading.Thread(
-        target=monitor_containers_on_network, args=(kafka_url, network_name, monitoring_interval))
+    monitor_thread = threading.Thread(target=monitor_containers_on_network, args=(
+        kafka_url, network_name, monitoring_interval))
     monitor_thread.start()
-
-    # Start the Kafka consumer for deleting containers in a separate thread
     delete_consumer_thread = threading.Thread(target=kafka_consumer, args=(
-        'delete-container', 'my-group-delete-container', delete_docker_container, kafka_url, container_name, base_image_path))
+        'delete-container', 'my-group-delete-container', delete_callback, kafka_url))
     delete_consumer_thread.start()
 
-    # Check if the threads are alive
+    threads = [consumer_thread, monitor_thread, delete_consumer_thread]
     while True:
-        if not consumer_thread.is_alive():
-            logger.error("The Kafka consumer thread is not alive")
-            break
-        if not monitor_thread.is_alive():
-            logger.error("The monitor thread is not alive")
-            break
-        if not delete_consumer_thread.is_alive():
-            logger.error("The delete consumer thread is not alive")
-            break
-
+        for thread in threads:
+            if not thread.is_alive():
+                logger.error("Thread '%s' is not alive. Restarting...", thread.name)
+                thread.start()
         time.sleep(1)
+
 
 
 if __name__ == '__main__':
