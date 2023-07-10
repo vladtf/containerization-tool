@@ -25,11 +25,6 @@ stop_containers_manager() {
         log_warning "Stopping monitoring (PID: $pid)"
         kill -s INT "$pid"
     done
-
-    # Wait for all monitoring processes to stop
-    while ps aux | grep "$containers_manager_script_name" | grep -v grep > /dev/null; do
-        sleep 1
-    done
 }
 
 # Function to handle Ctrl+C

@@ -16,8 +16,8 @@ import tarfile
 
 
 # Configure the logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
+logger = logging.getLogger("containers-manager")
 
 
 def load_config() -> configparser.ConfigParser:
@@ -34,7 +34,7 @@ def kafka_producer(message: str, topic: str, bootstrap_servers: str):
     producer.flush()
 
 
-def kafka_consumer(topics: list[str], group_id: str, callback: Callable[[str], None], bootstrap_servers: str):
+def kafka_consumer(topic: str, group_id: str, callback: Callable[[str], None], bootstrap_servers: str):
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
@@ -42,13 +42,12 @@ def kafka_consumer(topics: list[str], group_id: str, callback: Callable[[str], N
     })
     admin_client = AdminClient({'bootstrap.servers': bootstrap_servers})
     topic_metadata = admin_client.list_topics(timeout=5)
-    for topic in topics:
-        if topic not in topic_metadata.topics:
-            new_topic = NewTopic(topic, num_partitions=1, replication_factor=1)
-            admin_client.create_topics([new_topic])
-            while topic not in admin_client.list_topics().topics:
-                time.sleep(0.1)
-    consumer.subscribe(topics)
+    if topic not in topic_metadata.topics:
+        new_topic = NewTopic(topic, num_partitions=1, replication_factor=1)
+        admin_client.create_topics([new_topic])
+        while topic not in admin_client.list_topics().topics:
+            time.sleep(0.1)
+    consumer.subscribe([topic])
     try:
         while True:
             messages = consumer.consume(10, timeout=1.0)
@@ -62,11 +61,10 @@ def kafka_consumer(topics: list[str], group_id: str, callback: Callable[[str], N
                         logger.error("Kafka error: %s", message.error().str())
                         continue
                 logger.info("Received message on topic '%s': %s",
-                            message.topic(), message.value().decode())
+                            topic, message.value().decode())
                 callback(message.value().decode())
     finally:
         consumer.close()
-
 
 
 

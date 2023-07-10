@@ -18,7 +18,7 @@ public class ForwardingService {
     private final KafkaForwardingRulesProducer kafkaForwardingRulesProducer;
 
 
-    public List<ForwardingChainModel> getAllForwardingChains() {
+    public List<ContainerForwardingRulesModel> getAllForwardingChains() {
         return kafkaForwardingRulesConsumer.getForwardingChains();
     }
 

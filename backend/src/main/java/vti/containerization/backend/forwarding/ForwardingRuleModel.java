@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ForwardingRuleModel {
+    private String chain;
     private String command;
     private String target;
     private String protocol;

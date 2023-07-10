@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Container, ListGroup, Alert, Form, Button, Card } from "react-bootstrap";
+import {
+  Container,
+  ListGroup,
+  Alert,
+  Form,
+  Button,
+  Card,
+} from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
@@ -8,6 +15,7 @@ const ForwardingRulesPage = () => {
   const [data, setData] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [selectedContainer, setSelectedContainer] = useState("");
   const [newRule, setNewRule] = useState({
     chainName: "",
     rule: {
@@ -20,29 +28,15 @@ const ForwardingRulesPage = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000); // Fetch data every 5 seconds
+    const interval = setInterval(fetchData, 5000);
 
     return () => {
-      clearInterval(interval); // Cleanup interval on component unmount
+      clearInterval(interval);
     };
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "chainName") {
-      setNewRule((prevState) => ({
-        ...prevState,
-        chainName: value,
-      }));
-    } else {
-      setNewRule((prevState) => ({
-        ...prevState,
-        rule: {
-          ...prevState.rule,
-          [name]: value,
-        },
-      }));
-    }
+    setSelectedContainer(e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -50,14 +44,12 @@ const ForwardingRulesPage = () => {
 
     try {
       await axios.post(`${BACKEND_URL}/forwarding-chains/add`, newRule);
-
-      // Refresh the data after successful POST request
       fetchData();
       setSuccess(true);
       setError("");
       setTimeout(() => {
         setSuccess(false);
-      }, 3000); // Set timeout to reset success state after 3 seconds
+      }, 3000);
     } catch (error) {
       setError("Error adding forwarding rule");
       setSuccess(false);
@@ -67,13 +59,12 @@ const ForwardingRulesPage = () => {
   const handleClear = async () => {
     try {
       await axios.post(`${BACKEND_URL}/forwarding-chains/clear`);
-      // Refresh the data after successful clear request
       fetchData();
       setSuccess(true);
       setError("");
       setTimeout(() => {
         setSuccess(false);
-      }, 3000); // Set timeout to reset success state after 3 seconds
+      }, 3000);
     } catch (error) {
       setError("Error clearing forwarding rules");
       setSuccess(false);
@@ -89,8 +80,23 @@ const ForwardingRulesPage = () => {
     }
   };
 
-  const chainNames = ["OUTPUT", "INPUT", "FORWARD"]; // Example chain names
-  const protocols = ["tcp", "udp", "icmp"]; // Example protocols
+  const chainNames = ["OUTPUT", "INPUT", "FORWARD"];
+  const protocols = ["tcp", "udp", "icmp"];
+
+  const filteredData = selectedContainer
+    ? data.filter((container) => container.containerId === selectedContainer)
+    : data;
+
+  const getRulesGroupedByChain = (rules) => {
+    const rulesGroupedByChain = {};
+    rules.forEach((rule) => {
+      if (!rulesGroupedByChain[rule.chain]) {
+        rulesGroupedByChain[rule.chain] = [];
+      }
+      rulesGroupedByChain[rule.chain].push(rule);
+    });
+    return rulesGroupedByChain;
+  };
 
   return (
     <Container>
@@ -101,26 +107,54 @@ const ForwardingRulesPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3>Forwarding Rules</h3>
-          {data.length > 0 ? (
+          <Form.Group controlId="containerSelect">
+            <Form.Label>Container</Form.Label>
+            <Form.Control
+              as="select"
+              value={selectedContainer}
+              onChange={handleChange}
+            >
+              <option value="">All Containers</option>
+              {data.map((container) => (
+                <option
+                  key={container.containerId}
+                  value={container.containerId}
+                >
+                  {container.containerName}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+          {filteredData.length > 0 ? (
             <ListGroup>
-              {data.map((chain, chainIndex) => (
-                <ListGroup.Item key={chainIndex}>
-                  <h5>{chain.name}</h5>
-                  <ul>
-                    {chain.rules.map((rule, ruleIndex) => (
-                      <li key={ruleIndex}>
-                        <strong>Rule {ruleIndex + 1}</strong>
-                        <ul>
-                          <li>Command: {rule.command}</li>
-                          <li>Target: {rule.target}</li>
-                          <li>Protocol: {rule.protocol}</li>
-                          <li>Options: {rule.options}</li>
-                          <li>Source: {rule.source}</li>
-                          <li>Destination: {rule.destination}</li>
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
+              {filteredData.map((container) => (
+                <ListGroup.Item key={container.containerId}>
+                  <h5>{container.containerName}</h5>
+                  {Object.entries(getRulesGroupedByChain(container.rules)).map(
+                    ([chain, rules]) => (
+                      <Card key={chain} className="my-3">
+                        <Card.Body>
+                          <Card.Title>{chain}</Card.Title>
+                          {rules.map((rule, ruleIndex) => (
+                            <Card key={ruleIndex} className="my-3">
+                              <Card.Body>
+                                <Card.Title>Rule {ruleIndex + 1}</Card.Title>
+                                <Card.Text>Chain: {rule.chain}</Card.Text>
+                                <Card.Text>Command: {rule.command}</Card.Text>
+                                <Card.Text>Target: {rule.target}</Card.Text>
+                                <Card.Text>Protocol: {rule.protocol}</Card.Text>
+                                <Card.Text>Options: {rule.options}</Card.Text>
+                                <Card.Text>Source: {rule.source}</Card.Text>
+                                <Card.Text>
+                                  Destination: {rule.destination}
+                                </Card.Text>
+                              </Card.Body>
+                            </Card>
+                          ))}
+                        </Card.Body>
+                      </Card>
+                    )
+                  )}
                 </ListGroup.Item>
               ))}
             </ListGroup>
@@ -140,7 +174,9 @@ const ForwardingRulesPage = () => {
                 as="select"
                 name="chainName"
                 value={newRule.chainName}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setNewRule({ ...newRule, chainName: e.target.value })
+                }
               >
                 <option value="">Select Chain Name</option>
                 {chainNames.map((chainName) => (
@@ -156,7 +192,12 @@ const ForwardingRulesPage = () => {
                 type="text"
                 name="target"
                 value={newRule.rule.target}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setNewRule({
+                    ...newRule,
+                    rule: { ...newRule.rule, target: e.target.value },
+                  })
+                }
               />
             </Form.Group>
             <Form.Group controlId="protocol">
@@ -165,7 +206,12 @@ const ForwardingRulesPage = () => {
                 as="select"
                 name="protocol"
                 value={newRule.rule.protocol}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setNewRule({
+                    ...newRule,
+                    rule: { ...newRule.rule, protocol: e.target.value },
+                  })
+                }
               >
                 <option value="">Select Protocol</option>
                 {protocols.map((protocol) => (
@@ -181,7 +227,12 @@ const ForwardingRulesPage = () => {
                 type="text"
                 name="source"
                 value={newRule.rule.source}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setNewRule({
+                    ...newRule,
+                    rule: { ...newRule.rule, source: e.target.value },
+                  })
+                }
               />
             </Form.Group>
             <Form.Group controlId="destination">
@@ -190,7 +241,12 @@ const ForwardingRulesPage = () => {
                 type="text"
                 name="destination"
                 value={newRule.rule.destination}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setNewRule({
+                    ...newRule,
+                    rule: { ...newRule.rule, destination: e.target.value },
+                  })
+                }
               />
             </Form.Group>
             <Button type="submit">Add Rule</Button>

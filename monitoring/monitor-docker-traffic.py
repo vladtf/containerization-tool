@@ -10,8 +10,8 @@ import time
 import threading
 
 # Configure the logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
+logger = logging.getLogger("monitor-docker-traffic")
 
 # Counter variable to keep track of the message count
 message_count = 0

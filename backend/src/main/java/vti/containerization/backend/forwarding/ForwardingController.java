@@ -15,7 +15,7 @@ public class ForwardingController {
     private final ForwardingService forwardingService;
 
     @GetMapping("/all")
-    public List<ForwardingChainModel> getAllForwardingChains() {
+    public List<ContainerForwardingRulesModel> getAllForwardingChains() {
         return forwardingService.getAllForwardingChains();
     }
 

@@ -181,28 +181,32 @@ const ContainersPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3 className="mb-4">Containers</h3>
-          {containers.map((container, index) => (
-            <Card key={index} className="mb-3">
-              <Card.Body>
-                <strong>ID:</strong> {container.id}
-                <br />
-                <strong>Name:</strong> {container.name}
-                <br />
-                <strong>Status:</strong> {container.status}
-                <br />
-                <strong>Image:</strong> {container.image}
-              </Card.Body>
-              <Card.Footer>
-                <Button
-                  onClick={() => handleDeleteContainer(container.id)}
-                  variant="outline-danger"
-                  style={{ borderRadius: "20px" }}
-                >
-                  Delete Container
-                </Button>
-              </Card.Footer>
-            </Card>
-          ))}
+          {containers.length === 0 ? (
+            <p>No containers found.</p>
+          ) : (
+            containers.map((container, index) => (
+              <Card key={index} className="mb-3">
+                <Card.Body>
+                  <strong>ID:</strong> {container.id}
+                  <br />
+                  <strong>Name:</strong> {container.name}
+                  <br />
+                  <strong>Status:</strong> {container.status}
+                  <br />
+                  <strong>Image:</strong> {container.image}
+                </Card.Body>
+                <Card.Footer>
+                  <Button
+                    onClick={() => handleDeleteContainer(container.id)}
+                    variant="outline-danger"
+                    style={{ borderRadius: "20px" }}
+                  >
+                    Delete Container
+                  </Button>
+                </Card.Footer>
+              </Card>
+            ))
+          )}
         </Card.Body>
       </Card>
     </Container>

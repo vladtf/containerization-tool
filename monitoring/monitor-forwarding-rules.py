@@ -8,9 +8,10 @@ from confluent_kafka.admin import AdminClient, NewTopic
 import configparser
 import os
 
+
 # Configure the logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
+logger = logging.getLogger("monitor-forwarding-rules")
 
 
 def load_config():
@@ -82,9 +83,9 @@ def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name)
         consumer.close()
 
 
-def show_nat_table(container_name):
+def show_nat_table(container_id):
     client = docker.from_env()
-    container = client.containers.get(container_name)
+    container = client.containers.get(container_id)
 
     exec_command = 'iptables-save -t nat'
     response = container.exec_run(exec_command, privileged=True)
@@ -98,7 +99,7 @@ def show_nat_table(container_name):
 
 def parse_iptables_rules(iptables_output):
     rules = iptables_output.strip().split('\n')
-    nat_table = {}
+    nat_table = []
     chain = None
 
     for rule in rules:
@@ -112,6 +113,7 @@ def parse_iptables_rules(iptables_output):
             chain = parts[1]
             rule_spec = parts[2:]
 
+            # TODO: handle other chains
             if chain != 'OUTPUT':
                 continue
 
@@ -138,7 +140,8 @@ def parse_iptables_rules(iptables_output):
                 elif part == '--to-destination':
                     rule_entry['destination'] = rule_spec[i + 1]
 
-            nat_table.setdefault(chain, []).append(rule_entry)
+            # Add the rule to the nat table
+            nat_table.append(rule_entry)
 
     return nat_table
 
@@ -179,13 +182,42 @@ def process_message_from_kafka(message, container_name):
         logger.error("Container '%s' not found.", container_name)
 
 
-def monitor_forwarding_rules(bootstrap_servers, container_name, monitoring_interval):
-    while True:
-        nat_table = show_nat_table(container_name)
-        kafka_producer(json.dumps(nat_table, indent=4),
-                       'monitor-forwarding-rules', bootstrap_servers)
+def list_containers_on_network(network_name: str) -> list[dict]:
+    try:
+        client = docker.from_env()
+        containers = client.containers.list(
+            filters={"network": network_name}, all=True)
+        logger.info("Containers on the network '%s': %d",
+                    network_name, len(containers))
 
-        logger.info("Forwarding rules: %d", len(nat_table))
+        return containers
+    except docker.errors.APIError as e:
+        logger.error("Failed to list containers on the network: %s", e)
+
+
+def monitor_forwarding_rules(bootstrap_servers, network_name, monitoring_interval):
+    while True:
+
+        containers = list_containers_on_network(network_name)
+
+        nat_tables = []
+
+        for container in containers:
+            nat_table = show_nat_table(container.id)
+
+            nat_tables.append({
+                'containerId': container.id,
+                'containerName': container.name,
+                'rules': nat_table
+            })
+
+            logger.info("NAT table for container '%s': %d rules",
+                        container.name, len(nat_table))
+
+        kafka_producer(json.dumps(nat_tables),
+                       'forwarding-rules', bootstrap_servers)
+
+        logger.info("Sent %d nat tables to Kafka", len(nat_tables))
         time.sleep(monitoring_interval)
 
 
@@ -196,6 +228,7 @@ def main():
     # Extract configuration values
     kafka_url = config.get('kafka', 'bootstrap_servers')
     container_name = 'my-ubuntu'
+    network_name = 'mynetwork'
     monitoring_interval = 5
 
     # Start the Kafka consumers in separate threads
@@ -210,7 +243,7 @@ def main():
     # Run the monitoring loop in separate thread
     # monitoring_thread(kafka_url, container_name, monitoring_interval)
     monitoring_thread = threading.Thread(target=monitor_forwarding_rules, args=(
-        kafka_url, container_name, monitoring_interval))
+        kafka_url, network_name, monitoring_interval))
     monitoring_thread.start()
 
     # Check if the threads are alive
