@@ -58,8 +58,9 @@ const ForwardingRulesPage = () => {
 
   const handleClear = async () => {
     try {
-      await axios.post(`${BACKEND_URL}/forwarding-chains/clear`);
-      fetchData();
+      await axios.post(`${BACKEND_URL}/forwarding-chains/clear`, {
+        containerId: selectedContainer,
+      });
       setSuccess(true);
       setError("");
       setTimeout(() => {
@@ -70,7 +71,6 @@ const ForwardingRulesPage = () => {
       setSuccess(false);
     }
   };
-
   const fetchData = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/forwarding-chains/all`);
@@ -278,6 +278,24 @@ const ForwardingRulesPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3>Clear Forwarding Rules</h3>
+          <Form.Group controlId="containerSelect">
+            <Form.Label>Container</Form.Label>
+            <Form.Control
+              as="select"
+              value={selectedContainer}
+              onChange={(e) => setSelectedContainer(e.target.value)}
+            >
+              <option value="">Select Container</option>
+              {data.map((container) => (
+                <option
+                  key={container.containerId}
+                  value={container.containerId}
+                >
+                  {container.containerName}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
           <Button variant="danger" onClick={handleClear}>
             Clear Rules
           </Button>

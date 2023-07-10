@@ -26,8 +26,8 @@ public class ForwardingController {
     }
 
     @PostMapping("/clear")
-    public void clearForwardingRules() {
-        forwardingService.clearForwardingRules();
+    public void clearForwardingRules(@RequestBody ClearForwardingRulesRequest request) {
+        forwardingService.clearForwardingRules(request);
     }
 
     @Data
@@ -37,6 +37,13 @@ public class ForwardingController {
         private String chainName;
         private String containerId;
         private ForwardingRuleModel rule;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ClearForwardingRulesRequest {
+        private String containerId;
     }
 
 }

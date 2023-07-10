@@ -34,7 +34,7 @@ def kafka_producer(message, topic, bootstrap_servers):
     producer.flush()
 
 
-def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name):
+def kafka_consumer(topic, group_id, callback, bootstrap_servers):
     consumer = Consumer({
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
@@ -74,10 +74,7 @@ def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name)
             logger.info("Received message on topic '%s': %s",
                         topic, msg.value().decode())
 
-            if callback.__name__ == 'clear_nat_table':
-                callback(container_name)
-            else:
-                callback(msg.value().decode(), container_name)
+            callback(msg.value().decode())
 
     finally:
         consumer.close()
@@ -146,15 +143,28 @@ def parse_iptables_rules(iptables_output):
     return nat_table
 
 
-def clear_nat_table(container_name):
-    client = docker.from_env()
-    container = client.containers.get(container_name)
+def clear_nat_table(message):
+    try:
+        parsed_message = json.loads(message)
+        container_id = parsed_message['containerId']
 
-    exec_command = 'iptables -t nat -F OUTPUT'
-    container.exec_run(exec_command, privileged=True)
+        client = docker.from_env()
+        container = client.containers.get(container_id)
+
+        exec_command = 'iptables -t nat -F OUTPUT'
+        container.exec_run(exec_command, privileged=True)
+
+        logger.info("NAT table cleared: %s", exec_command)
+
+    except json.JSONDecodeError as e:
+        logger.error("Error parsing JSON: %s", e)
+    except KeyError as e:
+        logger.error("Key not found in JSON: %s", e)
+    except docker.errors.NotFound:
+        logger.error("Container '%s' not found.", container_id)
 
 
-def process_message_from_kafka(message, container_name):
+def process_message_from_kafka(message):
     try:
         parsed_message = json.loads(message)
         chain_name = parsed_message['chainName']
@@ -180,7 +190,7 @@ def process_message_from_kafka(message, container_name):
     except KeyError as e:
         logger.error("Key not found in JSON: %s", e)
     except docker.errors.NotFound:
-        logger.error("Container '%s' not found.", container_name)
+        logger.error("Container '%s' not found.", container_id)
 
 
 def list_containers_on_network(network_name: str) -> list[dict]:
@@ -234,9 +244,9 @@ def main():
 
     # Start the Kafka consumers in separate threads
     consumer_thread_add_rules = threading.Thread(target=kafka_consumer, args=(
-        'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka, kafka_url, container_name))
+        'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka, kafka_url))
     consumer_thread_clear_rules = threading.Thread(target=kafka_consumer, args=(
-        'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table, kafka_url, container_name))
+        'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table, kafka_url))
 
     consumer_thread_add_rules.start()
     consumer_thread_clear_rules.start()

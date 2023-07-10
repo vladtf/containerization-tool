@@ -24,12 +24,11 @@ public class ForwardingService {
 
     @SneakyThrows
     public void addForwardingRuleToChain(ForwardingController.AddForwardingRuleRequest forwardingChainModel) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        String message = objectMapper.writeValueAsString(forwardingChainModel);
-        kafkaForwardingRulesProducer.sendForwardingRules("add-forwarding-rules", message);
+        kafkaForwardingRulesProducer.sendForwardingRules(forwardingChainModel);
     }
 
-    public void clearForwardingRules() {
-        kafkaForwardingRulesProducer.sendForwardingRules("clear-forwarding-rules", "clear-forwarding-rules");
+    @SneakyThrows
+    public void clearForwardingRules(ForwardingController.ClearForwardingRulesRequest request) {
+        kafkaForwardingRulesProducer.sendClearForwardingRules(request);
     }
 }
