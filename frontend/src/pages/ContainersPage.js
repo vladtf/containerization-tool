@@ -42,6 +42,14 @@ const ContainersPage = () => {
   useEffect(() => {
     fetchUploadedFiles();
     fetchContainers();
+
+    const refreshInterval = setInterval(() => {
+      fetchContainers();
+    }, 5000); // Refresh containers every 5 seconds
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   const handleFileChange = (event) => {
@@ -82,14 +90,23 @@ const ContainersPage = () => {
       fileId: fileName,
     };
 
-    console.log(requestBody);
-
     try {
       await axios.post(`${BACKEND_URL}/containers/create`, requestBody);
       setSuccess(true);
       fetchContainers();
     } catch (error) {
       setError("Failed to create a new container. Please try again later.");
+    }
+  };
+
+  const handleDeleteContainer = async (containerId) => {
+    console.log("Deleting container:", containerId);
+    try {
+      await axios.delete(`${BACKEND_URL}/containers/${containerId}`);
+      setSuccess(true);
+      fetchContainers();
+    } catch (error) {
+      setError("Failed to delete the container. Please try again later.");
     }
   };
 
@@ -164,9 +181,9 @@ const ContainersPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3 className="mb-4">Containers</h3>
-          <ListGroup>
-            {containers.map((container, index) => (
-              <ListGroup.Item key={index}>
+          {containers.map((container, index) => (
+            <Card key={index} className="mb-3">
+              <Card.Body>
                 <strong>ID:</strong> {container.id}
                 <br />
                 <strong>Name:</strong> {container.name}
@@ -174,9 +191,18 @@ const ContainersPage = () => {
                 <strong>Status:</strong> {container.status}
                 <br />
                 <strong>Image:</strong> {container.image}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+              </Card.Body>
+              <Card.Footer>
+                <Button
+                  onClick={() => handleDeleteContainer(container.id)}
+                  variant="outline-danger"
+                  style={{ borderRadius: "20px" }}
+                >
+                  Delete Container
+                </Button>
+              </Card.Footer>
+            </Card>
+          ))}
         </Card.Body>
       </Card>
     </Container>

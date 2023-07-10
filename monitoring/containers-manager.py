@@ -77,6 +77,8 @@ def kafka_consumer(topic, group_id, callback, bootstrap_servers, container_name,
 
             if callback.__name__ == 'create_docker_container':
                 callback(msg.value().decode(), base_image_path)
+            elif callback.__name__ == 'delete_docker_container':
+                callback(msg.value().decode())
             else:
                 callback(container_name)
 
@@ -125,6 +127,26 @@ def create_docker_container(create_request, base_image_path):
         logger.error("Failed to start Docker container: %s", e)
 
 
+
+def delete_docker_container(container_id):
+    logger.info("Deleting Docker container with ID: %s", container_id)
+
+    try:
+        # Create a Docker client
+        client = docker.from_env()
+
+        # Get the container
+        container = client.containers.get(container_id)
+
+        # Stop and remove the container
+        container.stop()
+        container.remove()
+
+        logger.info("Docker container with ID %s deleted successfully", container_id)
+    except docker.errors.APIError as e:
+        logger.error("Failed to delete Docker container with ID %s: %s", container_id, e)
+
+
 def list_containers_on_network(network_name):
     try:
         # Create a Docker client
@@ -146,6 +168,7 @@ def list_containers_on_network(network_name):
         # Print the container information
         for container in containers:
             containers_data.append({
+                "id": container.id,
                 "name": container.name,
                 "status": container.status,
                 "ip": container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]
@@ -186,6 +209,11 @@ def main():
         target=monitor_containers_on_network, args=(kafka_url, network_name, monitoring_interval))
     monitor_thread.start()
 
+    # Start the Kafka consumer for deleting containers in a separate thread
+    delete_consumer_thread = threading.Thread(target=kafka_consumer, args=(
+        'delete-container', 'my-group-delete-container', delete_docker_container, kafka_url, container_name, base_image_path))
+    delete_consumer_thread.start()
+
     # Check if the threads are alive
     while True:
         if not consumer_thread.is_alive():
@@ -193,6 +221,9 @@ def main():
             break
         if not monitor_thread.is_alive():
             logger.error("The monitor thread is not alive")
+            break
+        if not delete_consumer_thread.is_alive():
+            logger.error("The delete consumer thread is not alive")
             break
 
         time.sleep(1)

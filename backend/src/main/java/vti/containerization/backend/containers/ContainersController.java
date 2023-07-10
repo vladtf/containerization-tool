@@ -28,6 +28,13 @@ public class ContainersController {
         log.info("Container created successfully");
     }
 
+    @DeleteMapping("/{containerId}")
+    public void deleteContainer(@PathVariable String containerId) {
+        // You can implement the logic to delete a container here using the provided containerId
+        containersService.deleteContainer(containerId);
+        log.info("Container deleted successfully");
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

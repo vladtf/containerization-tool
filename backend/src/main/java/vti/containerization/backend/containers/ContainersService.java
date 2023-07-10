@@ -33,4 +33,9 @@ public class ContainersService {
         kafkaContainersDataProducer.sendCreateContainerRequest(request);
         log.info("Container created successfully");
     }
+
+    public void deleteContainer(String containerId) {
+        kafkaContainersDataProducer.sendDeleteContainerRequest(containerId);
+        log.info("Container deleted successfully");
+    }
 }

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ContainerDataModel {
+    private String id;
     private String name;
     private String status;
     private String ip;

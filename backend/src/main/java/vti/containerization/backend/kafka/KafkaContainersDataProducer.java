@@ -29,4 +29,13 @@ public class KafkaContainersDataProducer {
             LOGGER.severe("Failed to serialize message: " + e.getMessage());
         }
     }
+
+    public void sendDeleteContainerRequest(String containerId) {
+        try {
+            LOGGER.info("Sending delete container request: " + containerId);
+            kafkaProducer.sendMessage("delete-container", containerId);
+        } catch (Exception e) {
+            LOGGER.severe("Failed to serialize message: " + e.getMessage());
+        }
+    }
 }
