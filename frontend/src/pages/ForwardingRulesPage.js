@@ -168,6 +168,27 @@ const ForwardingRulesPage = () => {
         <Card.Body>
           <h3>Add Forwarding Rule</h3>
           <Form onSubmit={handleSubmit}>
+            <Form.Group controlId="containerName">
+              <Form.Label>Container Name</Form.Label>
+              <Form.Control
+                as="select"
+                name="containerName"
+                value={newRule.containerName}
+                onChange={(e) =>
+                  setNewRule({ ...newRule, containerId: e.target.value })
+                }
+              >
+                <option value="">Select Container Name</option>
+                {data.map((container) => (
+                  <option
+                    key={container.containerId}
+                    value={container.containerId}
+                  >
+                    {container.containerName}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
             <Form.Group controlId="chainName">
               <Form.Label>Chain Name</Form.Label>
               <Form.Control

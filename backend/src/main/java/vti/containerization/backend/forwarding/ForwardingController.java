@@ -35,7 +35,7 @@ public class ForwardingController {
     @NoArgsConstructor
     public static class AddForwardingRuleRequest {
         private String chainName;
-
+        private String containerId;
         private ForwardingRuleModel rule;
     }
 

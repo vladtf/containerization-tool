@@ -158,6 +158,7 @@ def process_message_from_kafka(message, container_name):
     try:
         parsed_message = json.loads(message)
         chain_name = parsed_message['chainName']
+        container_id = parsed_message['containerId']
         rule = parsed_message['rule']
 
         # Extract the rule details
@@ -168,7 +169,7 @@ def process_message_from_kafka(message, container_name):
 
         # Update iptables with the rule
         client = docker.from_env()
-        container = client.containers.get(container_name)
+        container = client.containers.get(container_id)
 
         exec_command = f'iptables -t nat -A {chain_name} -d {source} -j {target} --to-destination {destination}'
         container.exec_run(exec_command, privileged=True)
