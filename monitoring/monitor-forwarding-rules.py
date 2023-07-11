@@ -1,3 +1,5 @@
+import signal
+import sys
 import time
 import json
 import logging
@@ -8,63 +10,22 @@ from confluent_kafka.admin import AdminClient, NewTopic
 import os
 
 from configuration import config_loader
-
+from containers.docker_client import list_containers_on_network
+from kafka.kafka_client import create_kafka_producer, create_kafka_consumer, consume_kafka_message
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("monitor-forwarding-rules")
 
-
-def kafka_producer(message, topic, bootstrap_servers):
-    producer = Producer({'bootstrap.servers': bootstrap_servers})
-    producer.produce(topic, key='my_key', value=message)
-    producer.flush()
+# Global variable to stop threads
+stop_threads = False
 
 
-def kafka_consumer(topic, group_id, callback, bootstrap_servers):
-    consumer = Consumer({
-        'bootstrap.servers': bootstrap_servers,
-        'group.id': group_id,
-        'auto.offset.reset': 'earliest'
-    })
-
-    # Create an AdminClient for topic management
-    admin_client = AdminClient({'bootstrap.servers': bootstrap_servers})
-
-    # Check if the topic exists
-    topic_metadata = admin_client.list_topics(timeout=5)
-    if topic not in topic_metadata.topics:
-        # Create the topic if it doesn't exist
-        new_topic = NewTopic(topic, num_partitions=1, replication_factor=1)
-        admin_client.create_topics([new_topic])
-
-        # Wait for topic creation to complete
-        while topic not in admin_client.list_topics().topics:
-            time.sleep(0.1)
-
-    # Subscribe to the topic
-    consumer.subscribe([topic])
-
-    try:
-        while True:
-            msg = consumer.poll(1.0)
-
-            if msg is None:
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    continue
-                else:
-                    logger.error("Kafka error: %s", msg.error().str())
-                    continue
-
-            logger.info("Received message on topic '%s': %s",
-                        topic, msg.value().decode())
-
-            callback(msg.value().decode())
-
-    finally:
-        consumer.close()
+# Signal handler
+def signal_handler(sig, frame):
+    global stop_threads
+    stop_threads = True
+    logger.info("Interrupt signal received. Stopping threads...")
 
 
 def show_nat_table(container_id):
@@ -130,134 +91,197 @@ def parse_iptables_rules(iptables_output):
     return nat_table
 
 
-def clear_nat_table(message):
+def clear_nat_table_task(clear_forwarding_rules_consumer: Consumer):
+    global stop_threads
+
     try:
-        parsed_message = json.loads(message)
-        container_id = parsed_message['containerId']
+        while not stop_threads:
+            message = consume_kafka_message(clear_forwarding_rules_consumer)
+            if message is None:
+                continue
 
-        client = docker.from_env()
-        container = client.containers.get(container_id)
+            parsed_message = json.loads(message)
+            container_id = parsed_message['containerId']
 
-        exec_command = 'iptables -t nat -F OUTPUT'
-        container.exec_run(exec_command, privileged=True)
+            client = docker.from_env()
+            container = client.containers.get(container_id)
 
-        logger.info("NAT table cleared: %s", exec_command)
+            exec_command = 'iptables -t nat -F OUTPUT'
+            container.exec_run(exec_command, privileged=True)
 
-    except json.JSONDecodeError as e:
-        logger.error("Error parsing JSON: %s", e)
-    except KeyError as e:
-        logger.error("Key not found in JSON: %s", e)
-    except docker.errors.NotFound:
-        logger.error("Container '%s' not found.", container_id)
+            logger.info("NAT table cleared: %s", exec_command)
+    except KeyboardInterrupt:
+        logger.info("Stopping thread 'clear_nat_table'...")
+        pass
+
+    except Exception as e:
+        logger.error("Error clearing NAT table", e)
+        pass
+
+    logger.info("Thread 'clear_nat_table' stopped.")
 
 
-def process_message_from_kafka(message):
+def add_forwarding_rule_task(add_forwarding_rules_consumer):
+    global stop_threads
     try:
-        parsed_message = json.loads(message)
-        chain_name = parsed_message['chainName']
-        container_id = parsed_message['containerId']
-        rule = parsed_message['rule']
+        while not stop_threads:
+            message = consume_kafka_message(add_forwarding_rules_consumer)
+            if message is None:
+                continue
 
-        # Extract the rule details
-        target = rule['target']
-        protocol = rule['protocol']
-        source = rule['source']
-        destination = rule['destination']
+            parsed_message = json.loads(message)
+            chain_name = parsed_message['chainName']
+            container_id = parsed_message['containerId']
+            rule = parsed_message['rule']
 
-        # Update iptables with the rule
-        client = docker.from_env()
-        container = client.containers.get(container_id)
+            # Extract the rule details
+            target = rule['target']
+            protocol = rule['protocol']
+            source = rule['source']
+            destination = rule['destination']
 
-        exec_command = f'iptables -t nat -A {chain_name} -d {source} -j {target} --to-destination {destination}'
-        container.exec_run(exec_command, privileged=True)
+            # Update iptables with the rule
+            client = docker.from_env()
+            container = client.containers.get(container_id)
 
-        logger.info("Iptables rule added: %s", exec_command)
-    except json.JSONDecodeError as e:
-        logger.error("Error parsing JSON: %s", e)
-    except KeyError as e:
-        logger.error("Key not found in JSON: %s", e)
-    except docker.errors.NotFound:
-        logger.error("Container '%s' not found.", container_id)
+            exec_command = f'iptables -t nat -A {chain_name} -d {source} -j {target} --to-destination {destination}'
+            container.exec_run(exec_command, privileged=True)
+
+            logger.info("Iptables rule added: %s", exec_command)
+
+    except KeyboardInterrupt:
+        logger.info("Stopping thread 'process_message_from_kafka'...")
+        pass
+
+    except Exception as e:
+        logger.error("Error processing message from Kafka: %s", e)
+        pass
+
+    logger.info("Thread 'process_message_from_kafka' stopped.")
 
 
-def list_containers_on_network(network_name: str) -> list[dict]:
+def monitor_forwarding_rules_task(forwarding_rules_producer: Producer, network_name: str, monitoring_interval: int):
+    global stop_threads
+
     try:
-        client = docker.from_env()
-        containers = client.containers.list(
-            filters={"network": network_name}, all=True)
-        logger.info("Containers on the network '%s': %d",
-                    network_name, len(containers))
+        while not stop_threads:
 
-        return containers
-    except docker.errors.APIError as e:
-        logger.error("Failed to list containers on the network: %s", e)
+            containers = list_containers_on_network(network_name)
+
+            nat_tables = []
+
+            for container in containers:
+                nat_table = show_nat_table(container.id)
+
+                nat_tables.append({
+                    'containerId': container.id,
+                    'containerName': container.name,
+                    'rules': nat_table
+                })
+
+                logger.info("NAT table for container '%s': %d rules",
+                            container.name, len(nat_table))
+
+            forwarding_rules_producer.produce(
+                'forwarding-rules', key='my_key', value=json.dumps(nat_tables))
+
+            logger.info("Sent %d nat tables to Kafka", len(nat_tables))
+            time.sleep(monitoring_interval)
+    except KeyboardInterrupt:
+        logger.info("Stopping thread 'monitor_forwarding_rules'...")
+        pass
+
+    except Exception as e:
+        logger.error("Error in thread 'monitor_forwarding_rules': %s", e)
+        pass
+
+    logger.info("Thread 'monitor_forwarding_rules' stopped.")
 
 
-def monitor_forwarding_rules(bootstrap_servers, network_name, monitoring_interval):
-    while True:
+def build_monitor_forwarding_rules_task(monitoring_interval, network_name,
+                                        forwarding_rules_producer) -> threading.Thread:
+    return threading.Thread(target=monitor_forwarding_rules_task, args=(
+        forwarding_rules_producer, network_name, monitoring_interval))
 
-        containers = list_containers_on_network(network_name)
 
-        nat_tables = []
+def build_clear_forwarding_rules_task(clear_forwarding_rules_consumer) -> threading.Thread:
+    return threading.Thread(target=clear_nat_table_task, args=(clear_forwarding_rules_consumer,))
 
-        for container in containers:
-            nat_table = show_nat_table(container.id)
 
-            nat_tables.append({
-                'containerId': container.id,
-                'containerName': container.name,
-                'rules': nat_table
-            })
-
-            logger.info("NAT table for container '%s': %d rules",
-                        container.name, len(nat_table))
-
-        kafka_producer(json.dumps(nat_tables),
-                       'forwarding-rules', bootstrap_servers)
-
-        logger.info("Sent %d nat tables to Kafka", len(nat_tables))
-        time.sleep(monitoring_interval)
+def build_add_forwarding_rules_task(add_forwarding_rules_consumer) -> threading.Thread:
+    return threading.Thread(target=add_forwarding_rule_task, args=(add_forwarding_rules_consumer,))
 
 
 def main():
+    global stop_threads
+
     # Load the configuration
     config = config_loader.load_config(os.path.abspath(__file__))
-
-    # Extract configuration values
     kafka_url = config.get('kafka', 'bootstrap_servers')
     network_name = config.get('docker', 'network_name')
+
     monitoring_interval = 5
 
-    # Start the Kafka consumers in separate threads
-    consumer_thread_add_rules = threading.Thread(target=kafka_consumer, args=(
-        'add-forwarding-rules', 'my-group-add-rules', process_message_from_kafka, kafka_url))
-    consumer_thread_clear_rules = threading.Thread(target=kafka_consumer, args=(
-        'clear-forwarding-rules', 'my-group-clear-rules', clear_nat_table, kafka_url))
+    # Init Kafka producer
+    forwarding_rules_producer = create_kafka_producer(kafka_url)
 
-    consumer_thread_add_rules.start()
-    consumer_thread_clear_rules.start()
+    # Init Kafka consumer
+    add_forwarding_rules_consumer = create_kafka_consumer(
+        'add-forwarding-rules', 'my-group-add-rules', kafka_url)
 
-    # Run the monitoring loop in separate thread
-    # monitoring_thread(kafka_url, container_name, monitoring_interval)
-    monitoring_thread = threading.Thread(target=monitor_forwarding_rules, args=(
-        kafka_url, network_name, monitoring_interval))
-    monitoring_thread.start()
+    clear_forwarding_rules_consumer = create_kafka_consumer(
+        'clear-forwarding-rules', 'my-group-clear-rules', kafka_url)
 
-    # Check if the threads are alive
-    while True:
-        if not consumer_thread_add_rules.is_alive():
-            logger.error(
-                "Consumer thread for 'add-forwarding-rules' topic is dead.")
-            break
-        if not consumer_thread_clear_rules.is_alive():
-            logger.error(
-                "Consumer thread for 'clear-forwarding-rules' topic is dead.")
-            break
-        if not monitoring_thread.is_alive():
-            logger.error("Monitoring thread is dead.")
-            break
+    # Create threads
+    threads = {
+        'add-forwarding-rules': build_add_forwarding_rules_task(add_forwarding_rules_consumer),
+        'clear-forwarding-rules': build_clear_forwarding_rules_task(clear_forwarding_rules_consumer),
+        'monitor-forwarding-rules': build_monitor_forwarding_rules_task(monitoring_interval, network_name,
+                                                                        forwarding_rules_producer)
+    }
 
-        time.sleep(1)
+    # Set up signal handler for Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Start the threads
+    for thread_name, thread in threads.items():
+        logger.info("Starting thread '%s'", thread_name)
+        thread.start()
+
+    try:
+        while not stop_threads:
+            for thread_name, thread in threads.items():
+                if not thread.is_alive():
+                    logger.error("Thread '%s' is not alive. Restarting...", thread_name)
+
+                    if thread_name == 'monitor-forwarding-rules':
+                        threads[thread_name] = build_monitor_forwarding_rules_task(monitoring_interval, network_name,
+                                                                                   forwarding_rules_producer)
+                    elif thread_name == 'add-forwarding-rules':
+                        threads[thread_name] = build_add_forwarding_rules_task(add_forwarding_rules_consumer)
+                    elif thread_name == 'clear-forwarding-rules':
+                        threads[thread_name] = build_clear_forwarding_rules_task(clear_forwarding_rules_consumer)
+
+                    threads[thread_name].start()
+
+            time.sleep(monitoring_interval)
+    except KeyboardInterrupt:
+        logger.info("Stopping threads...")
+    finally:
+        for thread in threads.values():
+            logger.info("Stopping thread '%s'...", thread.name)
+            thread.join()
+
+        # Close Kafka producer and consumer
+        forwarding_rules_producer.flush()
+
+        add_forwarding_rules_consumer.close()
+        clear_forwarding_rules_consumer.close()
+
+        logger.info("All threads stopped. Exiting...")
+
+    logger.info("Exiting...")
+    sys.exit(0)
 
 
 if __name__ == '__main__':
