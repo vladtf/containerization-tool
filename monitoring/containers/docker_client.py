@@ -18,6 +18,13 @@ class ContainerData:
         self.status = status
         self.ip = ip
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'status': self.status,
+            'ip': self.ip,
+        }
 
 def create_docker_container(create_request: str, base_image_path: str, network_name: str):
     logger.info("Creating Docker container from file: %s", create_request)

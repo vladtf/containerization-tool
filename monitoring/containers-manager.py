@@ -11,7 +11,6 @@ import os
 from configuration import config_loader
 from containers import docker_client
 
-
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("containers-manager")
@@ -56,6 +55,7 @@ def kafka_consumer(topic: str, group_id: str, callback: Callable[[str], None], b
                         continue
                 logger.info("Received message on topic '%s': %s",
                             topic, message.value().decode())
+
                 callback(message.value().decode())
     finally:
         consumer.close()
@@ -69,8 +69,12 @@ def monitor_containers_on_network(kafka_url: str, network_name: str, monitoring_
     while True:
         containers_data = docker_client.list_containers_on_network(
             network_name)
+
+        containers_data = json.dumps([data.to_dict() for data in containers_data])
+
         kafka_producer(json.dumps(containers_data),
                        'containers-data', kafka_url)
+
         time.sleep(monitoring_interval)
 
 
@@ -86,23 +90,34 @@ def main():
         docker_client.create_docker_container, base_image_path=base_image_path, network_name=network_name)
     delete_callback = prepare_docker_callback(
         docker_client.delete_docker_container)
-    consumer_thread = threading.Thread(target=kafka_consumer, args=(
-        'create-container', 'my-group-create-container', create_callback, kafka_url))
-    consumer_thread.start()
-    monitor_thread = threading.Thread(target=monitor_containers_on_network, args=(
-        kafka_url, network_name, monitoring_interval))
-    monitor_thread.start()
-    delete_consumer_thread = threading.Thread(target=kafka_consumer, args=(
-        'delete-container', 'my-group-delete-container', delete_callback, kafka_url))
-    delete_consumer_thread.start()
 
-    threads = [consumer_thread, monitor_thread, delete_consumer_thread]
+    threads = {
+        "consumer_thread": threading.Thread(target=kafka_consumer, args=(
+            'create-container', 'my-group-create-container', create_callback, kafka_url)),
+        "monitor_thread": threading.Thread(target=monitor_containers_on_network, args=(
+            kafka_url, network_name, monitoring_interval)),
+        "delete_consumer_thread": threading.Thread(target=kafka_consumer, args=(
+            'delete-container', 'my-group-delete-container', delete_callback, kafka_url))
+    }
+
+    for thread in threads.values():
+        thread.start()
+
     while True:
-        for thread in threads:
+        for thread_name, thread in threads.items():
             if not thread.is_alive():
                 logger.error(
-                    "Thread '%s' is not alive. Restarting...", thread.name)
-                thread.start()
+                    "Thread '%s' is not alive. Restarting...", thread_name)
+                if thread_name == "consumer_thread":
+                    threads[thread_name] = threading.Thread(target=kafka_consumer, args=(
+                        'create-container', 'my-group-create-container', create_callback, kafka_url))
+                elif thread_name == "monitor_thread":
+                    threads[thread_name] = threading.Thread(target=monitor_containers_on_network, args=(
+                        kafka_url, network_name, monitoring_interval))
+                elif thread_name == "delete_consumer_thread":
+                    threads[thread_name] = threading.Thread(target=kafka_consumer, args=(
+                        'delete-container', 'my-group-delete-container', delete_callback, kafka_url))
+                threads[thread_name].start()
         time.sleep(1)
 
 
