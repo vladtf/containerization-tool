@@ -9,3 +9,7 @@ logs/
 
 # intelij
 .idea/
+
+
+# pycache
+__pycache__/

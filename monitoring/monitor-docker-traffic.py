@@ -4,12 +4,11 @@ import json
 import logging
 from confluent_kafka import Producer
 import pyshark
-import configparser
 import os
 import time
 import threading
 
-from monitoring.configuration import config_loader
+from configuration import config_loader
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
@@ -40,13 +39,13 @@ def kafka_producer(message, bootstrap_servers):
 
     producer.produce(topic, key='my_key', value=message)
 
-    producer.flush()
+    # producer.flush()
 
     # Increment the message count
     message_count += 1
 
 
-def packet_callback(pkt, config):
+def packet_callback(pkt, config, kafka_url):
     packet_data = {}
 
     if 'ip' in pkt:
@@ -93,7 +92,6 @@ def packet_callback(pkt, config):
         packet_data['protocol'] = 'unknown'
 
     json_message = json.dumps(packet_data)
-    kafka_url = config.get('kafka', 'bootstrap_servers')
     kafka_producer(json_message, kafka_url)
 
 # Periodically log the message count
@@ -115,7 +113,7 @@ def main():
     kafka_url = config.get('kafka', 'bootstrap_servers')
 
     # Docker network name
-    docker_network_name = 'mynetwork'
+    docker_network_name = config.get('docker', 'network_name')
 
     # Get the Docker network interface name
     interface = get_docker_interface(docker_network_name)
@@ -135,7 +133,7 @@ def main():
         capture = pyshark.LiveCapture(interface=interface)
 
         # Start capturing packets and invoke the packet_callback function for each packet
-        capture.apply_on_packets(lambda pkt: packet_callback(pkt, config))
+        capture.apply_on_packets(lambda pkt: packet_callback(pkt, kafka_url))
 
 
 if __name__ == '__main__':
