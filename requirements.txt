@@ -8,6 +8,7 @@ lxml==4.9.2
 packaging==23.1
 pyshark==0.6
 requests==2.31.0
+schedule==1.2.0
 termcolor==2.3.0
 urllib3==2.0.3
 websocket-client==1.6.1

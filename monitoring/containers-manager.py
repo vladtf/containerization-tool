@@ -159,8 +159,7 @@ def main():
         while not stop_threads:
             for thread_name, thread in threads.items():
                 if not thread.is_alive():
-                    logger.error(
-                        "Thread '%s' is not alive. Restarting...", thread_name)
+                    logger.error("Thread '%s' is not alive. Restarting...", thread_name)
 
                     if thread_name == 'monitor_containers':
                         threads[thread_name] = build_monitor_containers_task(containers_data_producer,
@@ -181,8 +180,8 @@ def main():
     except KeyboardInterrupt:
         logger.info("Interrupted by user. Exiting...")
     finally:
-        for thread in threads.values():
-            logger.info("Stopping thread '%s'...", thread.name)
+        for thread_name, thread in threads.items():
+            logger.info("Stopping thread '%s'...", thread_name)
             thread.join()
 
         # Close Kafka producer and consumer
