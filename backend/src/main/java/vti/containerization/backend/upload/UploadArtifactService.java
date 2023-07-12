@@ -11,10 +11,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static vti.containerization.backend.utils.FileUtils.generateUniqueFileName;
 
 @AllArgsConstructor
 @Service
@@ -23,16 +24,25 @@ public class UploadArtifactService {
 
     private final ContainerizationToolProperties containerizationToolProperties;
 
+
     public void handleArtifactUpload(MultipartFile file) throws IOException {
         log.info("Received file: " + file.getOriginalFilename());
 
+        // Get the list of already uploaded files
+        List<UploadedFileModel> uploadedFiles = getUploadedFiles();
+
         // Generate a unique filename
-        String fileName = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+        String fileName = generateUniqueFileName(Objects.requireNonNull(file.getOriginalFilename()), uploadedFiles);
+
+        log.info(MessageFormat.format("Saving file {0} to {1}", file.getOriginalFilename(), fileName));
 
         // Create the target directory if it doesn't exist
         File targetDirectory = new File(containerizationToolProperties.getUpload().getDirectory());
         if (!targetDirectory.exists()) {
-            targetDirectory.mkdirs();
+            boolean mkdirs = targetDirectory.mkdirs();
+            if (!mkdirs) {
+                throw new RuntimeException("Failed to create the target directory: " + targetDirectory.getAbsolutePath());
+            }
         }
 
         // Save the file to the target directory
