@@ -110,12 +110,16 @@ def monitor_forwarding_rules_task(forwarding_rules_producer: Producer, network_n
             nat_tables = []
 
             for container in containers:
+                if container.status != 'running':
+                    logger.warning("Container '%s' is not running. Skipping...", container.name)
+                    continue
+
                 nat_table = show_nat_table(container.id)
 
                 nat_tables.append({
                     'containerId': container.id,
                     'containerName': container.name,
-                    'rules': nat_table
+                    'rules': [rule.to_dict() for rule in nat_table]
                 })
 
                 logger.info("NAT table for container '%s': %d rules",

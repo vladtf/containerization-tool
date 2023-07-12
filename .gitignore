@@ -13,3 +13,6 @@ logs/
 
 # pycache
 __pycache__/
+
+# logs
+logs/

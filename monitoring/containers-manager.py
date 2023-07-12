@@ -101,6 +101,10 @@ def delete_container_task(consumer: Consumer):
         logger.info("Stopping thread 'delete_container_task'...")
         pass
 
+    except Exception as e:
+        logger.error("Error deleting container: %s", e)
+        pass
+
     logger.info("Stopping thread 'delete_container_task'...")
 
 
@@ -158,6 +162,7 @@ def main():
 
     try:
         while not stop_threads:
+            all_threads_alive = True
             for thread_name, thread in threads.items():
                 if not thread.is_alive():
                     logger.error("Thread '%s' is not alive. Restarting...", thread_name)
@@ -176,6 +181,10 @@ def main():
                             delete_container_consumer)
 
                     threads[thread_name].start()
+                    all_threads_alive = False
+
+            if all_threads_alive:
+                logger.info("All threads alive")
 
             time.sleep(monitoring_interval)
     except KeyboardInterrupt:
@@ -190,6 +199,7 @@ def main():
 
         create_container_consumer.close()
         delete_container_consumer.close()
+        logger.info("Kafka producer and consumer closed")
 
         logger.info("All threads stopped. Exiting...")
 

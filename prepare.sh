@@ -55,6 +55,21 @@ log_info() {
 VENV_DIR="$BIN_DIR/.venv"
 REQUIREMENTS_FILE="$BIN_DIR/requirements.txt"
 
+install_pip_requirements() {
+    log_info "Installing requirements"
+    pip_install_output=$(pip install -r "$REQUIREMENTS_FILE" 2>&1)
+
+    # Check if requirements are already installed
+    if [[ $pip_install_output == *"Requirement already satisfied"* ]]; then
+        log_warning "Requirements already installed"
+    elif [[ $pip_install_output == *"Successfully installed"* ]]; then
+        log_success "Requirements installed"
+    else
+        log_error "Failed to install requirements"
+        exit 1
+    fi
+}
+
 # Check if .venv directory exists
 if [ ! -d "$VENV_DIR" ]; then
     log_warning "Virtual environment not found. Creating virtual environment..."
@@ -78,14 +93,7 @@ if [ ! -d "$VENV_DIR" ]; then
 
     # Install requirements
     if [ -f "$REQUIREMENTS_FILE" ]; then
-        log_info "Installing requirements"
-        pip install -r "$REQUIREMENTS_FILE"
-        if [ $? -ne 0 ]; then
-            log_error "Failed to install requirements"
-            exit 1
-        else
-            log_success "Requirements installed"
-        fi
+        install_pip_requirements
     else
         log_error "Requirements file '$REQUIREMENTS_FILE' not found."
         log_error "Please make sure to create the requirements file and try again."
@@ -96,13 +104,5 @@ else
     source "$VENV_DIR/bin/activate"
     log_success "Virtual environment activated"
 
-    log_info "Installing requirements"
-    pip install -r "$REQUIREMENTS_FILE"
-
-    if [ $? -ne 0 ]; then
-        log_error "Failed to install requirements"
-        exit 1
-    else
-        log_success "Requirements installed"
-    fi
+    install_pip_requirements
 fi
