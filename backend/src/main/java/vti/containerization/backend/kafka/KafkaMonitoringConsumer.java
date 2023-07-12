@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import vti.containerization.backend.messages.MessageModel;
+import vti.containerization.backend.traffic.MessageModel;
 
 import java.util.ArrayList;
 import java.util.List;

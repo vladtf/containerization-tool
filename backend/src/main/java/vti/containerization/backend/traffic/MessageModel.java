@@ -1,4 +1,4 @@
-package vti.containerization.backend.messages;
+package vti.containerization.backend.traffic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

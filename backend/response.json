@@ -1,0 +1,38 @@
+[
+  {
+    "groupId": "all",
+    "messages": [
+      {
+        "protocol": "ip",
+        "src_ip": "172.26.0.3",
+        "dst_ip": "8.8.8.8",
+        "src_port": null,
+        "dst_port": null
+      }
+    ]
+  },
+  {
+    "groupId": "container-1d91d04d-52ef-418a-90d4-ee614feb2408-test-ping.sh",
+    "messages": [
+      {
+        "protocol": "ip",
+        "src_ip": "172.26.0.3",
+        "dst_ip": "8.8.8.8",
+        "src_port": null,
+        "dst_port": null
+      }
+    ]
+  },
+  {
+    "groupId": "my-ubuntu",
+    "messages": [
+      {
+        "protocol": "ip",
+        "src_ip": "172.26.0.3",
+        "dst_ip": "8.8.8.8",
+        "src_port": null,
+        "dst_port": null
+      }
+    ]
+  }
+]

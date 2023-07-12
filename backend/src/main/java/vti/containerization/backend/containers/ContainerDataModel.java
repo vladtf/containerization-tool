@@ -12,4 +12,6 @@ public class ContainerDataModel {
     private String name;
     private String status;
     private String ip;
+    private String image;
+    private String created;
 }

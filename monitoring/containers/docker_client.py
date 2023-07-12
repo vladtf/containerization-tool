@@ -1,9 +1,10 @@
+import io
 import json
 import logging
+import tarfile
+from dataclasses import dataclass, asdict
 
 import docker
-import tarfile
-import io
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
@@ -14,20 +15,17 @@ class DockerClientException(Exception):
     pass
 
 
+@dataclass
 class ContainerData:
-    def __init__(self, id: str, name: str, status: str, ip: str):
-        self.id = id
-        self.name = name
-        self.status = status
-        self.ip = ip
+    id: str
+    name: str
+    status: str
+    ip: str
+    image: str
+    created: str
 
     def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'status': self.status,
-            'ip': self.ip,
-        }
+        return asdict(self)
 
 
 def check_container_exists(container_id: str):
@@ -79,7 +77,9 @@ def list_containers_on_network(network_name: str) -> list[ContainerData]:
                 id=container.id,
                 name=container.name,
                 status=container.status,
-                ip=container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"]
+                ip=container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"],
+                created=container.attrs["Created"],
+                image=container.attrs["Config"]["Image"]
             ))
         return containers_data
     except Exception as e:

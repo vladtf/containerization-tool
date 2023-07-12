@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Container, ListGroup, Alert, Button, Card } from "react-bootstrap";
+import {
+  Container,
+  ListGroup,
+  Alert,
+  Button,
+  Card,
+  Form,
+} from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 
 const MessagesPage = () => {
-  const [messages, setMessages] = useState([]);
+  const [data, setData] = useState([]);
   const [error, setError] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("all");
+  const [groupIds, setGroupIds] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -20,8 +30,27 @@ const MessagesPage = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/messages/all`);
-      setMessages(response.data);
+      setData(response.data);
       setError(null);
+
+      setGroupIds(
+        response.data.reduce((acc, curr) => {
+          if (!acc.includes(curr.groupId)) {
+            acc.push(curr.groupId);
+          }
+          return acc;
+        }, [])
+      );
+
+      if (selectedGroupId === "all") {
+        setMessages(response.data);
+      }
+
+      if (selectedGroupId !== "all") {
+        setMessages(
+          response.data.filter((message) => message.groupId === selectedGroupId)
+        );
+      }
     } catch (error) {
       setError("Failed to fetch messages.");
     }
@@ -30,7 +59,7 @@ const MessagesPage = () => {
   const handleClearMessages = async () => {
     try {
       await axios.get(`${BACKEND_URL}/messages/clear`);
-      setMessages([]);
+      setData([]);
       setError(null);
     } catch (error) {
       setError("Failed to clear messages.");
@@ -38,18 +67,36 @@ const MessagesPage = () => {
   };
 
   // Group messages by source and destination
-  const groupedMessages = {};
-  messages.forEach((message) => {
-    const key = `${message.src_ip}-${message.dst_ip}`;
-    if (groupedMessages[key]) {
-      groupedMessages[key].count += 1;
-    } else {
-      groupedMessages[key] = {
-        message,
-        count: 1,
-      };
+  const getGroupedMessages = () => {
+    var filteredMessages = data.filter(
+      (group) => group.groupId === selectedGroupId
+    );
+
+    if (filteredMessages.length !== 1) {
+      return [];
     }
-  });
+
+    filteredMessages = filteredMessages[0].messages;
+
+    const groupedMessages = {};
+
+    filteredMessages.forEach((message) => {
+      const key = `${message.src_ip}-${message.dst_ip}`;
+      if (groupedMessages[key]) {
+        groupedMessages[key].count += 1;
+      } else {
+        groupedMessages[key] = {
+          message,
+          count: 1,
+        };
+      }
+    });
+
+    // Transform object into array
+    const groupedMessagesArray = Object.values(groupedMessages);
+
+    return groupedMessagesArray;
+  };
 
   return (
     <Container>
@@ -58,15 +105,41 @@ const MessagesPage = () => {
         <Card.Body>
           <h3>Messages Page</h3>
           {error && <Alert variant="danger">{error}</Alert>}
-          {Object.keys(groupedMessages).length === 0 && !error && (
+          {groupIds.length == 0 && !error && (
             <Alert variant="info">No messages available.</Alert>
           )}
           <Button variant="danger" onClick={handleClearMessages}>
             Clear Messages
           </Button>
-          {Object.keys(groupedMessages).length > 0 && (
+
+          <Form.Group controlId="groupIdSelect">
+            <Form.Label>Group ID</Form.Label>
+            <Form.Control
+              as="select"
+              value={selectedGroupId}
+              onChange={(e) => {
+                const filteredMessages = data.filter(
+                  (group) => group.groupId === e.target.value
+                );
+                setMessages(filteredMessages);
+
+                console.log(filteredMessages);
+
+                setSelectedGroupId(e.target.value);
+              }}
+            >
+              <option value="">Select a group ID</option>
+              {data.map((group) => (
+                <option key={group.groupId} value={group.groupId}>
+                  {group.groupId}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+
+          {messages.length > 0 ? (
             <ListGroup className="mt-4">
-              {Object.values(groupedMessages).map(({ message, count }, index) => (
+              {getGroupedMessages().map(({ message, count }, index) => (
                 <ListGroup.Item key={index}>
                   <div>
                     <p>Protocol: {message.protocol}</p>
@@ -79,6 +152,8 @@ const MessagesPage = () => {
                 </ListGroup.Item>
               ))}
             </ListGroup>
+          ) : (
+            <Alert variant="info">No messages available for this group.</Alert>
           )}
         </Card.Body>
       </Card>

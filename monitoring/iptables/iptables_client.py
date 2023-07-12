@@ -1,29 +1,20 @@
+from dataclasses import dataclass, asdict
+
 import docker
 
 
+@dataclass
 class RuleEntry:
-    def __init__(self, command, chain, target, protocol, options, source, destination):
-        self.command = command
-        self.chain = chain
-        self.target = target
-        self.protocol = protocol
-        self.options = options
-        self.source = source
-        self.destination = destination
+    command: str
+    chain: str
+    target: str
+    protocol: str
+    options: str
+    source: str
+    destination: str
 
     def to_dict(self):
-        return {
-            'command': self.command,
-            'chain': self.chain,
-            'target': self.target,
-            'protocol': self.protocol,
-            'options': self.options,
-            'source': self.source,
-            'destination': self.destination
-        }
-
-    def __str__(self):
-        return f"Command: {self.command}, Chain: {self.chain}, Target: {self.target}, Protocol: {self.protocol}, Options: {self.options}, Source: {self.source}, Destination: {self.destination}"
+        return asdict(self)
 
 
 def parse_iptables_rules(iptables_output) -> list[RuleEntry]:

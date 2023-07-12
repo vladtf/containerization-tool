@@ -25,7 +25,7 @@ public class KafkaContainersDataConsumer {
             return Arrays.asList(containerDataModels);
         } catch (JsonProcessingException e) {
             LOGGER.warning("Failed to deserialize message: " + e.getMessage());
-            return null;
+            return Collections.emptyList();
         }
     }
 

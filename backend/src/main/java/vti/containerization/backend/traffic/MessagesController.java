@@ -1,6 +1,8 @@
-package vti.containerization.backend.messages;
+package vti.containerization.backend.traffic;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +17,7 @@ public class MessagesController {
     private final MessagesService messagesService;
 
     @GetMapping("/all")
-    public List<MessageModel> getAllMessages() {
+    public List<TrafficMessagesResponse> getAllMessages() {
         return messagesService.getAllMessages();
     }
 
@@ -23,5 +25,13 @@ public class MessagesController {
     @GetMapping("/clear")
     public void clearMessages() {
         messagesService.clearMessages();
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class TrafficMessagesResponse {
+        private String groupId;
+        private List<MessageModel> messages;
     }
 }

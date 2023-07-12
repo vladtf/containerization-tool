@@ -193,7 +193,11 @@ const ContainersPage = () => {
                   <br />
                   <strong>Status:</strong> {container.status}
                   <br />
+                  <strong>Ip Address:</strong> {container.ip}
+                  <br />
                   <strong>Image:</strong> {container.image}
+                  <br />
+                  <strong>Created At:</strong> {container.created}
                 </Card.Body>
                 <Card.Footer>
                   <Button
