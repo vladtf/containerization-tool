@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
 
 # Global variable to stop threads
+# TODO: to replace with an thread pool
 stop_threads = False
 
 

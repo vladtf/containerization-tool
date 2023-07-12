@@ -1,16 +1,15 @@
-import signal
-import subprocess
-import re
 import json
 import logging
-import sys
-
-import schedule
-from confluent_kafka import Producer
-import pyshark
 import os
-import time
+import re
+import signal
+import subprocess
+import sys
 import threading
+import time
+
+import pyshark
+from confluent_kafka import Producer
 
 from configuration import config_loader
 from kafka.kafka_client import create_kafka_producer
@@ -23,6 +22,7 @@ logger = logging.getLogger("monitor-docker-traffic")
 message_count = 0
 
 # Global variable to stop threads
+# TODO: to replace with an thread pool
 stop_threads = False
 
 

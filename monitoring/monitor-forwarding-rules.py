@@ -1,16 +1,17 @@
-import signal
-import sys
-import time
 import json
 import logging
-from confluent_kafka import Producer, Consumer, KafkaError
-import docker
-import threading
-from confluent_kafka.admin import AdminClient, NewTopic
 import os
+import signal
+import sys
+import threading
+import time
+
+import docker
+from confluent_kafka import Producer, Consumer
 
 from configuration import config_loader
 from containers.docker_client import list_containers_on_network
+from iptables.iptables_client import show_nat_table
 from kafka.kafka_client import create_kafka_producer, create_kafka_consumer, consume_kafka_message
 
 # Configure the logger
@@ -18,6 +19,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("monitor-forwarding-rules")
 
 # Global variable to stop threads
+# TODO: to replace with an thread pool
 stop_threads = False
 
 
@@ -26,69 +28,6 @@ def signal_handler(sig, frame):
     global stop_threads
     stop_threads = True
     logger.info("Interrupt signal received. Stopping threads...")
-
-
-def show_nat_table(container_id):
-    client = docker.from_env()
-    container = client.containers.get(container_id)
-
-    exec_command = 'iptables-save -t nat'
-    response = container.exec_run(exec_command, privileged=True)
-
-    output = response.output.decode()
-
-    nat_table = parse_iptables_rules(output)
-
-    return nat_table
-
-
-def parse_iptables_rules(iptables_output):
-    rules = iptables_output.strip().split('\n')
-    nat_table = []
-    chain = None
-
-    for rule in rules:
-        rule = rule.strip()
-        if rule.startswith(':'):
-            # Skip the counters line
-            continue
-
-        if rule.startswith('-A'):
-            parts = rule.split(' ')
-            chain = parts[1]
-            rule_spec = parts[2:]
-
-            # TODO: handle other chains
-            if chain != 'OUTPUT':
-                continue
-
-            rule_entry = {
-                'command': rule,
-                'chain': chain,
-                'target': None,
-                'protocol': None,
-                'options': None,
-                'source': None,
-                'destination': None
-            }
-
-            # Extracting the target, protocol, options, source, and destination from the rule_spec
-            for i, part in enumerate(rule_spec):
-                if part == '-j':
-                    rule_entry['target'] = rule_spec[i + 1]
-                elif part == '-p':
-                    rule_entry['protocol'] = rule_spec[i + 1]
-                elif part == '-s':
-                    rule_entry['source'] = rule_spec[i + 1]
-                elif part == '-d':
-                    rule_entry['source'] = rule_spec[i + 1]
-                elif part == '--to-destination':
-                    rule_entry['destination'] = rule_spec[i + 1]
-
-            # Add the rule to the nat table
-            nat_table.append(rule_entry)
-
-    return nat_table
 
 
 def clear_nat_table_task(clear_forwarding_rules_consumer: Consumer):
