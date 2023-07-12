@@ -40,4 +40,15 @@ public class UploadArtifactController {
         }
     }
 
+    @DeleteMapping("/files/{fileName}")
+    public ResponseEntity<String> deleteUploadedFile(@PathVariable String fileName) {
+        try {
+            uploadArtifactService.deleteUploadedFile(fileName);
+            return ResponseEntity.ok("File deleted successfully!");
+        } catch (Exception e) {
+            log.log(java.util.logging.Level.SEVERE, "Failed to delete the file: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete the file: " + e.getMessage());
+        }
+    }
+
 }

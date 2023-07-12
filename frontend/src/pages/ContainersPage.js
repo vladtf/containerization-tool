@@ -99,6 +99,16 @@ const ContainersPage = () => {
     }
   };
 
+  const handleDeleteFile = async (fileName) => {
+    try {
+      await axios.delete(`${BACKEND_URL}/upload/files/${fileName}`);
+      setSuccess(true);
+      fetchUploadedFiles();
+    } catch (error) {
+      setError("Failed to delete the file. Please try again later.");
+    }
+  };
+
   const handleDeleteContainer = async (containerId) => {
     console.log("Deleting container:", containerId);
     try {
@@ -154,8 +164,8 @@ const ContainersPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3 className="mb-4">Uploaded Files</h3>
-          {uploadedFiles.map((file, index) => (
-            <Card className="mb-3" key={index}>
+          {uploadedFiles.map((file) => (
+            <Card className="mb-3" key={file.id}>
               <Card.Body>
                 <strong>Name:</strong> {file.name}
                 <br />
@@ -165,12 +175,20 @@ const ContainersPage = () => {
               </Card.Body>
               <Card.Footer>
                 <Button
-                  className="mt-3"
+                  className="mt-3 mr-2"
                   onClick={() => handleCreateContainer(file.name)}
                   variant="outline-primary"
                   style={{ borderRadius: "20px" }}
                 >
                   Create Container
+                </Button>
+                <Button
+                  className="mt-3"
+                  onClick={() => handleDeleteFile(file.name)}
+                  variant="outline-danger"
+                  style={{ borderRadius: "20px", marginLeft: "10px" }}
+                >
+                  Delete File
                 </Button>
               </Card.Footer>
             </Card>

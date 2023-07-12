@@ -1,16 +1,9 @@
-import React, { useState, useEffect } from "react";
-import {
-  Container,
-  ListGroup,
-  Alert,
-  Button,
-  Card,
-  Form,
-} from "react-bootstrap";
-import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
-import { BACKEND_URL } from "../config/BackendConfiguration";
+import React, { useEffect, useState } from "react";
+import { Alert, Button, Card, Container, ListGroup } from "react-bootstrap";
 import { IoCubeOutline } from "react-icons/io5";
+import CustomNavbar from "../components/CustomNavbar";
+import { BACKEND_URL } from "../config/BackendConfiguration";
 
 const MessagesPage = () => {
   const [data, setData] = useState([]);
@@ -110,7 +103,7 @@ const MessagesPage = () => {
         <Card.Body>
           <h3>Messages Page</h3>
           {error && <Alert variant="danger">{error}</Alert>}
-          {groupIds.length == 0 && !error && (
+          {groupIds.length === 0 && !error && (
             <Alert variant="info">No messages available.</Alert>
           )}
           <Button variant="danger" onClick={handleClearMessages}>

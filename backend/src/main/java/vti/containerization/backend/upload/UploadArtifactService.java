@@ -72,4 +72,24 @@ public class UploadArtifactService {
         return Optional.empty();
     }
 
+    public void deleteUploadedFile(String fileName) {
+        log.info("Deleting file: " + fileName);
+
+        File targetDirectory = new File(containerizationToolProperties.getUpload().getDirectory());
+        File[] files = targetDirectory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.getName().equals(fileName)) {
+                    boolean delete = file.delete();
+
+                    if (delete) {
+                        log.info("File deleted successfully: " + file.getAbsolutePath());
+                    } else {
+                        log.info("Failed to delete the file: " + file.getAbsolutePath());
+                        throw new RuntimeException("Failed to delete the file: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+    }
 }
