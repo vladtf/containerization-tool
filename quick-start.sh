@@ -52,7 +52,7 @@ docker network inspect "$test_network_name" >/dev/null 2>&1
 if [ $? -ne 0 ]; then
     # Create the test network
     log_info "Creating test network"
-    docker network create "$test_network_name"
+    docker network create --driver bridge --opt com.docker.network.bridge.name="$test_network_name" "$test_network_name"
 else
     log_success "$test_network_name already exists"
 fi

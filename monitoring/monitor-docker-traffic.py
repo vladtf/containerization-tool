@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 
+import docker
 import pyshark
 from confluent_kafka import Producer
 
@@ -34,17 +35,17 @@ def signal_handler(sig, frame):
 
 
 def get_docker_interface(docker_network_name):
-    command = ['docker', 'network', 'ls',
-               '--filter', f"name={docker_network_name}"]
-    result = subprocess.run(command, capture_output=True, text=True)
+    client = docker.from_env()
 
-    match = re.search(r"(\w{12})", result.stdout)
-    if match:
-        interface_id = match.group(1)
-        return "br-" + interface_id
+    network = client.networks.get(docker_network_name)
 
-    logger.error("Error getting docker interface")
-    exit(1)
+    if network is None:
+        logger.error("Error getting docker interface")
+        exit(1)
+
+    bridge_interface = network.attrs['Options']['com.docker.network.bridge.name']
+
+    return bridge_interface
 
 
 def packet_callback(pkt, traffic_producer: Producer):

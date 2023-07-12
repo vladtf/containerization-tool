@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  your_service:
+    image: ubuntu:latest
+    networks:
+      - your_network
+
+networks:
+  your_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+    # Define the iptables rule for output forwarding
+    iptables:
+      - OUTPUT -d 8.8.8.8 -j DNAT --to-destination 9.9.9.9

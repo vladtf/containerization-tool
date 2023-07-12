@@ -162,7 +162,6 @@ def main():
 
     try:
         while not stop_threads:
-            all_threads_alive = True
             for thread_name, thread in threads.items():
                 if not thread.is_alive():
                     logger.error("Thread '%s' is not alive. Restarting...", thread_name)
@@ -181,10 +180,6 @@ def main():
                             delete_container_consumer)
 
                     threads[thread_name].start()
-                    all_threads_alive = False
-
-            if all_threads_alive:
-                logger.info("All threads alive")
 
             time.sleep(monitoring_interval)
     except KeyboardInterrupt:
