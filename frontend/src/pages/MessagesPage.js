@@ -10,6 +10,7 @@ import {
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
+import { IoCubeOutline } from "react-icons/io5";
 
 const MessagesPage = () => {
   const [data, setData] = useState([]);
@@ -26,6 +27,10 @@ const MessagesPage = () => {
       clearInterval(interval); // Clean up the interval on component unmount
     };
   }, []);
+
+  useEffect(() => {
+    setMessages(data.filter((message) => message.groupId === selectedGroupId));
+  }, [selectedGroupId]);
 
   const fetchData = async () => {
     try {
@@ -112,30 +117,52 @@ const MessagesPage = () => {
             Clear Messages
           </Button>
 
-          <Form.Group controlId="groupIdSelect">
-            <Form.Label>Group ID</Form.Label>
-            <Form.Control
-              as="select"
-              value={selectedGroupId}
-              onChange={(e) => {
-                const filteredMessages = data.filter(
-                  (group) => group.groupId === e.target.value
-                );
-                setMessages(filteredMessages);
+          <hr />
 
-                console.log(filteredMessages);
+          <div style={{ display: "flex" }}>
+            {groupIds.map((groupId) => (
+              <Button
+                key={groupId}
+                style={{
+                  margin: "0 5px",
+                  width: "180px",
+                  height: "180px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  position: "relative",
+                }}
+                variant={
+                  selectedGroupId === groupId ? "primary" : "outline-primary"
+                }
+                onClick={() => setSelectedGroupId(groupId)}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  <IoCubeOutline size={40} />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                >
+                  <span>{groupId}</span>
+                </div>
+              </Button>
+            ))}
+          </div>
 
-                setSelectedGroupId(e.target.value);
-              }}
-            >
-              <option value="">Select a group ID</option>
-              {data.map((group) => (
-                <option key={group.groupId} value={group.groupId}>
-                  {group.groupId}
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
+          <hr />
 
           {messages.length > 0 ? (
             <ListGroup className="mt-4">
