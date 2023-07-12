@@ -119,7 +119,7 @@ const MessagesPage = () => {
 
           <hr />
 
-          <div style={{ display: "flex" }}>
+          <div style={{ overflowX: "scroll", display: "flex" }}>
             {groupIds.map((groupId) => (
               <Button
                 key={groupId}

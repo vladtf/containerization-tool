@@ -10,6 +10,7 @@ import {
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
+import { IoCubeOutline } from "react-icons/io5";
 
 const ForwardingRulesPage = () => {
   const [data, setData] = useState([]);
@@ -107,24 +108,56 @@ const ForwardingRulesPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3>Forwarding Rules</h3>
-          <Form.Group controlId="containerSelect">
-            <Form.Label>Container</Form.Label>
-            <Form.Control
-              as="select"
-              value={selectedContainer}
-              onChange={handleChange}
-            >
-              <option value="">All Containers</option>
-              {data.map((container) => (
-                <option
-                  key={container.containerId}
-                  value={container.containerId}
+          
+          <hr />
+
+          <div style={{ overflowX: "scroll", display: "flex" }}>
+            {data.map((container) => (
+              <Button
+                key={container.containerId}
+                style={{
+                  margin: "0 5px",
+                  width: "180px",
+                  height: "180px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  position: "relative",
+                }}
+                variant={
+                  selectedContainer === container.containerId
+                    ? "primary"
+                    : "outline-primary"
+                }
+                onClick={() => setSelectedContainer(container.containerId)}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                  }}
                 >
-                  {container.containerName}
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
+                  <IoCubeOutline size={40} />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                >
+                  <span>{container.containerName}</span>
+                </div>
+              </Button>
+            ))}
+          </div>
+
+          <hr />
+
           {filteredData.length > 0 ? (
             <ListGroup>
               {filteredData.map((container) => (
