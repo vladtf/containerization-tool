@@ -108,7 +108,7 @@ const ForwardingRulesPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3>Forwarding Rules</h3>
-          
+
           <hr />
 
           <div style={{ overflowX: "scroll", display: "flex" }}>
@@ -303,7 +303,9 @@ const ForwardingRulesPage = () => {
                 }
               />
             </Form.Group>
-            <Button type="submit">Add Rule</Button>
+            <Button type="submit" className="mt-3" variant="primary">
+              Add Rule
+            </Button>
           </Form>
         </Card.Body>
       </Card>
@@ -329,7 +331,7 @@ const ForwardingRulesPage = () => {
               ))}
             </Form.Control>
           </Form.Group>
-          <Button variant="danger" onClick={handleClear}>
+          <Button variant="danger" onClick={handleClear} className="mt-3">
             Clear Rules
           </Button>
         </Card.Body>

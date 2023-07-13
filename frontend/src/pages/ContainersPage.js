@@ -156,7 +156,9 @@ const ContainersPage = () => {
                 onChange={handleFileChange}
               />
             </Form.Group>
-            <Button type="submit">Upload</Button>
+            <Button type="submit" className="mt-3">
+              Upload
+            </Button>
           </Form>
         </Card.Body>
       </Card>
