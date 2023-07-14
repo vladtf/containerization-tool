@@ -5,3 +5,4 @@
 * make multithreading to run multiple processes
 * create network from python script
 * sent more information about containers to backend
+* add required dependencies for jar/war
