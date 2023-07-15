@@ -58,7 +58,8 @@ def monitor_containers_task(producer: Producer, network_name: str, monitoring_in
     logger.info("Stopping thread 'monitor_containers_task'...")
 
 
-def create_container_task(consumer: Consumer, base_image_path: str, network_name: str):
+def create_container_task(consumer: Consumer, containers_data_producer: Producer,
+                          base_image_path: str, network_name: str):
     global stop_threads
 
     try:
@@ -79,6 +80,7 @@ def create_container_task(consumer: Consumer, base_image_path: str, network_name
 
     except Exception as e:
         logger.error("Error creating container: %s", e)
+        containers_data_producer.produce('containers-data-error', key='my_key', value="Error creating container")
         pass
 
     logger.info("Stopping thread 'create_container_task'...")
@@ -112,9 +114,10 @@ def build_delete_container_task(delete_container_consumer) -> threading.Thread:
     return threading.Thread(target=delete_container_task, args=(delete_container_consumer,))
 
 
-def build_create_container_task(base_image_path, create_container_consumer, network_name) -> threading.Thread:
+def build_create_container_task(base_image_path, create_container_consumer, containers_data_producer,
+                                network_name) -> threading.Thread:
     return threading.Thread(target=create_container_task,
-                            args=(create_container_consumer, base_image_path, network_name))
+                            args=(create_container_consumer, containers_data_producer, base_image_path, network_name))
 
 
 def build_monitor_containers_task(containers_data_producer, monitoring_interval, network_name) -> threading.Thread:
@@ -148,6 +151,7 @@ def main():
         'monitor_containers': build_monitor_containers_task(containers_data_producer, monitoring_interval,
                                                             network_name),
         'create_container': build_create_container_task(base_image_path, create_container_consumer,
+                                                        containers_data_producer,
                                                         network_name),
         'delete_container': build_delete_container_task(delete_container_consumer)
     }

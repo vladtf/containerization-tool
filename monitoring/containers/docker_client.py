@@ -44,7 +44,8 @@ def create_docker_container(create_request: str, base_image_path: str, network_n
     container_name = create_request["containerName"].replace(" ", "_").lower()
     try:
         if check_container_exists(container_name):
-            logger.info("Container '%s' already exists", container_name)
+            raise DockerClientException(
+                "Container '%s' already exists" % container_name)
             return
 
         client = docker.from_env()
