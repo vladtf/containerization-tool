@@ -5,6 +5,7 @@ import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import vti.containerization.backend.kafka.KafkaContainersDataConsumer;
 import vti.containerization.backend.kafka.KafkaContainersDataProducer;
+import vti.containerization.backend.kafka.KafkaContainersErrorConsumer;
 import vti.containerization.backend.upload.UploadArtifactService;
 import vti.containerization.backend.upload.UploadedFileModel;
 
@@ -14,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Log
 public class ContainersService {
+    private final KafkaContainersErrorConsumer kafkaContainersErrorConsumer;
 
     private final KafkaContainersDataConsumer kafkaContainersDataConsumer;
     private final KafkaContainersDataProducer kafkaContainersDataProducer;
@@ -37,5 +39,9 @@ public class ContainersService {
     public void deleteContainer(String containerId) {
         kafkaContainersDataProducer.sendDeleteContainerRequest(containerId);
         log.info("Container deleted successfully");
+    }
+
+    public List<String> getErrors() {
+        return kafkaContainersErrorConsumer.getErrors();
     }
 }

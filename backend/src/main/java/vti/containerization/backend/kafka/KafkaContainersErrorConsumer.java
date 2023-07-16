@@ -25,6 +25,11 @@ public class KafkaContainersErrorConsumer {
     }
 
     public List<String> getErrors() {
+        // get the errors and clear the buffer
+        List<String> errors = new ArrayList<>(this.errors);
+        this.errors.clear();
+
+        LOGGER.info("Returning errors: " + errors);
         return errors;
     }
 }

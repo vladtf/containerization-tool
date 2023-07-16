@@ -19,11 +19,14 @@ const ContainersPage = () => {
   const [containers, setContainers] = useState([]);
 
   useEffect(() => {
+    fetchErrors();
     fetchUploadedFiles();
     fetchContainers();
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
+      fetchErrors();
+      fetchUploadedFiles();
     }, 5000); // Refresh containers every 5 seconds
 
     return () => {
@@ -113,6 +116,19 @@ const ContainersPage = () => {
       console.error("Failed to fetch containers:", error);
     }
   };
+
+    // This function fetches errors from the backend
+    const fetchErrors = async () => {
+      try {
+        const response = await axios.get(`${BACKEND_URL}/containers/errors`);
+        // Assuming the response contains an array of error messages
+        response.data.forEach(errorMsg => {
+          toast.error(errorMsg);
+        });
+      } catch (error) {
+        console.error("Failed to fetch errors:", error);
+      }
+    };
 
   return (
     <Container>

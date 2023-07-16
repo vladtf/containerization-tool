@@ -35,6 +35,11 @@ public class ContainersController {
         log.info("Container deleted successfully");
     }
 
+    @GetMapping("/errors")
+    public List<String> getErrors() {
+        return containersService.getErrors();
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

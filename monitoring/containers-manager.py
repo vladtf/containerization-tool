@@ -62,8 +62,8 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
                           base_image_path: str, network_name: str):
     global stop_threads
 
-    try:
-        while not stop_threads:
+    while not stop_threads:
+        try:
             message = consume_kafka_message(consumer)
             if message is None:
                 continue
@@ -74,14 +74,14 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
 
             logger.info("Container created successfully")
 
-    except KeyboardInterrupt:
-        logger.info("Stopping thread 'create_container_task'...")
-        pass
+        except KeyboardInterrupt:
+            logger.info("Stopping thread 'create_container_task'...")
+            break
 
-    except Exception as e:
-        logger.error("Error creating container: %s", e)
-        containers_data_producer.produce('containers-data-error', key='my_key', value="Error creating container")
-        pass
+        except Exception as e:
+            logger.error("Error creating container: %s", e)
+            containers_data_producer.produce('containers-data-error', key='my_key', value="Error creating container")
+            pass
 
     logger.info("Stopping thread 'create_container_task'...")
 

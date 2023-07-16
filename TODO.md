@@ -6,3 +6,5 @@
 * create network from python script
 * sent more information about containers to backend
 * add required dependencies for jar/war
+* add a history of messages sent to tostify
+* need to handle errors in threads because the consumers are taking too long to restart after an error
