@@ -91,6 +91,7 @@ def list_containers_on_network(network_name: str) -> list[ContainerData]:
 def delete_docker_container(container_id: str):
     try:
         if not check_container_exists(container_id):
+            log.info("creating container %s", container_id)
             logger.info("Container '%s' does not exist", container_id)
             return
 

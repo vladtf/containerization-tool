@@ -10,34 +10,13 @@ import {
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ContainersPage = () => {
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [containers, setContainers] = useState([]);
-
-  useEffect(() => {
-    let errorTimeout, successTimeout;
-
-    if (error) {
-      errorTimeout = setTimeout(() => {
-        setError("");
-      }, 3000);
-    }
-
-    if (success) {
-      successTimeout = setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-    }
-
-    return () => {
-      clearTimeout(errorTimeout);
-      clearTimeout(successTimeout);
-    };
-  }, [error, success]);
 
   useEffect(() => {
     fetchUploadedFiles();
@@ -61,12 +40,9 @@ const ContainersPage = () => {
     event.preventDefault();
 
     if (!file) {
-      setError("Please select a JAR, WAR, or SH file to upload.");
+      toast.error("Please select a JAR, WAR, or SH file to upload.");
       return;
     }
-
-    setError("");
-    setSuccess(false);
 
     try {
       const formData = new FormData();
@@ -78,10 +54,10 @@ const ContainersPage = () => {
         },
       });
 
-      setSuccess(true);
+      toast.success("File uploaded successfully");
       fetchUploadedFiles();
     } catch (error) {
-      setError("Failed to upload the file. Please try again later.");
+      toast.error("Failed to upload the file. Please try again later.");
     }
   };
 
@@ -92,20 +68,20 @@ const ContainersPage = () => {
 
     try {
       await axios.post(`${BACKEND_URL}/containers/create`, requestBody);
-      setSuccess(true);
+      toast.success("Container created successfully");
       fetchContainers();
     } catch (error) {
-      setError("Failed to create a new container. Please try again later.");
+      toast.error("Failed to create a new container. Please try again later.");
     }
   };
 
   const handleDeleteFile = async (fileName) => {
     try {
       await axios.delete(`${BACKEND_URL}/upload/files/${fileName}`);
-      setSuccess(true);
+      toast.success("File deleted successfully");
       fetchUploadedFiles();
     } catch (error) {
-      setError("Failed to delete the file. Please try again later.");
+      toast.error("Failed to delete the file. Please try again later.");
     }
   };
 
@@ -113,10 +89,10 @@ const ContainersPage = () => {
     console.log("Deleting container:", containerId);
     try {
       await axios.delete(`${BACKEND_URL}/containers/${containerId}`);
-      setSuccess(true);
+      toast.success("Container deleted successfully");
       fetchContainers();
     } catch (error) {
-      setError("Failed to delete the container. Please try again later.");
+      toast.error("Failed to delete the container. Please try again later.");
     }
   };
 
@@ -141,8 +117,7 @@ const ContainersPage = () => {
   return (
     <Container>
       <CustomNavbar />
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">Request sent successfully!</Alert>}
+      <ToastContainer />
 
       <Card className="my-4">
         <Card.Body>
