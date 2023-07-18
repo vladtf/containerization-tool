@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import vti.containerization.backend.kafka.entities.KafkaFeedbackMessage;
 
 import java.util.List;
 
@@ -28,6 +29,11 @@ public class ForwardingController {
     @PostMapping("/clear")
     public void clearForwardingRules(@RequestBody ClearForwardingRulesRequest request) {
         forwardingService.clearForwardingRules(request);
+    }
+
+    @GetMapping("/feedback")
+    public List<KafkaFeedbackMessage> getFeedback() {
+        return forwardingService.getFeedback();
     }
 
     @Data

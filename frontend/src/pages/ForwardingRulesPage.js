@@ -11,6 +11,7 @@ import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 import { IoCubeOutline } from "react-icons/io5";
+import { ToastContainer, toast } from "react-toastify";
 
 const ForwardingRulesPage = () => {
   const [data, setData] = useState([]);
@@ -28,24 +29,25 @@ const ForwardingRulesPage = () => {
   });
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
+    fetchForwardingRules();
+    fetchFeedbackMessages();
+
+    const interval = setInterval(() => {
+      fetchForwardingRules();
+      fetchFeedbackMessages();
+    }, 5000);
 
     return () => {
       clearInterval(interval);
     };
   }, []);
 
-  const handleChange = (e) => {
-    setSelectedContainer(e.target.value);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       await axios.post(`${BACKEND_URL}/forwarding-chains/add`, newRule);
-      fetchData();
+      fetchForwardingRules();
       setSuccess(true);
       setError("");
       setTimeout(() => {
@@ -72,12 +74,39 @@ const ForwardingRulesPage = () => {
       setSuccess(false);
     }
   };
-  const fetchData = async () => {
+  const fetchForwardingRules = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/forwarding-chains/all`);
       setData(response.data);
     } catch (error) {
       setError("Error fetching data");
+    }
+  };
+
+  // This function fetches errors from the backend
+  const fetchFeedbackMessages = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/containers/feedback`);
+      // Assuming the response contains an array of error messages
+      response.data.forEach((message) => {
+        if (message.level === "INFO") {
+          toast.info(message.message);
+        }
+
+        if (message.level === "WARNING") {
+          toast.warn(message.message);
+        }
+
+        if (message.level === "ERROR") {
+          toast.error(message.message);
+        }
+
+        if (message.level === "SUCCESS") {
+          toast.success(message.message);
+        }
+      });
+    } catch (error) {
+      console.error("Failed to fetch errors:", error);
     }
   };
 
@@ -102,6 +131,8 @@ const ForwardingRulesPage = () => {
   return (
     <Container>
       <CustomNavbar />
+      <ToastContainer />
+
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">Request sent successfully!</Alert>}
 

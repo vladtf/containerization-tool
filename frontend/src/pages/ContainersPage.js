@@ -11,7 +11,6 @@ import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const ContainersPage = () => {
   const [file, setFile] = useState(null);
@@ -121,7 +120,7 @@ const ContainersPage = () => {
   // This function fetches errors from the backend
   const fetchFeedbackMessages = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/containers/errors`);
+      const response = await axios.get(`${BACKEND_URL}/containers/feedback`);
       // Assuming the response contains an array of error messages
       response.data.forEach((message) => {
         if (message.level === "INFO") {

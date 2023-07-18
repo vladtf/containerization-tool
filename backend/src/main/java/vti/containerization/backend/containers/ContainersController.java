@@ -36,9 +36,9 @@ public class ContainersController {
         log.info("Container deleted successfully");
     }
 
-    @GetMapping("/errors")
-    public List<KafkaFeedbackMessage> getErrors() {
-        return containersService.getErrors();
+    @GetMapping("/feedback")
+    public List<KafkaFeedbackMessage> getFeedback() {
+        return containersService.getFeedback();
     }
 
     @Data

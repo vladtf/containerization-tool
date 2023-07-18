@@ -12,12 +12,25 @@ from confluent_kafka import Producer, Consumer
 from configuration import config_loader
 from containers.docker_client import list_containers_on_network
 from iptables.iptables_client import show_nat_table
-from kafka.kafka_client import create_kafka_producer, create_kafka_consumer, consume_kafka_message
+from kafka.kafka_client import create_kafka_producer, create_kafka_consumer, consume_kafka_message, Level, \
+    FeedbackMessage
 from threads.thread_pool import ThreadPool
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("monitor-forwarding-rules")
+
+
+# Topics
+ADD_FORWARDING_RULE_TOPIC = "add-forwarding-rule"
+CLEAR_FORWARDING_RULES_TOPIC = "clear-forwarding-rules"
+FORWARDING_RULES_FEEDBACK_TOPIC = "forwarding-rules-feedback"
+
+# Send a message to the feedback topic
+def send_feedback_message(level: Level, message: str, producer: Producer) -> None:
+    logger.debug("Sending feedback message: %s", message)
+    feedback_message = FeedbackMessage(message, level)
+    producer.produce(FORWARDING_RULES_FEEDBACK_TOPIC, key='my_key', value=feedback_message.to_json())
 
 
 # Cleanup method before exiting the application
@@ -46,7 +59,7 @@ def stop_threads_handler(thread_pool: ThreadPool,
     return signal_handler
 
 
-def clear_nat_table_task(clear_forwarding_rules_consumer: Consumer):
+def clear_nat_table_task(clear_forwarding_rules_consumer: Consumer, forwarding_rules_producer: Producer):
     try:
         message = consume_kafka_message(clear_forwarding_rules_consumer)
         if message is None:
@@ -62,12 +75,14 @@ def clear_nat_table_task(clear_forwarding_rules_consumer: Consumer):
         container.exec_run(exec_command, privileged=True)
 
         logger.info("NAT table cleared: %s", exec_command)
+        send_feedback_message(Level.SUCCESS, "NAT table cleared", forwarding_rules_producer)
 
     except Exception as e:
         logger.error("Error clearing NAT table", e)
+        send_feedback_message(Level.ERROR, f"Error clearing NAT table: {e}", forwarding_rules_producer)
 
 
-def add_forwarding_rule_task(add_forwarding_rules_consumer):
+def add_forwarding_rule_task(add_forwarding_rules_consumer: Consumer, forwarding_rules_producer: Producer):
     try:
         message = consume_kafka_message(add_forwarding_rules_consumer)
         if message is None:
@@ -92,9 +107,11 @@ def add_forwarding_rule_task(add_forwarding_rules_consumer):
         container.exec_run(exec_command, privileged=True)
 
         logger.info("Iptables rule added: %s", exec_command)
+        send_feedback_message(Level.SUCCESS, "Iptables rule added", forwarding_rules_producer)
 
     except Exception as e:
         logger.error("Error processing message from Kafka: %s", e)
+        send_feedback_message(Level.ERROR, f"Error processing message from Kafka: {e}", forwarding_rules_producer)
 
 
 def monitor_forwarding_rules_task(forwarding_rules_producer: Producer, network_name: str, monitoring_interval: int):
@@ -127,6 +144,7 @@ def monitor_forwarding_rules_task(forwarding_rules_producer: Producer, network_n
 
     except Exception as e:
         logger.error("Error in thread 'monitor_forwarding_rules': %s", e)
+        send_feedback_message(Level.ERROR, f"Error in thread 'monitor_forwarding_rules': {e}", forwarding_rules_producer)
 
 
 def main():
@@ -142,10 +160,10 @@ def main():
 
     # Init Kafka consumer
     add_forwarding_rules_consumer = create_kafka_consumer(
-        'add-forwarding-rules', 'my-group-add-rules', kafka_url)
+        ADD_FORWARDING_RULE_TOPIC, 'my-group-add-rules', kafka_url)
 
     clear_forwarding_rules_consumer = create_kafka_consumer(
-        'clear-forwarding-rules', 'my-group-clear-rules', kafka_url)
+        CLEAR_FORWARDING_RULES_TOPIC, 'my-group-clear-rules', kafka_url)
 
     # Create threads
     thread_pool = ThreadPool(monitor_interval=monitoring_interval)
@@ -155,10 +173,10 @@ def main():
                          args=(forwarding_rules_producer, network_name, monitoring_interval))
 
     thread_pool.add_task(name='add_forwarding_rules', target=add_forwarding_rule_task,
-                         args=(add_forwarding_rules_consumer,))
+                         args=(add_forwarding_rules_consumer, forwarding_rules_producer))
 
     thread_pool.add_task(name='clear_forwarding_rules', target=clear_nat_table_task,
-                         args=(clear_forwarding_rules_consumer,))
+                         args=(clear_forwarding_rules_consumer, forwarding_rules_producer))
 
     # Set up signal handler for Ctrl+C
     signal.signal(signal.SIGINT, stop_threads_handler(

@@ -42,7 +42,7 @@ public class ContainersService {
         log.info("Container deleted successfully");
     }
 
-    public List<KafkaFeedbackMessage> getErrors() {
+    public List<KafkaFeedbackMessage> getFeedback() {
         return kafkaContainersFeedbackConsumer.getFeedbackMessages();
     }
 }

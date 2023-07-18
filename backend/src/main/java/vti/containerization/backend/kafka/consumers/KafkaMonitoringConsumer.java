@@ -28,7 +28,7 @@ public class KafkaMonitoringConsumer {
         }
     }
 
-    @KafkaListener(topics = "monitor-docker-traffic", groupId = "my_group")
+    @KafkaListener(topics = "docker-traffic", groupId = "my_group")
     public synchronized void listen(String message) {
         LOGGER.fine("Received message: " + message);
 

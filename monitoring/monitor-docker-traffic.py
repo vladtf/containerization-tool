@@ -11,15 +11,25 @@ import pyshark
 from confluent_kafka import Producer
 
 from configuration import config_loader
-from kafka.kafka_client import create_kafka_producer
+from kafka.kafka_client import create_kafka_producer, Level, FeedbackMessage
 from threads.thread_pool import ThreadPool
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger("monitor-docker-traffic")
 
+# Topics
+DOCKER_TRAFFIC_TOPIC = "docker-traffic"
+DOCKER_TRAFFIC_FEEDBACK_TOPIC = "docker-traffic-feedback"
+
 # Counter variable to keep track of the message count
 message_count = 0
+
+# Send a message to the feedback topic
+def send_feedback_message(level: Level, message: str, containers_data_producer: Producer) -> None:
+    logger.debug("Sending feedback message: %s", message)
+    feedback_message = FeedbackMessage(message, level)
+    containers_data_producer.produce(DOCKER_TRAFFIC_FEEDBACK_TOPIC, key='my_key', value=feedback_message.to_json())
 
 
 # Cleanup method before exiting the application
@@ -105,7 +115,7 @@ def packet_callback(pkt, traffic_producer: Producer):
 
     json_message = json.dumps(packet_data)
 
-    traffic_producer.produce('monitor-docker-traffic', key='my_key', value=json_message)
+    traffic_producer.produce(DOCKER_TRAFFIC_TOPIC, key='my_key', value=json_message)
     message_count += 1
 
 
