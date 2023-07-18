@@ -22,10 +22,11 @@ class AtomicBoolean:
 
 
 class Task:
-    def __init__(self, name, target, args):
+    def __init__(self, name, target, args, daemon=True):
         self._name = name
         self._target = target
         self._args = args
+        self._daemon = daemon
 
     def get_name(self):
         return self._name
@@ -37,7 +38,10 @@ class Task:
         return self._args
 
     def task_wrapper(self, is_running: AtomicBoolean):
-        while is_running.get():
+        if self._daemon:
+            while is_running.get():
+                self._target(*self._args)
+        else:
             self._target(*self._args)
 
         logger.info("Thread '%s' stopped", self._name)
@@ -53,8 +57,8 @@ class ThreadPool:
         self._monitor_interval = monitor_interval
         self._threads_running = AtomicBoolean(True)
 
-    def add_task(self, name, target, args):
-        self._tasks[name] = Task(name, target, args)
+    def add_task(self, name, target, args, daemon=True):
+        self._tasks[name] = Task(name, target, args, daemon)
 
     def start_threads(self):
         for task_name, task in self._tasks.items():

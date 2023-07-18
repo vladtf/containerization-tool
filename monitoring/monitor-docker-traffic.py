@@ -1,9 +1,7 @@
 import json
 import logging
 import os
-import re
 import signal
-import subprocess
 import sys
 import threading
 import time
@@ -14,6 +12,7 @@ from confluent_kafka import Producer
 
 from configuration import config_loader
 from kafka.kafka_client import create_kafka_producer
+from threads.thread_pool import ThreadPool
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
@@ -22,16 +21,24 @@ logger = logging.getLogger("monitor-docker-traffic")
 # Counter variable to keep track of the message count
 message_count = 0
 
-# Global variable to stop threads
-# TODO: to replace with an thread pool
-stop_threads = False
+
+# Cleanup method before exiting the application
+def cleanup_task(traffic_producer: Producer):
+    # Close Kafka producer and consumer
+    traffic_producer.flush()
+
+    logger.info("Kafka producer and consumer closed")
 
 
 # Signal handler
-def signal_handler(sig, frame):
-    global stop_threads
-    stop_threads = True
-    logger.info("Interrupt signal received. Stopping threads...")
+def stop_threads_handler(thread_pool: ThreadPool,
+                         traffic_producer: Producer):
+    def signal_handler(sig, frame):
+        logger.info("Interrupt signal received. Stopping application...")
+        thread_pool.stop_threads()
+        cleanup_task(traffic_producer)
+
+    return signal_handler
 
 
 def get_docker_interface(docker_network_name):
@@ -105,12 +112,10 @@ def packet_callback(pkt, traffic_producer: Producer):
 # Periodically log the message count
 def log_message_count_task(monitoring_interval: int = 5):
     global message_count
-    global stop_threads
 
-    while not stop_threads:
-        logger.info("Total Messages Sent: %d", message_count)
-        message_count = 0
-        time.sleep(monitoring_interval)
+    logger.info("Total Messages Sent: %d", message_count)
+    message_count = 0
+    time.sleep(monitoring_interval)
 
 
 def monitor_traffic_task(docker_network_name: str, traffic_producer: Producer):
@@ -138,61 +143,30 @@ def main():
     # Init Kafka producer
     traffic_producer = create_kafka_producer(kafka_url)
 
-    # Create threads
-    threads = {
-        'monitor_traffic': build_monitor_traffic_task(docker_network_name, traffic_producer),
-        'log_message_count': build_log_message_count_task(monitoring_interval)
-    }
+    # Create thread pool
+    thread_pool = ThreadPool(monitor_interval=monitoring_interval)
+
+    # Add tasks to thread pool
+    thread_pool.add_task(name='monitor_traffic', target=monitor_traffic_task,
+                         args=(docker_network_name, traffic_producer),
+                         daemon=False)
+
+    thread_pool.add_task(name='log_message_count', target=log_message_count_task,
+                         args=(monitoring_interval,))
 
     # Set up signal handler for Ctrl+C
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, stop_threads_handler(
+        thread_pool=thread_pool,
+        traffic_producer=traffic_producer))
 
     # Start the threads
-    for thread_name, thread in threads.items():
-        logger.info("Starting thread '%s'...", thread_name)
-        thread.start()
+    thread_pool.start_threads()
 
-    try:
-        while not stop_threads:
-            for thread_name, thread in threads.items():
-                if thread.is_alive():
-                    continue
-
-                logger.error("Thread '%s' is not alive. Restarting...", thread_name)
-
-                if thread_name == 'monitor_traffic':
-                    threads[thread_name] = build_monitor_traffic_task(docker_network_name, traffic_producer)
-
-                elif thread_name == 'log_message_count':
-                    threads[thread_name] = build_log_message_count_task(monitoring_interval)
-
-                threads[thread_name].start()
-
-            time.sleep(monitoring_interval)
-    except KeyboardInterrupt:
-        logger.info("Interrupted by user. Exiting...")
-
-    finally:
-        for thread_name, thread in threads.items():
-            logger.info("Stopping thread '%s'...", thread_name)
-            thread.join()
-
-            # Close the Kafka producer
-        traffic_producer.flush()
-
-        logger.info("All threads stopped. Exiting...")
+    # Monitor threads
+    thread_pool.monitor_threads()
 
     logger.info("Exiting...")
     sys.exit(0)
-
-
-def build_log_message_count_task(monitoring_interval: int):
-    return threading.Thread(target=log_message_count_task, args=(monitoring_interval,))
-
-
-def build_monitor_traffic_task(docker_network_name, traffic_producer):
-    return threading.Thread(target=monitor_traffic_task,
-                            args=(docker_network_name, traffic_producer))
 
 
 if __name__ == '__main__':

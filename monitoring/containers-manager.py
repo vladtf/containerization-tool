@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-# Stop application
+# Cleanup method before exiting the application
 def cleanup_task(containers_data_producer: Producer, create_container_consumer: Consumer,
                  delete_container_consumer: Consumer):
     # Close Kafka producer and consumer
