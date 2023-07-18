@@ -10,6 +10,7 @@ from confluent_kafka import Producer, Consumer
 
 from configuration import config_loader
 from containers import docker_client
+from containers.docker_client import DockerClientException
 from kafka.kafka_client import consume_kafka_message, create_kafka_producer, create_kafka_consumer
 
 # Configure the logger
@@ -21,11 +22,37 @@ logger = logging.getLogger(__name__)
 stop_threads = False
 
 
-# Signal handler
-def signal_handler(sig, frame):
+# Stop application
+def stop_application(threads: dict, containers_data_producer: Producer, create_container_consumer: Consumer,
+                     delete_container_consumer: Consumer):
     global stop_threads
+
+    logger.info("Stopping application...")
+
     stop_threads = True
-    logger.info("Interrupt signal received. Stopping threads...")
+
+    for thread_name, thread in threads.items():
+        logger.info("Stopping thread '%s'...", thread_name)
+        thread.join()
+
+    # Close Kafka producer and consumer
+    containers_data_producer.flush()
+
+    create_container_consumer.close()
+    delete_container_consumer.close()
+    logger.info("Kafka producer and consumer closed")
+
+
+# Signal handler
+def stop_threads_handler(threads: dict, containers_data_producer: Producer, create_container_consumer: Consumer,
+                         delete_container_consumer: Consumer):
+    def signal_handler(sig, frame):
+        global stop_threads
+        stop_threads = True
+        logger.info("Interrupt signal received. Stopping application...")
+        stop_application(threads, containers_data_producer, create_container_consumer, delete_container_consumer)
+
+    return signal_handler
 
 
 def monitor_containers_task(producer: Producer, network_name: str, monitoring_interval: int = 5):
@@ -77,6 +104,11 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
         except KeyboardInterrupt:
             logger.info("Stopping thread 'create_container_task'...")
             break
+
+        except DockerClientException as e:
+            logger.error("Error creating container: %s", e)
+            containers_data_producer.produce('containers-data-error', key='my_key', value=str(e))
+            pass
 
         except Exception as e:
             logger.error("Error creating container: %s", e)
@@ -157,7 +189,9 @@ def main():
     }
 
     # Set up signal handler for Ctrl+C
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, stop_threads_handler(threads, containers_data_producer,
+                                                      create_container_consumer,
+                                                      delete_container_consumer))
 
     # Start the threads
     for thread_name, thread in threads.items():
@@ -186,20 +220,8 @@ def main():
                     threads[thread_name].start()
 
             time.sleep(monitoring_interval)
-    except KeyboardInterrupt:
-        logger.info("Interrupted by user. Exiting...")
     finally:
-        for thread_name, thread in threads.items():
-            logger.info("Stopping thread '%s'...", thread_name)
-            thread.join()
-
-        # Close Kafka producer and consumer
-        containers_data_producer.flush()
-
-        create_container_consumer.close()
-        delete_container_consumer.close()
-        logger.info("Kafka producer and consumer closed")
-
+        stop_application(threads, containers_data_producer, create_container_consumer, delete_container_consumer)
         logger.info("All threads stopped. Exiting...")
 
     logger.info("Exiting...")

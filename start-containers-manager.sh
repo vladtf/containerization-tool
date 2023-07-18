@@ -23,7 +23,12 @@ stop_containers_manager() {
     log_warning "Stopping containers manager"
     for pid in $(ps aux | grep "$containers_manager_script_name" | grep -v grep | awk '{print $2}'); do
         log_warning "Stopping monitoring (PID: $pid)"
-        kill "$pid"
+        kill -INT "$pid"
+
+        # Wait for the process to stop
+        while ps -p "$pid" > /dev/null; do
+            sleep 1
+        done
     done
 }
 

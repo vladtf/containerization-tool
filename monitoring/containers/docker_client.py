@@ -46,7 +46,6 @@ def create_docker_container(create_request: str, base_image_path: str, network_n
         if check_container_exists(container_name):
             raise DockerClientException(
                 "Container '%s' already exists" % container_name)
-            return
 
         client = docker.from_env()
         new_image, _ = client.images.build(
@@ -91,7 +90,6 @@ def list_containers_on_network(network_name: str) -> list[ContainerData]:
 def delete_docker_container(container_id: str):
     try:
         if not check_container_exists(container_id):
-            log.info("creating container %s", container_id)
             logger.info("Container '%s' does not exist", container_id)
             return
 

@@ -27,7 +27,7 @@ const ContainersPage = () => {
       fetchContainers();
       fetchErrors();
       fetchUploadedFiles();
-    }, 5000); // Refresh containers every 5 seconds
+    }, 5000); // Refresh every 5 seconds
 
     return () => {
       clearInterval(refreshInterval);
@@ -71,7 +71,7 @@ const ContainersPage = () => {
 
     try {
       await axios.post(`${BACKEND_URL}/containers/create`, requestBody);
-      toast.success("Container created successfully");
+      toast.success("Sent request to create a new container")
       fetchContainers();
     } catch (error) {
       toast.error("Failed to create a new container. Please try again later.");
@@ -92,7 +92,7 @@ const ContainersPage = () => {
     console.log("Deleting container:", containerId);
     try {
       await axios.delete(`${BACKEND_URL}/containers/${containerId}`);
-      toast.success("Container deleted successfully");
+      toast.success("Sent request to delete container");
       fetchContainers();
     } catch (error) {
       toast.error("Failed to delete the container. Please try again later.");
@@ -114,6 +114,7 @@ const ContainersPage = () => {
       setContainers(response.data);
     } catch (error) {
       console.error("Failed to fetch containers:", error);
+      toast.error("Failed to fetch containers. Please try again later.");
     }
   };
 
