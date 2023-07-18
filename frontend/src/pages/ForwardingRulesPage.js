@@ -42,6 +42,7 @@ const ForwardingRulesPage = () => {
       fetchForwardingRules();
       toast.success("Request sent successfully!");
     } catch (error) {
+      console.error("Failed to add forwarding rule:", error);
       toast.error("Error adding forwarding rule");
     }
   };
@@ -53,6 +54,7 @@ const ForwardingRulesPage = () => {
       });
       toast.success("Request sent successfully!");
     } catch (error) {
+      console.error("Failed to clear forwarding rules:", error);
       toast.error("Error clearing forwarding rules");
     }
   };
@@ -62,6 +64,7 @@ const ForwardingRulesPage = () => {
       const response = await axios.get(`${BACKEND_URL}/forwarding-chains/all`);
       setData(response.data);
     } catch (error) {
+      console.error("Failed to fetch forwarding rules:", error);
       toast.error("Error fetching forwarding rules");
     }
   };
@@ -82,6 +85,7 @@ const ForwardingRulesPage = () => {
       });
     } catch (error) {
       console.error("Failed to fetch errors:", error);
+      toast.error("Error fetching feedback messages");
     }
   };
 

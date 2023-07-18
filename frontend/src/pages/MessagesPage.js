@@ -1,20 +1,27 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { Alert, Button, Card, Container, ListGroup } from "react-bootstrap";
+import {
+  Alert,
+  Button,
+  Card,
+  Container,
+  ListGroup,
+  ToastContainer,
+} from "react-bootstrap";
 import { IoCubeOutline } from "react-icons/io5";
 import CustomNavbar from "../components/CustomNavbar";
 import { BACKEND_URL } from "../config/BackendConfiguration";
+import { toast } from "react-toastify";
 
 const MessagesPage = () => {
   const [data, setData] = useState([]);
-  const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState("all");
   const [groupIds, setGroupIds] = useState([]);
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000); // Fetch data every 5 seconds
+    fetchTrafficMessages();
+    const interval = setInterval(fetchTrafficMessages, 5000); // Fetch data every 5 seconds
 
     return () => {
       clearInterval(interval); // Clean up the interval on component unmount
@@ -25,11 +32,10 @@ const MessagesPage = () => {
     setMessages(data.filter((message) => message.groupId === selectedGroupId));
   }, [selectedGroupId]);
 
-  const fetchData = async () => {
+  const fetchTrafficMessages = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/messages/all`);
       setData(response.data);
-      setError(null);
 
       setGroupIds(
         response.data.reduce((acc, curr) => {
@@ -50,7 +56,8 @@ const MessagesPage = () => {
         );
       }
     } catch (error) {
-      setError("Failed to fetch messages.");
+      console.log("Failed to fetch traffic messages.", error);
+      toast.error("Failed to fetch traffic messages.");
     }
   };
 
@@ -58,9 +65,9 @@ const MessagesPage = () => {
     try {
       await axios.get(`${BACKEND_URL}/messages/clear`);
       setData([]);
-      setError(null);
     } catch (error) {
-      setError("Failed to clear messages.");
+      console.log("Failed to clear traffic messages.", error);
+      toast.error("Failed to clear traffic messages.");
     }
   };
 
@@ -99,11 +106,12 @@ const MessagesPage = () => {
   return (
     <Container>
       <CustomNavbar />
+      <ToastContainer />
+
       <Card className="my-4">
         <Card.Body>
           <h3>Messages Page</h3>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {groupIds.length === 0 && !error && (
+          {groupIds.length === 0 && (
             <Alert variant="info">No messages available.</Alert>
           )}
           <Button variant="danger" onClick={handleClearMessages}>
