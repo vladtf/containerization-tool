@@ -1,4 +1,4 @@
-package vti.containerization.backend.kafka;
+package vti.containerization.backend.kafka.producers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ public class KafkaForwardingRulesProducer {
     private final Logger LOGGER = Logger.getLogger(KafkaForwardingRulesProducer.class.getName());
 
 
-    private final KafkaProducer kafkaProducer;
+    private final KafkaProducerClient kafkaProducerClient;
 
     @SneakyThrows
     public void sendForwardingRules(ForwardingController.AddForwardingRuleRequest message) {
@@ -23,7 +23,7 @@ public class KafkaForwardingRulesProducer {
 
         ObjectMapper objectMapper = new ObjectMapper();
         String messageJson = objectMapper.writeValueAsString(message);
-        kafkaProducer.sendMessage("add-forwarding-rules", messageJson);
+        kafkaProducerClient.sendMessage("add-forwarding-rules", messageJson);
     }
 
     @SneakyThrows
@@ -32,6 +32,6 @@ public class KafkaForwardingRulesProducer {
 
         ObjectMapper objectMapper = new ObjectMapper();
         String messageJson = objectMapper.writeValueAsString(message);
-        kafkaProducer.sendMessage("clear-forwarding-rules", messageJson);
+        kafkaProducerClient.sendMessage("clear-forwarding-rules", messageJson);
     }
 }

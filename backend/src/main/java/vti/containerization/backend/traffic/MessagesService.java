@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import vti.containerization.backend.containers.ContainerDataModel;
 import vti.containerization.backend.containers.ContainersService;
-import vti.containerization.backend.kafka.KafkaMonitoringConsumer;
+import vti.containerization.backend.kafka.consumers.KafkaMonitoringConsumer;
 
 import java.util.ArrayList;
 import java.util.List;

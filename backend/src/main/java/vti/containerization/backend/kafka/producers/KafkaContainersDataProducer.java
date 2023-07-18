@@ -1,4 +1,4 @@
-package vti.containerization.backend.kafka;
+package vti.containerization.backend.kafka.producers;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,7 +14,7 @@ public class KafkaContainersDataProducer {
 
     private final Logger LOGGER = Logger.getLogger(KafkaContainersDataProducer.class.getName());
 
-    private final KafkaProducer kafkaProducer;
+    private final KafkaProducerClient kafkaProducerClient;
 
     public void sendCreateContainerRequest(ContainersController.CreateContainerRequest message) {
 
@@ -24,7 +24,7 @@ public class KafkaContainersDataProducer {
             String messageJson = objectMapper.writeValueAsString(message);
             LOGGER.info("Sending create container request: " + messageJson);
 
-            kafkaProducer.sendMessage("create-container", messageJson);
+            kafkaProducerClient.sendMessage("create-container", messageJson);
         } catch (Exception e) {
             LOGGER.severe("Failed to serialize message: " + e.getMessage());
         }
@@ -33,7 +33,7 @@ public class KafkaContainersDataProducer {
     public void sendDeleteContainerRequest(String containerId) {
         try {
             LOGGER.info("Sending delete container request: " + containerId);
-            kafkaProducer.sendMessage("delete-container", containerId);
+            kafkaProducerClient.sendMessage("delete-container", containerId);
         } catch (Exception e) {
             LOGGER.severe("Failed to serialize message: " + e.getMessage());
         }

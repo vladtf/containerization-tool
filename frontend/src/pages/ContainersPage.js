@@ -10,8 +10,8 @@ import {
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ContainersPage = () => {
   const [file, setFile] = useState(null);
@@ -19,13 +19,13 @@ const ContainersPage = () => {
   const [containers, setContainers] = useState([]);
 
   useEffect(() => {
-    fetchErrors();
+    fetchFeedbackMessages();
     fetchUploadedFiles();
     fetchContainers();
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
-      fetchErrors();
+      fetchFeedbackMessages();
       fetchUploadedFiles();
     }, 5000); // Refresh every 5 seconds
 
@@ -71,7 +71,7 @@ const ContainersPage = () => {
 
     try {
       await axios.post(`${BACKEND_URL}/containers/create`, requestBody);
-      toast.success("Sent request to create a new container")
+      toast.success("Sent request to create a new container");
       fetchContainers();
     } catch (error) {
       toast.error("Failed to create a new container. Please try again later.");
@@ -118,18 +118,32 @@ const ContainersPage = () => {
     }
   };
 
-    // This function fetches errors from the backend
-    const fetchErrors = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/containers/errors`);
-        // Assuming the response contains an array of error messages
-        response.data.forEach(errorMsg => {
-          toast.error(errorMsg);
-        });
-      } catch (error) {
-        console.error("Failed to fetch errors:", error);
-      }
-    };
+  // This function fetches errors from the backend
+  const fetchFeedbackMessages = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/containers/errors`);
+      // Assuming the response contains an array of error messages
+      response.data.forEach((message) => {
+        if (message.level === "INFO") {
+          toast.info(message.message);
+        }
+
+        if (message.level === "WARNING") {
+          toast.warn(message.message);
+        }
+
+        if (message.level === "ERROR") {
+          toast.error(message.message);
+        }
+
+        if (message.level === "SUCCESS") {
+          toast.success(message.message);
+        }
+      });
+    } catch (error) {
+      console.error("Failed to fetch errors:", error);
+    }
+  };
 
   return (
     <Container>

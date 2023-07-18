@@ -1,4 +1,4 @@
-package vti.containerization.backend.kafka;
+package vti.containerization.backend.kafka.producers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -7,14 +7,14 @@ import org.springframework.stereotype.Component;
 import java.util.logging.Logger;
 
 @Component
-public class KafkaProducer {
+public class KafkaProducerClient {
 
-    private final Logger LOGGER = Logger.getLogger(KafkaProducer.class.getName());
+    private final Logger LOGGER = Logger.getLogger(KafkaProducerClient.class.getName());
 
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
-    public KafkaProducer(KafkaTemplate<String, String> kafkaTemplate) {
+    public KafkaProducerClient(KafkaTemplate<String, String> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 

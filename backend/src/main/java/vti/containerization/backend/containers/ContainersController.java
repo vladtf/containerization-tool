@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.web.bind.annotation.*;
+import vti.containerization.backend.kafka.entities.KafkaFeedbackMessage;
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ public class ContainersController {
     }
 
     @GetMapping("/errors")
-    public List<String> getErrors() {
+    public List<KafkaFeedbackMessage> getErrors() {
         return containersService.getErrors();
     }
 

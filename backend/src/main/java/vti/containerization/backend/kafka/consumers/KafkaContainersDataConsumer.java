@@ -1,4 +1,4 @@
-package vti.containerization.backend.kafka;
+package vti.containerization.backend.kafka.consumers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

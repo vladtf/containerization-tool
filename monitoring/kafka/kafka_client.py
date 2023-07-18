@@ -1,4 +1,7 @@
+import json
 import time
+from dataclasses import dataclass, asdict
+from enum import Enum
 
 from confluent_kafka import Consumer, Producer
 import logging
@@ -9,6 +12,31 @@ from confluent_kafka.cimpl import NewTopic
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+class Level(Enum):
+    INFO = "INFO"
+    ERROR = "ERROR"
+    WARNING = "WARNING"
+    SUCCESS = "SUCCESS"
+
+
+class EnumEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Enum):
+            return obj.value
+        return super().default(obj)
+
+@dataclass
+class FeedbackMessage:
+    message: str
+    level: Level
+
+    def to_dict(self):
+        return asdict(self)
+
+    def to_json(self):
+        return json.dumps(self.to_dict(), cls=EnumEncoder)
 
 
 def create_kafka_producer(bootstrap_servers: str) -> Producer:

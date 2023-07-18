@@ -1,11 +1,10 @@
 package vti.containerization.backend.forwarding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
-import vti.containerization.backend.kafka.KafkaForwardingRulesConsumer;
-import vti.containerization.backend.kafka.KafkaForwardingRulesProducer;
+import vti.containerization.backend.kafka.consumers.KafkaForwardingRulesConsumer;
+import vti.containerization.backend.kafka.producers.KafkaForwardingRulesProducer;
 
 import java.util.List;
 

@@ -10,8 +10,8 @@ from confluent_kafka import Producer, Consumer
 
 from configuration import config_loader
 from containers import docker_client
-from containers.docker_client import DockerClientException
-from kafka.kafka_client import consume_kafka_message, create_kafka_producer, create_kafka_consumer
+from kafka.kafka_client import consume_kafka_message, create_kafka_producer, create_kafka_consumer, FeedbackMessage, \
+    Level
 
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
@@ -100,25 +100,22 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
                                                   create_request=message)
 
             logger.info("Container created successfully")
+            feedback: FeedbackMessage = FeedbackMessage("Container created successfully", Level.SUCCESS)
+            containers_data_producer.produce('containers-data-feedback', key='my_key', value=feedback.to_json())
 
         except KeyboardInterrupt:
             logger.info("Stopping thread 'create_container_task'...")
             break
 
-        except DockerClientException as e:
-            logger.error("Error creating container: %s", e)
-            containers_data_producer.produce('containers-data-error', key='my_key', value=str(e))
-            pass
-
         except Exception as e:
             logger.error("Error creating container: %s", e)
-            containers_data_producer.produce('containers-data-error', key='my_key', value="Error creating container")
-            pass
+            feedback: FeedbackMessage = FeedbackMessage(str(e), Level.ERROR)
+            containers_data_producer.produce('containers-data-feedback', key='my_key', value=feedback.to_json())
 
     logger.info("Stopping thread 'create_container_task'...")
 
 
-def delete_container_task(consumer: Consumer):
+def delete_container_task(consumer: Consumer, containers_data_producer: Producer):
     global stop_threads
 
     try:
@@ -129,7 +126,10 @@ def delete_container_task(consumer: Consumer):
 
             logger.info("Deleting container with id: %s", message)
             docker_client.delete_docker_container(container_id=message)
+
             logger.info("Container deleted successfully")
+            feedback: FeedbackMessage = FeedbackMessage("Container deleted successfully", Level.SUCCESS)
+            containers_data_producer.produce('containers-data-feedback', key='my_key', value=feedback.to_json())
 
     except KeyboardInterrupt:
         logger.info("Stopping thread 'delete_container_task'...")
@@ -142,8 +142,9 @@ def delete_container_task(consumer: Consumer):
     logger.info("Stopping thread 'delete_container_task'...")
 
 
-def build_delete_container_task(delete_container_consumer) -> threading.Thread:
-    return threading.Thread(target=delete_container_task, args=(delete_container_consumer,))
+def build_delete_container_task(delete_container_consumer: Consumer,
+                                containers_data_producer: Producer) -> threading.Thread:
+    return threading.Thread(target=delete_container_task, args=(delete_container_consumer, containers_data_producer))
 
 
 def build_create_container_task(base_image_path, create_container_consumer, containers_data_producer,
@@ -185,7 +186,7 @@ def main():
         'create_container': build_create_container_task(base_image_path, create_container_consumer,
                                                         containers_data_producer,
                                                         network_name),
-        'delete_container': build_delete_container_task(delete_container_consumer)
+        'delete_container': build_delete_container_task(delete_container_consumer, containers_data_producer)
     }
 
     # Set up signal handler for Ctrl+C
@@ -215,7 +216,7 @@ def main():
 
                     elif thread_name == 'delete_container':
                         threads[thread_name] = build_delete_container_task(
-                            delete_container_consumer)
+                            delete_container_consumer, containers_data_producer)
 
                     threads[thread_name].start()
 
