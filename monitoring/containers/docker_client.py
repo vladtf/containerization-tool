@@ -42,15 +42,14 @@ def check_container_exists(container_id: str):
         return False
 
 
-def create_docker_container(create_request: str, base_image_path: str, network_name: str):
-    create_request = json.loads(create_request)
+def create_docker_container(create_request: dict, base_image_path: str, network_name: str):
     file_id = create_request["fileId"]
     file_path = create_request["filePath"]
-    container_name = create_request["containerName"].replace(" ", "_").lower()
+    container_name = create_request["containerName"]
     try:
         if check_container_exists(container_name):
             raise DockerClientException(
-                "Container '%s' already exists" % container_name)
+                f"Container with name '{container_name}' already exists")
 
         client = docker.from_env()
         new_image, _ = client.images.build(
@@ -68,7 +67,7 @@ def create_docker_container(create_request: str, base_image_path: str, network_n
         container.exec_run(cmd=exec_command, detach=True, privileged=True)
 
     except Exception as e:
-        raise DockerClientException("Failed to create Docker container: %s" % e)
+        raise DockerClientException(f"Failed to create Docker container with name {container_name}: {e}")
 
 
 def list_containers_on_network(network_name: str) -> list[ContainerData]:
@@ -88,8 +87,7 @@ def list_containers_on_network(network_name: str) -> list[ContainerData]:
             ))
         return containers_data
     except Exception as e:
-        raise DockerClientException(
-            "Failed to list containers on the network: %s" % e)
+        raise DockerClientException(f"Failed to list containers: {e}")
 
 
 def delete_docker_container(container_id: str):
@@ -103,5 +101,4 @@ def delete_docker_container(container_id: str):
         container.stop()
         container.remove()
     except Exception as e:
-        raise DockerClientException(
-            "Failed to delete Docker container with ID %s: %s" % (container_id, e))
+        raise DockerClientException(f"Failed to delete container {container_id}: {e}")

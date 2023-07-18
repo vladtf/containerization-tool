@@ -13,9 +13,22 @@ from kafka.kafka_client import consume_kafka_message, create_kafka_producer, cre
     Level
 from threads.thread_pool import ThreadPool
 
+# Topics
+CONTAINERS_DATA_TOPIC = "containers-data"
+CREATE_CONTAINER_TOPIC = "create-container"
+DELETE_CONTAINER_TOPIC = "delete-container"
+CONTAINERS_DATA_FEEDBACK_TOPIC = "containers-data-feedback"
+
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+# Send a message to the feedback topic
+def send_feedback_message(level: Level, message: str, containers_data_producer: Producer) -> None:
+    logger.debug("Sending feedback message: %s", message)
+    feedback_message = FeedbackMessage(message, level)
+    containers_data_producer.produce(CONTAINERS_DATA_FEEDBACK_TOPIC, key='my_key', value=feedback_message.to_json())
 
 
 # Cleanup method before exiting the application
@@ -42,7 +55,7 @@ def stop_threads_handler(thread_pool: ThreadPool,
     return signal_handler
 
 
-def monitor_containers_task(producer: Producer, network_name: str, monitoring_interval: int = 5):
+def monitor_containers_task(containers_data_producer: Producer, network_name: str, monitoring_interval: int = 5):
     logger.debug("Start 'monitor_containers_task' task...")
 
     try:
@@ -54,13 +67,14 @@ def monitor_containers_task(producer: Producer, network_name: str, monitoring_in
 
         containers_data = json.dumps([data.to_dict() for data in containers_data])
 
-        producer.produce('containers-data', key='my_key',
-                         value=containers_data)
+        containers_data_producer.produce(CONTAINERS_DATA_TOPIC, key='my_key',
+                                         value=containers_data)
 
         time.sleep(monitoring_interval)
 
     except Exception as e:
         logger.error("Error monitoring containers: %s", e)
+        send_feedback_message(Level.ERROR, f"Error monitoring containers: {e}", containers_data_producer)
 
 
 def create_container_task(consumer: Consumer, containers_data_producer: Producer,
@@ -72,18 +86,20 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
         if message is None:
             return
 
-        logger.info("Creating container with message: %s", message)
+        create_request = json.loads(message)
+        create_request['containerName'] = create_request['containerName'].replace(" ", "_").lower()
+
+        logger.info("Creating container with message: %s", create_request)
         docker_client.create_docker_container(base_image_path=base_image_path, network_name=network_name,
-                                              create_request=message)
+                                              create_request=create_request)
 
         logger.info("Container created successfully")
-        feedback: FeedbackMessage = FeedbackMessage("Container created successfully", Level.SUCCESS)
-        containers_data_producer.produce('containers-data-feedback', key='my_key', value=feedback.to_json())
+        send_feedback_message(Level.SUCCESS, f"Container '{create_request['containerName']}' created successfully",
+                              containers_data_producer)
 
     except Exception as e:
         logger.error("Error creating container: %s", e)
-        feedback: FeedbackMessage = FeedbackMessage(str(e), Level.ERROR)
-        containers_data_producer.produce('containers-data-feedback', key='my_key', value=feedback.to_json())
+        send_feedback_message(Level.ERROR, f"Error creating container: {e}", containers_data_producer)
 
 
 def delete_container_task(consumer: Consumer, containers_data_producer: Producer):
@@ -94,16 +110,18 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
         if message is None:
             return
 
+        container_id = message
+
         logger.info("Deleting container with id: %s", message)
-        docker_client.delete_docker_container(container_id=message)
+        docker_client.delete_docker_container(container_id=container_id)
 
         logger.info("Container deleted successfully")
-        feedback: FeedbackMessage = FeedbackMessage("Container deleted successfully", Level.SUCCESS)
-        containers_data_producer.produce('containers-data-feedback', key='my_key', value=feedback.to_json())
+        send_feedback_message(Level.SUCCESS, f"Container '{container_id}' deleted successfully",
+                              containers_data_producer)
 
     except Exception as e:
         logger.error("Error deleting container: %s", e)
-        pass
+        send_feedback_message(Level.ERROR, f"Error deleting container: {e}", containers_data_producer)
 
 
 def main():
@@ -119,10 +137,10 @@ def main():
     containers_data_producer = create_kafka_producer(kafka_url)
 
     # Init Kafka consumer
-    create_container_consumer = create_kafka_consumer('create-container', 'my-group-create-container',
+    create_container_consumer = create_kafka_consumer(CREATE_CONTAINER_TOPIC, 'my-group-create-container',
                                                       kafka_url)
 
-    delete_container_consumer = create_kafka_consumer('delete-container', 'my-group-delete-container',
+    delete_container_consumer = create_kafka_consumer(DELETE_CONTAINER_TOPIC, 'my-group-delete-container',
                                                       kafka_url)
 
     # Create thread pool
