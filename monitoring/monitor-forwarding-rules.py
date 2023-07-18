@@ -22,7 +22,7 @@ logger = logging.getLogger("monitor-forwarding-rules")
 
 
 # Topics
-ADD_FORWARDING_RULE_TOPIC = "add-forwarding-rule"
+ADD_FORWARDING_RULE_TOPIC = "add-forwarding-rules"
 CLEAR_FORWARDING_RULES_TOPIC = "clear-forwarding-rules"
 FORWARDING_RULES_FEEDBACK_TOPIC = "forwarding-rules-feedback"
 
@@ -169,7 +169,7 @@ def main():
     thread_pool = ThreadPool(monitor_interval=monitoring_interval)
 
     # Add tasks to thread pool
-    thread_pool.add_task(name='monitor_containers', target=monitor_forwarding_rules_task,
+    thread_pool.add_task(name='monitor_forwarding_rules', target=monitor_forwarding_rules_task,
                          args=(forwarding_rules_producer, network_name, monitoring_interval))
 
     thread_pool.add_task(name='add_forwarding_rules', target=add_forwarding_rule_task,

@@ -45,7 +45,7 @@ public class KafkaContainersFeedbackConsumer {
         List<KafkaFeedbackMessage> errors = new ArrayList<>(this.feedbackMessages);
         this.feedbackMessages.clear();
 
-        LOGGER.info("Returning errors: " + errors);
+        LOGGER.info("Returning containers feedback messages: " + errors);
         return errors;
     }
 }

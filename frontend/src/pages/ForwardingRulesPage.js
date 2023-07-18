@@ -1,22 +1,14 @@
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  ListGroup,
-  Alert,
-  Form,
-  Button,
-  Card,
-} from "react-bootstrap";
+import { Container, ListGroup, Form, Button, Card } from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 import { IoCubeOutline } from "react-icons/io5";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ForwardingRulesPage = () => {
   const [data, setData] = useState([]);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [selectedContainer, setSelectedContainer] = useState("");
   const [newRule, setNewRule] = useState({
     chainName: "",
@@ -48,14 +40,9 @@ const ForwardingRulesPage = () => {
     try {
       await axios.post(`${BACKEND_URL}/forwarding-chains/add`, newRule);
       fetchForwardingRules();
-      setSuccess(true);
-      setError("");
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
+      toast.success("Request sent successfully!");
     } catch (error) {
-      setError("Error adding forwarding rule");
-      setSuccess(false);
+      toast.error("Error adding forwarding rule");
     }
   };
 
@@ -64,44 +51,32 @@ const ForwardingRulesPage = () => {
       await axios.post(`${BACKEND_URL}/forwarding-chains/clear`, {
         containerId: selectedContainer,
       });
-      setSuccess(true);
-      setError("");
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
+      toast.success("Request sent successfully!");
     } catch (error) {
-      setError("Error clearing forwarding rules");
-      setSuccess(false);
+      toast.error("Error clearing forwarding rules");
     }
   };
+
   const fetchForwardingRules = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/forwarding-chains/all`);
       setData(response.data);
     } catch (error) {
-      setError("Error fetching data");
+      toast.error("Error fetching forwarding rules");
     }
   };
 
-  // This function fetches errors from the backend
   const fetchFeedbackMessages = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/containers/feedback`);
-      // Assuming the response contains an array of error messages
+      const response = await axios.get(`${BACKEND_URL}/forwarding-chains/feedback`);
       response.data.forEach((message) => {
         if (message.level === "INFO") {
           toast.info(message.message);
-        }
-
-        if (message.level === "WARNING") {
+        } else if (message.level === "WARNING") {
           toast.warn(message.message);
-        }
-
-        if (message.level === "ERROR") {
+        } else if (message.level === "ERROR") {
           toast.error(message.message);
-        }
-
-        if (message.level === "SUCCESS") {
+        } else if (message.level === "SUCCESS") {
           toast.success(message.message);
         }
       });
@@ -132,9 +107,6 @@ const ForwardingRulesPage = () => {
     <Container>
       <CustomNavbar />
       <ToastContainer />
-
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">Request sent successfully!</Alert>}
 
       <Card className="my-4">
         <Card.Body>
