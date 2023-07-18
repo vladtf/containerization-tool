@@ -66,8 +66,7 @@ def monitor_containers_task(producer: Producer, network_name: str, monitoring_in
             logger.info("Containers on network '%s': %d",
                         network_name, len(containers_data))
 
-            containers_data = json.dumps(
-                [data.to_dict() for data in containers_data])
+            containers_data = json.dumps([data.to_dict() for data in containers_data])
 
             producer.produce('containers-data', key='my_key',
                              value=containers_data)

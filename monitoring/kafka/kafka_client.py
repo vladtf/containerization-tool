@@ -21,11 +21,12 @@ class Level(Enum):
     SUCCESS = "SUCCESS"
 
 
-class EnumEncoder(json.JSONEncoder):
+class DataClassEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Enum):
             return obj.value
         return super().default(obj)
+
 
 @dataclass
 class FeedbackMessage:
@@ -36,7 +37,7 @@ class FeedbackMessage:
         return asdict(self)
 
     def to_json(self):
-        return json.dumps(self.to_dict(), cls=EnumEncoder)
+        return json.dumps(self.to_dict(), cls=DataClassEncoder)
 
 
 def create_kafka_producer(bootstrap_servers: str) -> Producer:

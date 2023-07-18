@@ -6,6 +6,8 @@ from dataclasses import dataclass, asdict
 
 import docker
 
+from kafka.kafka_client import DataClassEncoder
+
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
@@ -26,6 +28,9 @@ class ContainerData:
 
     def to_dict(self):
         return asdict(self)
+
+    def to_json(self):
+        return json.dumps(self.to_dict(), cls=DataClassEncoder)
 
 
 def check_container_exists(container_id: str):
