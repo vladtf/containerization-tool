@@ -34,11 +34,47 @@ const ForwardingRulesPage = () => {
     };
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleAddNewRule = async (e) => {
     e.preventDefault();
 
+    if (!selectedContainer) {
+      toast.error("Please select a container");
+      return;
+    }
+
+    if (!newRule.chainName) {
+      toast.error("Please select a chain name");
+      return;
+    }
+
+    if (!newRule.rule.target) {
+      toast.error("Please enter a target");
+      return;
+    }
+
+    if (!newRule.rule.protocol) {
+      toast.error("Please select a protocol");
+      return;
+    }
+
+    if (!newRule.rule.source) {
+      toast.error("Please enter a source");
+      return;
+    }
+
+    if (!newRule.rule.destination) {
+      toast.error("Please enter a destination");
+      return;
+    }
+    
+
+    const ruleToAdd = {
+      ...newRule,
+      containerId: selectedContainer,
+    };
+
     try {
-      await axios.post(`${BACKEND_URL}/forwarding-chains/add`, newRule);
+      await axios.post(`${BACKEND_URL}/forwarding-chains/add`, ruleToAdd);
       fetchForwardingRules();
       toast.success("Request sent successfully!");
     } catch (error) {
@@ -71,7 +107,9 @@ const ForwardingRulesPage = () => {
 
   const fetchFeedbackMessages = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/forwarding-chains/feedback`);
+      const response = await axios.get(
+        `${BACKEND_URL}/forwarding-chains/feedback`
+      );
       response.data.forEach((message) => {
         if (message.level === "INFO") {
           toast.info(message.message);
@@ -164,71 +202,14 @@ const ForwardingRulesPage = () => {
           </div>
 
           <hr />
-
-          {filteredData.length > 0 ? (
-            <ListGroup>
-              {filteredData.map((container) => (
-                <ListGroup.Item key={container.containerId}>
-                  <h5>{container.containerName}</h5>
-                  {Object.entries(getRulesGroupedByChain(container.rules)).map(
-                    ([chain, rules]) => (
-                      <Card key={chain} className="my-3">
-                        <Card.Body>
-                          <Card.Title>{chain}</Card.Title>
-                          {rules.map((rule, ruleIndex) => (
-                            <Card key={ruleIndex} className="my-3">
-                              <Card.Body>
-                                <Card.Title>Rule {ruleIndex + 1}</Card.Title>
-                                <Card.Text>Chain: {rule.chain}</Card.Text>
-                                <Card.Text>Command: {rule.command}</Card.Text>
-                                <Card.Text>Target: {rule.target}</Card.Text>
-                                <Card.Text>Protocol: {rule.protocol}</Card.Text>
-                                <Card.Text>Options: {rule.options}</Card.Text>
-                                <Card.Text>Source: {rule.source}</Card.Text>
-                                <Card.Text>
-                                  Destination: {rule.destination}
-                                </Card.Text>
-                              </Card.Body>
-                            </Card>
-                          ))}
-                        </Card.Body>
-                      </Card>
-                    )
-                  )}
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          ) : (
-            <p>No forwarding rules found.</p>
-          )}
         </Card.Body>
       </Card>
 
       <Card className="my-4">
         <Card.Body>
           <h3>Add Forwarding Rule</h3>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group controlId="containerName">
-              <Form.Label>Container Name</Form.Label>
-              <Form.Control
-                as="select"
-                name="containerName"
-                value={newRule.containerName}
-                onChange={(e) =>
-                  setNewRule({ ...newRule, containerId: e.target.value })
-                }
-              >
-                <option value="">Select Container Name</option>
-                {data.map((container) => (
-                  <option
-                    key={container.containerId}
-                    value={container.containerId}
-                  >
-                    {container.containerName}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
+          <Form onSubmit={handleAddNewRule}>
+            
             <Form.Group controlId="chainName">
               <Form.Label>Chain Name</Form.Label>
               <Form.Control
@@ -320,31 +301,62 @@ const ForwardingRulesPage = () => {
       <Card className="my-4">
         <Card.Body>
           <h3>Clear Forwarding Rules</h3>
-          <Form.Group controlId="containerSelect">
-            <Form.Label>Container</Form.Label>
-            <Form.Control
-              as="select"
-              value={selectedContainer}
-              onChange={(e) => setSelectedContainer(e.target.value)}
-            >
-              <option value="">Select Container</option>
-              {data.map((container) => (
-                <option
-                  key={container.containerId}
-                  value={container.containerId}
-                >
-                  {container.containerName}
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
+
           <Button variant="danger" onClick={handleClear} className="mt-3">
             Clear Rules
           </Button>
         </Card.Body>
       </Card>
+
+      {filteredData.length > 0 ? (
+        <ListGroup>
+          {filteredData.map((container) => (
+            <ListGroup.Item key={container.containerId}>
+              <h5>{container.containerName}</h5>
+              {renderRules(container)}
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      ) : (
+        <p>No forwarding rules found.</p>
+      )}
     </Container>
   );
+
+  function renderRules(container) {
+    const rules = Object.entries(getRulesGroupedByChain(container.rules));
+
+    if (rules.length === 0) {
+      return (
+        <Card className="my-3">
+          <Card.Body>
+            <Card.Title>No rules found.</Card.Title>
+          </Card.Body>
+        </Card>
+      );
+    }
+    return rules.map(([chain, rules]) => (
+      <Card key={chain} className="my-3">
+        <Card.Body>
+          <Card.Title>{chain}</Card.Title>
+          {rules.map((rule, ruleIndex) => (
+            <Card key={ruleIndex} className="my-3">
+              <Card.Body>
+                <Card.Title>Rule {ruleIndex + 1}</Card.Title>
+                <Card.Text>Chain: {rule.chain}</Card.Text>
+                <Card.Text>Command: {rule.command}</Card.Text>
+                <Card.Text>Target: {rule.target}</Card.Text>
+                <Card.Text>Protocol: {rule.protocol}</Card.Text>
+                <Card.Text>Options: {rule.options}</Card.Text>
+                <Card.Text>Source: {rule.source}</Card.Text>
+                <Card.Text>Destination: {rule.destination}</Card.Text>
+              </Card.Body>
+            </Card>
+          ))}
+        </Card.Body>
+      </Card>
+    ));
+  }
 };
 
 export default ForwardingRulesPage;

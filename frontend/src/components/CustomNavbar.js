@@ -1,7 +1,12 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Navbar, Nav } from "react-bootstrap";
-import { IoHome, IoChatbox, IoSettingsSharp, IoCubeOutline } from "react-icons/io5";
+import {
+  IoHome,
+  IoChatbox,
+  IoSettingsSharp,
+  IoCubeOutline,
+} from "react-icons/io5";
 
 const CustomNavbar = () => {
   const location = useLocation();
@@ -20,13 +25,6 @@ const CustomNavbar = () => {
         borderBottomRightRadius: "10px",
       }}
     >
-      {/* <Navbar.Brand
-        as={Link}
-        to="/"
-        style={{ fontWeight: "bold", paddingLeft: "10px" }}
-      >
-        Containerization Tool
-      </Navbar.Brand> */}
       <Navbar.Toggle aria-controls="navbar-nav" />
       <Navbar.Collapse id="navbar-nav">
         <Nav className="ml-auto">
