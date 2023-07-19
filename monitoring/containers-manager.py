@@ -3,14 +3,15 @@ import logging
 import os
 import signal
 import sys
+import threading
 import time
 
 from confluent_kafka import Producer, Consumer
 
 from configuration import config_loader
 from containers import docker_client
-from kafka.kafka_client import consume_kafka_message, create_kafka_producer, create_kafka_consumer, FeedbackMessage, \
-    Level
+from kafka.kafka_client import consume_kafka_message, create_kafka_producer, create_kafka_consumer, Level, \
+    send_feedback_message
 from threads.thread_pool import ThreadPool
 
 # Topics
@@ -22,13 +23,6 @@ CONTAINERS_DATA_FEEDBACK_TOPIC = "containers-data-feedback"
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
-
-
-# Send a message to the feedback topic
-def send_feedback_message(level: Level, message: str, containers_data_producer: Producer) -> None:
-    logger.debug("Sending feedback message: %s", message)
-    feedback_message = FeedbackMessage(message, level)
-    containers_data_producer.produce(CONTAINERS_DATA_FEEDBACK_TOPIC, key='my_key', value=feedback_message.to_json())
 
 
 # Cleanup method before exiting the application
@@ -47,7 +41,7 @@ def stop_threads_handler(thread_pool: ThreadPool,
                          containers_data_producer: Producer,
                          create_container_consumer: Consumer,
                          delete_container_consumer: Consumer):
-    def signal_handler(sig, frame):
+    def signal_handler():
         logger.info("Interrupt signal received. Stopping application...")
         thread_pool.stop_threads()
         cleanup_task(containers_data_producer, create_container_consumer, delete_container_consumer)
@@ -74,10 +68,13 @@ def monitor_containers_task(containers_data_producer: Producer, network_name: st
 
     except Exception as e:
         logger.error("Error monitoring containers: %s", e)
-        send_feedback_message(Level.ERROR, f"Error monitoring containers: {e}", containers_data_producer)
+        send_feedback_message(
+            level=Level.ERROR,
+            message=f"Error monitoring containers: {e}",
+            producer=containers_data_producer,
+            topic=CONTAINERS_DATA_FEEDBACK_TOPIC
+        )
 
-
-import threading
 
 def create_container_task(consumer: Consumer, containers_data_producer: Producer,
                           base_image_path: str, network_name: str):
@@ -97,11 +94,23 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
                 docker_client.create_docker_container(base_image_path=base_image_path, network_name=network_name,
                                                       create_request=create_request)
                 logger.info("Container created successfully")
-                send_feedback_message(Level.SUCCESS, f"Container '{create_request['containerName']}' created successfully",
-                                      containers_data_producer)
-            except Exception as e:
-                logger.error("Error creating container: %s", e)
-                send_feedback_message(Level.ERROR, f"Error creating container: {e}", containers_data_producer)
+
+                send_feedback_message(
+                    level=Level.SUCCESS,
+                    message=f"Container '{create_request['containerName']}' created successfully",
+                    producer=containers_data_producer,
+                    topic=CONTAINERS_DATA_FEEDBACK_TOPIC
+                )
+
+            except Exception as exc:
+                logger.error("Error creating container: %s", exc)
+
+                send_feedback_message(
+                    level=Level.ERROR,
+                    message=f"Error creating container: {exc}",
+                    producer=containers_data_producer,
+                    topic=CONTAINERS_DATA_FEEDBACK_TOPIC
+                )
 
         # Create a new thread for creating the container
         create_thread = threading.Thread(target=create_container)
@@ -109,7 +118,13 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
 
     except Exception as e:
         logger.error("Error creating container: %s", e)
-        send_feedback_message(Level.ERROR, f"Error creating container: {e}", containers_data_producer)
+
+        send_feedback_message(
+            level=Level.ERROR,
+            message=f"Error creating container: {e}",
+            producer=containers_data_producer,
+            topic=CONTAINERS_DATA_FEEDBACK_TOPIC
+        )
 
 
 def delete_container_task(consumer: Consumer, containers_data_producer: Producer):
@@ -127,11 +142,23 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
                 logger.info("Deleting container with id: %s", message)
                 docker_client.delete_docker_container(container_id=container_id)
                 logger.info("Container deleted successfully")
-                send_feedback_message(Level.SUCCESS, f"Container '{container_id}' deleted successfully",
-                                      containers_data_producer)
+
+                send_feedback_message(
+                    level=Level.SUCCESS,
+                    message=f"Container '{container_id}' deleted successfully",
+                    producer=containers_data_producer,
+                    topic=CONTAINERS_DATA_FEEDBACK_TOPIC
+                )
+
             except Exception as exc:
                 logger.error("Error deleting container: %s", exc)
-                send_feedback_message(Level.ERROR, f"Error deleting container: {exc}", containers_data_producer)
+
+                send_feedback_message(
+                    level=Level.ERROR,
+                    message=f"Error deleting container: {exc}",
+                    producer=containers_data_producer,
+                    topic=CONTAINERS_DATA_FEEDBACK_TOPIC
+                )
 
         # Create a new thread for deleting the container
         delete_thread = threading.Thread(target=delete_container)
@@ -139,7 +166,12 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
 
     except Exception as e:
         logger.error("Error deleting container: %s", e)
-        send_feedback_message(Level.ERROR, f"Error deleting container: {e}", containers_data_producer)
+
+        send_feedback_message(
+            level=Level.ERROR,
+            message=f"Error deleting container: {e}",
+            producer=containers_data_producer,
+            topic=CONTAINERS_DATA_FEEDBACK_TOPIC)
 
 
 def main():

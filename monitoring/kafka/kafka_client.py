@@ -92,3 +92,10 @@ def consume_kafka_message(consumer: Consumer):
     consumer.commit()
 
     return message.value().decode('utf-8')
+
+
+# Send a message to the feedback topic
+def send_feedback_message(level: Level, message: str, producer: Producer, topic: str):
+    logger.debug("Sending feedback message: %s", message)
+    feedback_message = FeedbackMessage(message, level)
+    producer.produce(topic, key='my_key', value=feedback_message.to_json())

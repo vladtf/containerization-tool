@@ -3,7 +3,6 @@ import logging
 import os
 import signal
 import sys
-import threading
 import time
 
 import docker
@@ -11,7 +10,7 @@ import pyshark
 from confluent_kafka import Producer
 
 from configuration import config_loader
-from kafka.kafka_client import create_kafka_producer, Level, FeedbackMessage
+from kafka.kafka_client import create_kafka_producer
 from threads.thread_pool import ThreadPool
 
 # Configure the logger
@@ -25,12 +24,6 @@ DOCKER_TRAFFIC_FEEDBACK_TOPIC = "docker-traffic-feedback"
 # Counter variable to keep track of the message count
 message_count = 0
 
-# Send a message to the feedback topic
-def send_feedback_message(level: Level, message: str, containers_data_producer: Producer) -> None:
-    logger.debug("Sending feedback message: %s", message)
-    feedback_message = FeedbackMessage(message, level)
-    containers_data_producer.produce(DOCKER_TRAFFIC_FEEDBACK_TOPIC, key='my_key', value=feedback_message.to_json())
-
 
 # Cleanup method before exiting the application
 def cleanup_task(traffic_producer: Producer):
@@ -43,7 +36,7 @@ def cleanup_task(traffic_producer: Producer):
 # Signal handler
 def stop_threads_handler(thread_pool: ThreadPool,
                          traffic_producer: Producer):
-    def signal_handler(sig, frame):
+    def signal_handler():
         logger.info("Interrupt signal received. Stopping application...")
         thread_pool.stop_threads()
         cleanup_task(traffic_producer)
