@@ -7,8 +7,14 @@ export PREPARE_SH_SOURCED=true
 # Save current directory
 BIN_DIR=$(dirname "$0")
 
-# Declare alias to connect to the test container
+# Declare aliases
 alias go-test='docker exec -it my-ubuntu bash'
+
+function go-container() {
+    container_name="$1"
+    echo -e "Entering container ${GREEN}$container_name${NC}"
+    docker exec -it "$1" bash
+}
 
 # Color codes
 GREEN='\033[0;32m'
