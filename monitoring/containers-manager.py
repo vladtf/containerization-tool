@@ -77,6 +77,8 @@ def monitor_containers_task(containers_data_producer: Producer, network_name: st
         send_feedback_message(Level.ERROR, f"Error monitoring containers: {e}", containers_data_producer)
 
 
+import threading
+
 def create_container_task(consumer: Consumer, containers_data_producer: Producer,
                           base_image_path: str, network_name: str):
     logger.debug("Start 'create_container_task' task...")
@@ -89,13 +91,21 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
         create_request = json.loads(message)
         create_request['containerName'] = create_request['containerName'].replace(" ", "_").lower()
 
-        logger.info("Creating container with message: %s", create_request)
-        docker_client.create_docker_container(base_image_path=base_image_path, network_name=network_name,
-                                              create_request=create_request)
+        def create_container():
+            try:
+                logger.info("Creating container with message: %s", create_request)
+                docker_client.create_docker_container(base_image_path=base_image_path, network_name=network_name,
+                                                      create_request=create_request)
+                logger.info("Container created successfully")
+                send_feedback_message(Level.SUCCESS, f"Container '{create_request['containerName']}' created successfully",
+                                      containers_data_producer)
+            except Exception as e:
+                logger.error("Error creating container: %s", e)
+                send_feedback_message(Level.ERROR, f"Error creating container: {e}", containers_data_producer)
 
-        logger.info("Container created successfully")
-        send_feedback_message(Level.SUCCESS, f"Container '{create_request['containerName']}' created successfully",
-                              containers_data_producer)
+        # Create a new thread for creating the container
+        create_thread = threading.Thread(target=create_container)
+        create_thread.start()
 
     except Exception as e:
         logger.error("Error creating container: %s", e)
@@ -112,12 +122,20 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
 
         container_id = message
 
-        logger.info("Deleting container with id: %s", message)
-        docker_client.delete_docker_container(container_id=container_id)
+        def delete_container():
+            try:
+                logger.info("Deleting container with id: %s", message)
+                docker_client.delete_docker_container(container_id=container_id)
+                logger.info("Container deleted successfully")
+                send_feedback_message(Level.SUCCESS, f"Container '{container_id}' deleted successfully",
+                                      containers_data_producer)
+            except Exception as exc:
+                logger.error("Error deleting container: %s", exc)
+                send_feedback_message(Level.ERROR, f"Error deleting container: {exc}", containers_data_producer)
 
-        logger.info("Container deleted successfully")
-        send_feedback_message(Level.SUCCESS, f"Container '{container_id}' deleted successfully",
-                              containers_data_producer)
+        # Create a new thread for deleting the container
+        delete_thread = threading.Thread(target=delete_container)
+        delete_thread.start()
 
     except Exception as e:
         logger.error("Error deleting container: %s", e)
