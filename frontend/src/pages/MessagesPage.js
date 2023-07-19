@@ -12,6 +12,7 @@ import { IoCubeOutline } from "react-icons/io5";
 import CustomNavbar from "../components/CustomNavbar";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 import { toast } from "react-toastify";
+import CustomFooter from "../components/CustomFooter";
 
 const MessagesPage = () => {
   const [data, setData] = useState([]);
@@ -185,6 +186,7 @@ const MessagesPage = () => {
           )}
         </Card.Body>
       </Card>
+      <CustomFooter />
     </Container>
   );
 };

@@ -6,6 +6,7 @@ import { BACKEND_URL } from "../config/BackendConfiguration";
 import { IoCubeOutline } from "react-icons/io5";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import CustomFooter from "../components/CustomFooter";
 
 const ForwardingRulesPage = () => {
   const [data, setData] = useState([]);
@@ -66,7 +67,6 @@ const ForwardingRulesPage = () => {
       toast.error("Please enter a destination");
       return;
     }
-    
 
     const ruleToAdd = {
       ...newRule,
@@ -149,7 +149,6 @@ const ForwardingRulesPage = () => {
     <Container>
       <CustomNavbar />
       <ToastContainer />
-
       <Card className="my-4">
         <Card.Body>
           <h3>Forwarding Rules</h3>
@@ -204,12 +203,10 @@ const ForwardingRulesPage = () => {
           <hr />
         </Card.Body>
       </Card>
-
       <Card className="my-4">
         <Card.Body>
           <h3>Add Forwarding Rule</h3>
           <Form onSubmit={handleAddNewRule}>
-            
             <Form.Group controlId="chainName">
               <Form.Label>Chain Name</Form.Label>
               <Form.Control
@@ -297,7 +294,6 @@ const ForwardingRulesPage = () => {
           </Form>
         </Card.Body>
       </Card>
-
       <Card className="my-4">
         <Card.Body>
           <h3>Clear Forwarding Rules</h3>
@@ -307,7 +303,6 @@ const ForwardingRulesPage = () => {
           </Button>
         </Card.Body>
       </Card>
-
       {filteredData.length > 0 ? (
         <ListGroup>
           {filteredData.map((container) => (
@@ -320,6 +315,8 @@ const ForwardingRulesPage = () => {
       ) : (
         <p>No forwarding rules found.</p>
       )}
+
+      <CustomFooter />
     </Container>
   );
 

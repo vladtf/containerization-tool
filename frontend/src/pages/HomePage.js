@@ -9,6 +9,7 @@ import {
   IoSettings,
   IoUnlink,
 } from "react-icons/io5";
+import CustomFooter from "../components/CustomFooter";
 
 const HomePage = () => {
   const navbarLinks = [
@@ -86,6 +87,8 @@ const HomePage = () => {
           ))}
         </div>
       </Container>
+
+      <CustomFooter />
     </Container>
   );
 };

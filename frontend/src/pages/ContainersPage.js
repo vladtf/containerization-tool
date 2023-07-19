@@ -11,6 +11,7 @@ import CustomNavbar from "../components/CustomNavbar";
 import axios from "axios";
 import { BACKEND_URL } from "../config/BackendConfiguration";
 import { ToastContainer, toast } from "react-toastify";
+import CustomFooter from "../components/CustomFooter";
 
 const ContainersPage = () => {
   const [file, setFile] = useState(null);
@@ -238,6 +239,7 @@ const ContainersPage = () => {
           )}
         </Card.Body>
       </Card>
+      <CustomFooter />
     </Container>
   );
 };
