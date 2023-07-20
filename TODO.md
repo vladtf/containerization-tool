@@ -11,3 +11,4 @@
 * run file inside container as entrypoint
 * create docker images that can handle multiple artifacts
 * update ui to configure the base image used
+* to fix container not being removed fully
