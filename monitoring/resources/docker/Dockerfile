@@ -7,6 +7,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+COPY ./entrypoint.bin /usr/local/bin/entrypoint.bin
+RUN chmod +x /usr/local/bin/entrypoint.bin
 
-CMD ["tail", "-f", "/dev/null"]
-
+CMD ["/usr/local/bin/entrypoint.bin"]

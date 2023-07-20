@@ -8,3 +8,6 @@
 * add required dependencies for jar/war
 * add a history of messages sent to tostify
 * add logs from the docker containers to the backend
+* run file inside container as entrypoint
+* create docker images that can handle multiple artifacts
+* update ui to configure the base image used

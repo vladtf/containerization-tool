@@ -21,6 +21,7 @@ const ForwardingRulesPage = () => {
     },
   });
 
+
   useEffect(() => {
     fetchForwardingRules();
     fetchFeedbackMessages();
