@@ -44,7 +44,8 @@ def stop_threads_handler(thread_pool: ThreadPool,
     def signal_handler(sig, frame):
         logger.info("Interrupt signal received. Stopping application...")
         thread_pool.stop_threads()
-        cleanup_task(containers_data_producer, create_container_consumer, delete_container_consumer)
+        cleanup_task(containers_data_producer,
+                     create_container_consumer, delete_container_consumer)
 
     return signal_handler
 
@@ -59,7 +60,8 @@ def monitor_containers_task(containers_data_producer: Producer, network_name: st
         logger.info("Containers on network '%s': %d",
                     network_name, len(containers_data))
 
-        containers_data = json.dumps([data.to_dict() for data in containers_data])
+        containers_data = json.dumps([data.to_dict()
+                                     for data in containers_data])
 
         containers_data_producer.produce(CONTAINERS_DATA_TOPIC, key='my_key',
                                          value=containers_data)
@@ -77,7 +79,8 @@ def monitor_containers_task(containers_data_producer: Producer, network_name: st
 
 
 def create_container_task(consumer: Consumer, containers_data_producer: Producer,
-                          base_image_path: str, network_name: str):
+                          base_image_path: str, network_name: str,
+                          fluentd_address: str, fluentd_format: str, fluentd_driver: str):
     logger.debug("Start 'create_container_task' task...")
 
     try:
@@ -86,13 +89,19 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
             return
 
         create_request = json.loads(message)
-        create_request['containerName'] = create_request['containerName'].replace(" ", "_").lower()
+        create_request['containerName'] = create_request['containerName'].replace(
+            " ", "_").lower()
 
         def create_container():
             try:
-                logger.info("Creating container with message: %s", create_request)
-                docker_client.create_docker_container(base_image_path=base_image_path, network_name=network_name,
-                                                      create_request=create_request)
+                logger.info("Creating container with message: %s",
+                            create_request)
+                docker_client.create_docker_container(
+                    create_request=create_request,
+                    base_image_path=base_image_path, network_name=network_name,
+                    fluentd_address=fluentd_address, fluentd_format=fluentd_format, fluentd_driver=fluentd_driver
+                )
+
                 logger.info("Container created successfully")
 
                 send_feedback_message(
@@ -140,7 +149,8 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
         def delete_container():
             try:
                 logger.info("Deleting container with id: %s", message)
-                docker_client.delete_docker_container(container_id=container_id)
+                docker_client.delete_docker_container(
+                    container_id=container_id)
                 logger.info("Container deleted successfully")
 
                 send_feedback_message(
@@ -180,6 +190,9 @@ def main():
     kafka_url = config.get('kafka', 'bootstrap_servers')
     network_name = config.get('docker', 'network_name')
     base_image_path = config.get('docker', 'base_image_path')
+    fluentd_address = config.get('fluentd', 'address')
+    fluentd_format = config.get('fluentd', 'format')
+    fluentd_driver = config.get('fluentd', 'driver')
 
     monitoring_interval = 5
 
@@ -201,7 +214,8 @@ def main():
                          args=(containers_data_producer, network_name, monitoring_interval))
 
     thread_pool.add_task(name='create_container', target=create_container_task,
-                         args=(create_container_consumer, containers_data_producer, base_image_path, network_name))
+                         args=(create_container_consumer, containers_data_producer, base_image_path, network_name,
+                               fluentd_address, fluentd_format, fluentd_driver))
 
     thread_pool.add_task(name='delete_container', target=delete_container_task,
                          args=(delete_container_consumer, containers_data_producer))

@@ -43,7 +43,9 @@ def check_container_exists(container_id: str):
         return False
 
 
-def create_docker_container(create_request: dict, base_image_path: str, network_name: str):
+def create_docker_container(create_request: dict, 
+                            base_image_path: str, network_name: str,
+                            fluentd_address: str, fluentd_format: str, fluentd_driver: str):
     file_id = create_request["fileId"]
     file_path = create_request["filePath"]
     container_name = create_request["containerName"]
@@ -60,8 +62,22 @@ def create_docker_container(create_request: dict, base_image_path: str, network_
         new_image, _ = client.images.build(
             path=base_image_path, dockerfile="Dockerfile", tag=f"{container_name}_image")
 
-        container = client.containers.run(new_image.id, detach=True, cap_add=[
-            "NET_ADMIN"], network=network_name, name=container_name)
+        log_config = {
+            'type': fluentd_driver,
+            'config': {
+                'syslog-format': fluentd_format,
+                'syslog-address': fluentd_address
+            }
+        }
+
+        container = client.containers.run(
+            new_image.id,
+            detach=True,
+            cap_add=["NET_ADMIN"],
+            network=network_name,
+            name=container_name,
+            log_config=log_config
+        )
 
     except Exception as e:
         raise DockerClientException(f"Failed to create Docker container with name {container_name}: {e}")
