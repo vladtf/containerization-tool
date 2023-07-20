@@ -3,6 +3,7 @@ package vti.containerization.backend.fluentd;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,5 +19,10 @@ public class FluentdLogController {
     @GetMapping("/logs")
     public List<FluentdLogModel> getAllLogs() {
         return fluentdLogService.getAllLogs();
+    }
+
+    @GetMapping("/logs/{ident}")
+    public List<FluentdLogModel> getLogsByIdent(@PathVariable String ident) {
+        return fluentdLogService.getLogsByIdent(ident);
     }
 }

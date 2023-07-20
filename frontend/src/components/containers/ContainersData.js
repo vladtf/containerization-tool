@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Button, Card } from "react-bootstrap";
+import { Button, Card, Modal } from "react-bootstrap";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { BACKEND_URL } from "../../config/BackendConfiguration";
 
 const ContainersData = () => {
   const [containers, setContainers] = useState([]);
+  const [selectedLogs, setSelectedLogs] = useState([]);
+  const [showLogsModal, setShowLogsModal] = useState(false); // State to manage log popup visibility
 
   useEffect(() => {
     fetchFeedbackMessages();
@@ -69,6 +71,19 @@ const ContainersData = () => {
     }
   };
 
+  const fetchContainerLogs = async (containerId) => {
+    try {
+      const response = await axios.get(
+        `${BACKEND_URL}/fluentd/logs/${containerId}`
+      );
+      setSelectedLogs(response.data);
+      setShowLogsModal(true); // Show the log popup
+    } catch (error) {
+      console.error("Failed to fetch container logs:", error);
+      toast.error("Failed to fetch container logs. Please try again later.");
+    }
+  };
+
   return (
     <>
       <ToastContainer />
@@ -95,6 +110,13 @@ const ContainersData = () => {
                 </Card.Body>
                 <Card.Footer>
                   <Button
+                    onClick={() => fetchContainerLogs(container.id)} // Fetch and set logs for the selected container
+                    variant="outline-primary" // Use a different variant for the "See Logs" button
+                    style={{ borderRadius: "20px", marginRight: "10px" }}
+                  >
+                    See Logs
+                  </Button>
+                  <Button
                     onClick={() => handleDeleteContainer(container.id)}
                     variant="outline-danger"
                     style={{ borderRadius: "20px" }}
@@ -107,6 +129,18 @@ const ContainersData = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* Log Popup */}
+      <Modal show={showLogsModal} onHide={() => setShowLogsModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Container Logs</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedLogs.map((log, index) => (
+            <p key={index}>{log.message}</p>
+          ))}
+        </Modal.Body>
+      </Modal>
     </>
   );
 };
