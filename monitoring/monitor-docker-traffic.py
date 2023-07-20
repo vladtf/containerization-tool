@@ -36,7 +36,7 @@ def cleanup_task(traffic_producer: Producer):
 # Signal handler
 def stop_threads_handler(thread_pool: ThreadPool,
                          traffic_producer: Producer):
-    def signal_handler():
+    def signal_handler(sig, frame):
         logger.info("Interrupt signal received. Stopping application...")
         thread_pool.stop_threads()
         cleanup_task(traffic_producer)

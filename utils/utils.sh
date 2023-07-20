@@ -16,12 +16,11 @@ docker network inspect bridge
 # dump docker network
 sudo tcpdump -i docker0
 
-# source virtualenv 
+# source virtualenv
 source myenv/bin/activate
 
 # show network interfaces
 ip link show
-
 
 # show iptables
 docker exec -u root -it 8e80272f9e78 iptables -t nat -L
@@ -34,3 +33,11 @@ iptables -t nat -A OUTPUT -d 8.8.8.8 -j DNAT --to-destination 9.9.9.9
 
 # show iptables
 iptables -t nat -L
+
+# start contaier which logs to syslog
+docker run \
+    --log-driver=syslog \
+    --log-opt syslog-format=rfc5424 \
+    --log-opt syslog-address=tcp://localhost:5140 \
+    test_image
+

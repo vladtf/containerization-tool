@@ -41,7 +41,7 @@ def stop_threads_handler(thread_pool: ThreadPool,
                          containers_data_producer: Producer,
                          create_container_consumer: Consumer,
                          delete_container_consumer: Consumer):
-    def signal_handler():
+    def signal_handler(sig, frame):
         logger.info("Interrupt signal received. Stopping application...")
         thread_pool.stop_threads()
         cleanup_task(containers_data_producer, create_container_consumer, delete_container_consumer)
