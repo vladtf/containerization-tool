@@ -65,8 +65,6 @@ def create_docker_container(create_request: dict, base_image_path: str, network_
 
     except Exception as e:
         raise DockerClientException(f"Failed to create Docker container with name {container_name}: {e}")
-    except Exception as e:
-        raise DockerClientException(f"Failed to create Docker container with name {container_name}: {e}")
 
 
 def list_containers_on_network(network_name: str) -> list[ContainerData]:

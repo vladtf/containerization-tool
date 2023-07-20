@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import vti.containerization.backend.containers.ContainerDataModel;
 
 import java.util.List;
 
@@ -33,5 +34,6 @@ public class MessagesController {
     public static class TrafficMessagesResponse {
         private String groupId;
         private List<MessageModel> messages;
+        private ContainerDataModel container;
     }
 }
