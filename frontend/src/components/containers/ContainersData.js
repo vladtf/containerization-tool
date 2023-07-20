@@ -139,18 +139,29 @@ const ContainersData = () => {
       </Card>
 
       {/* Log Popup */}
-      <Modal show={showLogsModal} onHide={() => setShowLogsModal(false)}>
+      <Modal
+        show={showLogsModal}
+        onHide={() => setShowLogsModal(false)}
+        size="xl"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Container Logs</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedLogs.map((log, index) => (
-            <p key={index}>{log.message}</p>
-          ))}
+          <pre
+            style={{ background: "#f1f1f1", padding: "1rem", overflow: "auto" }}
+          >
+            {selectedLogs.map((log, index) => (
+              <React.Fragment key={index}>
+                <span style={{ display: "inline-block" }}>{index + 1}.</span>
+                {log.message}
+                <br />
+              </React.Fragment>
+            ))}
+          </pre>
         </Modal.Body>
         <Modal.Footer>
           <span>{`Page ${currentPage} of ${totalPages}`}</span>
-
           <Button
             variant="secondary"
             onClick={() => fetchContainerLogs(containerId, currentPage - 1)}

@@ -23,6 +23,6 @@ public class FluentdLogController {
     public Page<FluentdLogModel> getLogsByIdent(
             @PathVariable String ident,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "30") int pageSize) {
         return fluentdLogService.getLogsByIdent(ident, page, pageSize);
     }}
