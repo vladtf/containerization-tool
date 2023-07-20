@@ -2,10 +2,8 @@ package vti.containerization.backend.fluentd;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,7 +20,9 @@ public class FluentdLogController {
     }
 
     @GetMapping("/logs/{ident}")
-    public List<FluentdLogModel> getLogsByIdent(@PathVariable String ident) {
-        return fluentdLogService.getLogsByIdent(ident);
-    }
-}
+    public Page<FluentdLogModel> getLogsByIdent(
+            @PathVariable String ident,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return fluentdLogService.getLogsByIdent(ident, page, pageSize);
+    }}

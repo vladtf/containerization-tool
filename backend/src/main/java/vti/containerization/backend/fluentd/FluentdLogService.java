@@ -3,6 +3,9 @@ package vti.containerization.backend.fluentd;
 import io.micrometer.common.util.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,8 +20,7 @@ public class FluentdLogService {
         return fluentdLogRepository.findAll();
     }
 
-    public List<FluentdLogModel> getLogsByIdent(String ident) {
-        // if containerId is bigger than 12 characters then take first 12 characters
+    public Page<FluentdLogModel> getLogsByIdent(String ident, int page, int pageSize) {
         if (StringUtils.isBlank(ident)) {
             throw new RuntimeException("Ident cannot be null or empty");
         }
@@ -29,6 +31,8 @@ public class FluentdLogService {
 
         ident = ident.substring(0, 12);
 
-        return fluentdLogRepository.findByIdent(ident);
+        Pageable pageable = PageRequest.of(page, pageSize);
+        return fluentdLogRepository.findByIdent(ident, pageable);
     }
+
 }

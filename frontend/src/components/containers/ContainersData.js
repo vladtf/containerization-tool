@@ -8,6 +8,9 @@ const ContainersData = () => {
   const [containers, setContainers] = useState([]);
   const [selectedLogs, setSelectedLogs] = useState([]);
   const [showLogsModal, setShowLogsModal] = useState(false); // State to manage log popup visibility
+  const [currentPage, setCurrentPage] = useState(1); // Current page number
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
+  const [containerId, setContainerId] = useState(null); // Container ID
 
   useEffect(() => {
     fetchFeedbackMessages();
@@ -71,13 +74,17 @@ const ContainersData = () => {
     }
   };
 
-  const fetchContainerLogs = async (containerId) => {
+  const fetchContainerLogs = async (containerId, page = 1) => {
+    setContainerId(containerId);
+
     try {
       const response = await axios.get(
-        `${BACKEND_URL}/fluentd/logs/${containerId}`
+        `${BACKEND_URL}/fluentd/logs/${containerId}?page=${page}`
       );
-      setSelectedLogs(response.data);
-      setShowLogsModal(true); // Show the log popup
+      setSelectedLogs(response.data.content);
+      setCurrentPage(response.data.number);
+      setTotalPages(response.data.totalPages);
+      setShowLogsModal(true);
     } catch (error) {
       console.error("Failed to fetch container logs:", error);
       toast.error("Failed to fetch container logs. Please try again later.");
@@ -110,12 +117,13 @@ const ContainersData = () => {
                 </Card.Body>
                 <Card.Footer>
                   <Button
-                    onClick={() => fetchContainerLogs(container.id)} // Fetch and set logs for the selected container
-                    variant="outline-primary" // Use a different variant for the "See Logs" button
+                    onClick={() => fetchContainerLogs(container.id)}
+                    variant="outline-primary"
                     style={{ borderRadius: "20px", marginRight: "10px" }}
                   >
                     See Logs
                   </Button>
+
                   <Button
                     onClick={() => handleDeleteContainer(container.id)}
                     variant="outline-danger"
@@ -140,6 +148,24 @@ const ContainersData = () => {
             <p key={index}>{log.message}</p>
           ))}
         </Modal.Body>
+        <Modal.Footer>
+          <span>{`Page ${currentPage} of ${totalPages}`}</span>
+
+          <Button
+            variant="secondary"
+            onClick={() => fetchContainerLogs(containerId, currentPage - 1)}
+            disabled={currentPage === 1} // Disable previous button on the first page
+          >
+            Previous
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => fetchContainerLogs(containerId, currentPage + 1)}
+            disabled={currentPage === totalPages} // Disable next button on the last page
+          >
+            Next
+          </Button>
+        </Modal.Footer>
       </Modal>
     </>
   );
