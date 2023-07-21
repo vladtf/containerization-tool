@@ -1,6 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-while true; do
-  curl container-http-server.sh:8080
-  sleep 1
-done
+ping 8.8.8.8
