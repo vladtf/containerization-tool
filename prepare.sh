@@ -1,11 +1,19 @@
 #!/bin/bash
 # Description: This script prepares the environment required for monitoring
 
-# Flag to indicate this script was sourced
-export PREPARE_SH_SOURCED=true
-
 # Save current directory
-BIN_DIR=$(dirname "$0")
+
+# Define variables only if this script was not already sourced
+if [ -z "$PREPARE_SH_SOURCED" ]; then
+    export PREPARE_DIR="$(realpath "$(dirname "$0")")"
+    export PREPARE_FILE="$PREPARE_DIR/$0"
+    export VENV_DIR="$PREPARE_DIR/.venv"
+    export REQUIREMENTS_FILE="$PREPARE_DIR/requirements.txt"
+
+    export LOG_DIR="$PREPARE_DIR/logs"
+    export LOG_FILE="$LOG_DIR/script.log"
+    mkdir -p "$LOG_DIR"
+fi
 
 # Declare aliases
 alias go-test='docker exec -it my-ubuntu bash'
@@ -21,11 +29,6 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
-
-# Log directory
-export LOG_DIR="$BIN_DIR/logs"
-export LOG_FILE="$LOG_DIR/script.log"
-mkdir -p "$LOG_DIR"
 
 # Logging functions
 log_success() {
@@ -58,9 +61,6 @@ log_info() {
 }
 
 # Create virtual environment
-VENV_DIR="$BIN_DIR/.venv"
-REQUIREMENTS_FILE="$BIN_DIR/requirements.txt"
-
 install_pip_requirements() {
     log_info "Installing requirements"
     pip_install_output=$(pip install -r "$REQUIREMENTS_FILE" 2>&1)
@@ -112,3 +112,6 @@ else
 
     install_pip_requirements
 fi
+
+# Flag to indicate this script was sourced
+export PREPARE_SH_SOURCED=true

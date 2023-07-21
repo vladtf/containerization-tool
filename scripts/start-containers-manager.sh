@@ -9,8 +9,7 @@ BIN_DIR=$(dirname "$0")
 
 # Paths
 containers_manager_script_name="containers-manager.py"
-containers_manager_script_path="$BIN_DIR/monitoring/$containers_manager_script_name"
-prepare_script_path="$BIN_DIR/prepare.sh"
+containers_manager_script_path="$BIN_DIR/../monitoring/$containers_manager_script_name"
 
 # Function to start container manager
 start_containers_manager() {
@@ -46,7 +45,7 @@ fi
 
 # Source prepare.sh
 echo "Sourcing prepare.sh"
-source "$prepare_script_path"
+source "$PREPARE_FILE"
 if [ $? -ne 0 ]; then
     echo "Failed to source prepare.sh"
     exit 1

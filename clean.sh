@@ -35,10 +35,6 @@ fi
 # Log script start
 log_info "Starting clean-up script"
 
-# Stop and remove the monitoring script
-log_info "Stopping monitoring script"
-pkill -f "monitor-docker-traffic.py"
-
 # Stop and remove the test container
 log_info "Stopping and removing the test container"
 docker stop "$test_container_name" >/dev/null 2>&1

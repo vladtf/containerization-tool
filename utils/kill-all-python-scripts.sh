@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 # Kill all python scripts
 pkill -f "containers-manager.py"
 pkill -f "monitor-docker-traffic.py"

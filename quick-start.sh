@@ -14,7 +14,6 @@ test_network_name="mynetwork"
 ###############################################
 
 # Paths
-prepare_script_path="$BIN_DIR/prepare.sh"
 kafka_compose_file_path="$BIN_DIR/docker-compose.yaml"
 test_container_path="$BIN_DIR/test/ubuntu"
 test_container_dockerfile_path="$test_container_path/Dockerfile"
@@ -27,7 +26,7 @@ fi
 
 # Source prepare.sh
 echo "Sourcing prepare.sh"
-source "$prepare_script_path"
+source "$PREPARE_FILE"
 if [ $? -ne 0 ]; then
     echo "Failed to source prepare.sh"
     exit 1

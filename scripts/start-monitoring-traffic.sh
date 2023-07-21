@@ -9,8 +9,7 @@ BIN_DIR=$(dirname "$0")
 
 # Paths
 monitoring_traffic_script_name="monitor-docker-traffic.py"
-monitoring_traffic_script_path="$BIN_DIR/monitoring/$monitoring_traffic_script_name"
-prepare_script_path="$BIN_DIR/prepare.sh"
+monitoring_traffic_script_path="$BIN_DIR/../monitoring/$monitoring_traffic_script_name"
 
 # Function to start monitoring
 start_monitoring() {
@@ -42,7 +41,7 @@ fi
 
 # Source prepare.sh
 echo "Sourcing prepare.sh"
-source "$prepare_script_path"
+source "$PREPARE_FILE"
 if [ $? -ne 0 ]; then
     echo "Failed to source prepare.sh"
     exit 1
