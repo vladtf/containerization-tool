@@ -4,12 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.logging.Logger;
 
 @Component
 public class KafkaProducerClient {
 
-    private final Logger LOGGER = Logger.getLogger(KafkaProducerClient.class.getName());
 
     private final KafkaTemplate<String, String> kafkaTemplate;
 

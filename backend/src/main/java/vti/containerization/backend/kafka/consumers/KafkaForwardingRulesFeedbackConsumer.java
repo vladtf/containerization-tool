@@ -33,7 +33,6 @@ public class KafkaForwardingRulesFeedbackConsumer {
     public void listen(String message) {
         LOGGER.info("Received containers errors: " + message);
 
-        ObjectMapper mapper = new ObjectMapper();
         Optional<KafkaFeedbackMessage> feedbackMessage = deserializeMessage(message);
 
         if (feedbackMessage.isPresent()) {
