@@ -1,11 +1,10 @@
 package vti.containerization.backend.upload;
 
+import java.io.File;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.core.annotation.AliasFor;
-
-import java.io.File;
 
 @Data
 @AllArgsConstructor

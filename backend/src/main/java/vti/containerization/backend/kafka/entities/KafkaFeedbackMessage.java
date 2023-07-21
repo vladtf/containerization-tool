@@ -11,7 +11,7 @@ public class KafkaFeedbackMessage {
     private String message;
     private Level level;
 
-    public static enum Level {
+    public enum Level {
         INFO("INFO"),
         SUCCESS("SUCCESS"),
         ERROR("ERROR"),
@@ -19,7 +19,7 @@ public class KafkaFeedbackMessage {
 
         private final String level;
 
-        private Level(String level) {
+        Level(String level) {
             this.level = level;
         }
 

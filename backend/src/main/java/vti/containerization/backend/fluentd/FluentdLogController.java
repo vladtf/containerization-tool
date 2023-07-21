@@ -24,5 +24,7 @@ public class FluentdLogController {
             @PathVariable String ident,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "30") int pageSize) {
+        log.info("Getting logs for ident: " + ident);
         return fluentdLogService.getLogsByIdent(ident, page, pageSize);
-    }}
+    }
+}

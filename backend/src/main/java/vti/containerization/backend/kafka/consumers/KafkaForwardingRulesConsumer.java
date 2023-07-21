@@ -1,13 +1,16 @@
 package vti.containerization.backend.kafka.consumers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
+
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import vti.containerization.backend.forwarding.ContainerForwardingRulesModel;
 
-import java.util.*;
-import java.util.logging.Logger;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import vti.containerization.backend.forwarding.ContainerForwardingRulesModel;
 
 @Component
 public class KafkaForwardingRulesConsumer {
