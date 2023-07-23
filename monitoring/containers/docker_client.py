@@ -60,7 +60,7 @@ def create_docker_container(create_request: dict,
         # Build the new image
         client = docker.from_env()
         new_image, _ = client.images.build(
-            path=base_image_path, dockerfile="Dockerfile", tag=f"{container_name}_image")
+            path=base_image_path, dockerfile="Dockerfile", tag=f"{container_name}_image", rm=True)
 
         log_config = {
             'type': fluentd_driver,

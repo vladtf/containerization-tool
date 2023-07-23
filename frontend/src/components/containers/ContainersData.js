@@ -11,6 +11,7 @@ const ContainersData = () => {
   const [currentPage, setCurrentPage] = useState(1); // Current page number
   const [totalPages, setTotalPages] = useState(1); // Total number of pages
   const [containerId, setContainerId] = useState(null); // Container ID
+  const [pageSize, setPageSize] = useState(30); // Number of logs per page
 
   useEffect(() => {
     fetchFeedbackMessages();
@@ -82,8 +83,9 @@ const ContainersData = () => {
         `${BACKEND_URL}/fluentd/logs/${containerId}?page=${page}`
       );
       setSelectedLogs(response.data.content);
-      setCurrentPage(response.data.number);
+      setCurrentPage(response.data.number + 1);
       setTotalPages(response.data.totalPages);
+      setPageSize(response.data.size);
       setShowLogsModal(true);
     } catch (error) {
       console.error("Failed to fetch container logs:", error);
@@ -149,11 +151,12 @@ const ContainersData = () => {
         </Modal.Header>
         <Modal.Body>
           <pre
-            style={{ background: "#f1f1f1", padding: "1rem", overflow: "auto" }}
+            style={{ background: "#f1f1f1", padding: "1rem", overflow: "auto"
+          }}
           >
             {selectedLogs.map((log, index) => (
               <React.Fragment key={index}>
-                <span style={{ display: "inline-block" }}>{index + 1}.</span>
+                <span style={{ display: "inline-block" }}>{currentPage*pageSize - pageSize + index + 1}.</span>
                 {log.message}
                 <br />
               </React.Fragment>

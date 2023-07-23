@@ -9,3 +9,5 @@
 * update ui to configure the base image used
 * to fix container not being removed fully
 * to fix missing logs when container didn't start
+* fix default logging driver for containers
+* fix missing logs from python scripts
