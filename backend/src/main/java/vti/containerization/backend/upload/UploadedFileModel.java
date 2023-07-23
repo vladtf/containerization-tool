@@ -16,21 +16,31 @@ public class UploadedFileModel {
     private String path;
 
     public enum FileType {
-        JAR, ZIP, WAR, SHELL, UNKNOWN;
+        JAR(".jar"),
+        ZIP(".zip"),
+        WAR(".war"),
+        SHELL(".sh"),
+        PYTHON(".py"),
+        UNKNOWN("");
+
+        private final String fileExtension;
+
+        FileType(String fileExtension) {
+            this.fileExtension = fileExtension;
+        }
+
+        public String getFileExtension() {
+            return fileExtension;
+        }
 
         public static FileType fromFile(File file) {
             String fileName = file.getName();
-            if (fileName.endsWith(".jar")) {
-                return JAR;
-            } else if (fileName.endsWith(".zip")) {
-                return ZIP;
-            } else if (fileName.endsWith(".war")) {
-                return WAR;
-            } else if (fileName.endsWith(".sh")) {
-                return SHELL;
-            } else {
-                return UNKNOWN;
+            for (FileType fileType : FileType.values()) {
+                if (fileName.endsWith(fileType.getFileExtension())) {
+                    return fileType;
+                }
             }
+            return UNKNOWN;
         }
     }
 }

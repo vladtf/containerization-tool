@@ -8,6 +8,8 @@ const UploadFile = () => {
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
+  const acceptedFileTypes = [".jar", ".war", ".sh", ".py"];
+
   useEffect(() => {
     fetchUploadedFiles();
 
@@ -29,7 +31,7 @@ const UploadFile = () => {
     event.preventDefault();
 
     if (!file) {
-      toast.error("Please select a JAR, WAR, or SH file to upload.");
+      toast.error("Please select a file to upload");
       return;
     }
 
@@ -91,10 +93,13 @@ const UploadFile = () => {
           <h3 className="mb-4">Upload File</h3>
           <Form onSubmit={handleSubmit}>
             <Form.Group>
-              <Form.Label>Select JAR, WAR, or SH File:</Form.Label>
+              <Form.Label>
+                Select a file with one of the following extensions:{" "}
+                {acceptedFileTypes.join(", ")}
+              </Form.Label>
               <Form.Control
                 type="file"
-                accept=".jar,.war,.sh"
+                accept={acceptedFileTypes.join(",")}
                 onChange={handleFileChange}
               />
             </Form.Group>
