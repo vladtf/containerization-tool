@@ -33,7 +33,7 @@ public class FluentdLogService {
 
         log.fine("Searching for logs with ident: " + ident);
 
-        Pageable pageable = PageRequest.of(page, pageSize);
+        Pageable pageable = PageRequest.of(page - 1, pageSize);
         return fluentdLogRepository.findByIdent(ident, pageable);
     }
 
