@@ -48,5 +48,6 @@ public class ContainersController {
         private String fileId;
         private String filePath;
         private String containerName;
+        private String fileType;
     }
 }

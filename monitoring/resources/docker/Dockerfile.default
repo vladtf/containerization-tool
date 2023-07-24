@@ -1,0 +1,6 @@
+FROM containerization-tool-base-image:latest
+
+COPY ./entrypoint.bin /usr/local/bin/entrypoint.bin
+RUN chmod +x /usr/local/bin/entrypoint.bin
+
+CMD ["/usr/local/bin/entrypoint.bin"]

@@ -43,12 +43,28 @@ def check_container_exists(container_id: str):
         return False
 
 
-def create_docker_container(create_request: dict, 
+def get_dockerfile_by_type(file_type: str):
+    file_type = file_type.lower()
+
+    dockerfile_map = {
+        "python": "Dockerfile.python",
+        "java": "Dockerfile.java",
+        "c": "Dockerfile.c",
+        "javascript": "Dockerfile.javascript",
+        "default": "Dockerfile.default"
+    }
+
+    return dockerfile_map.get(file_type, dockerfile_map["default"])
+
+
+def create_docker_container(create_request: dict,
                             base_image_path: str, network_name: str,
                             fluentd_address: str, fluentd_format: str, fluentd_driver: str):
     file_id = create_request["fileId"]
     file_path = create_request["filePath"]
     container_name = create_request["containerName"]
+    file_type = create_request["fileType"]
+
     try:
         if check_container_exists(container_name):
             raise DockerClientException(
@@ -59,8 +75,26 @@ def create_docker_container(create_request: dict,
 
         # Build the new image
         client = docker.from_env()
+
+        docker_file = get_dockerfile_by_type(file_type)
+        logger.info("Using Dockerfile '%s' to create container '%s'",
+                    docker_file, container_name)
+
+        # Build the base image
+        base_image, _ = client.images.build(
+            path=base_image_path, dockerfile="Dockerfile.base", tag=f"containerization-tool-base-image", rm=True)
+
+        # Check if the base image was built successfully
+        if base_image is None:
+            raise DockerClientException("Failed to build base image for container")
+
+        # Build the new image
         new_image, _ = client.images.build(
-            path=base_image_path, dockerfile="Dockerfile", tag=f"{container_name}_image", rm=True)
+            path=base_image_path, dockerfile=docker_file, tag=f"{container_name}_image", rm=True)
+
+        # Check if the new image was built successfully
+        if new_image is None:
+            raise DockerClientException("Failed to build new image for container")
 
         log_config = {
             'type': fluentd_driver,
@@ -80,7 +114,8 @@ def create_docker_container(create_request: dict,
         )
 
     except Exception as e:
-        raise DockerClientException(f"Failed to create Docker container with name {container_name}: {e}")
+        raise DockerClientException(
+            f"Failed to create Docker container with name {container_name}: {e}")
 
 
 def list_containers_on_network(network_name: str) -> list[ContainerData]:
@@ -114,4 +149,5 @@ def delete_docker_container(container_id: str):
         container.stop()
         container.remove()
     except Exception as e:
-        raise DockerClientException(f"Failed to delete container {container_id}: {e}")
+        raise DockerClientException(
+            f"Failed to delete container {container_id}: {e}")

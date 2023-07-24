@@ -61,9 +61,10 @@ const UploadFile = () => {
     }
   };
 
-  const handleCreateContainer = async (fileName) => {
+  const handleCreateContainer = async (fileName, fileType) => {
     const requestBody = {
       fileId: fileName,
+      fileType: fileType,
     };
 
     try {
@@ -125,7 +126,7 @@ const UploadFile = () => {
               <Card.Footer>
                 <Button
                   className="mt-3 mr-2"
-                  onClick={() => handleCreateContainer(file.name)}
+                  onClick={() => handleCreateContainer(file.name, file.type)}
                   variant="outline-primary"
                   style={{ borderRadius: "20px" }}
                 >

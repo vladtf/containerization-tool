@@ -11,3 +11,4 @@
 * to fix missing logs when container didn't start
 * fix default logging driver for containers
 * fix missing logs from python scripts
+* to add an alarm when a build of an container is expected to take longer (also to handle the case when is desired to build without cache)
