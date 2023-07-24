@@ -126,7 +126,7 @@ def list_containers_on_network(network_name: str) -> list[ContainerData]:
         containers_data = []
         for container in containers:
             containers_data.append(ContainerData(
-                id=container.id,
+                id=container.id[:12],  # Only show the first 12 characters of the container id
                 name=container.name,
                 status=container.status,
                 ip=container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"],

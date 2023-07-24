@@ -36,7 +36,7 @@ public class KafkaContainersDataConsumer {
     }
 
     private void saveToDatabase(List<ContainerDataModel> containersData) {
-        containersData.forEach(containerDataRepository::saveIfNotExists);
+        containerDataRepository.saveAll(containersData);
     }
 
     @KafkaListener(topics = "containers-data", groupId = "my_group")
