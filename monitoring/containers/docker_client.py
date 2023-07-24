@@ -48,7 +48,7 @@ def get_dockerfile_by_type(file_type: str):
 
     dockerfile_map = {
         "python": "Dockerfile.python",
-        "java": "Dockerfile.java",
+        "jar": "Dockerfile.java",
         "c": "Dockerfile.c",
         "javascript": "Dockerfile.javascript",
         "default": "Dockerfile.default"
