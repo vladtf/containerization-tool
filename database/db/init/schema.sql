@@ -40,5 +40,3 @@ FOR EACH ROW
 BEGIN
     CALL InsertContainerIfMissing(NEW.ident);
 END;
-
-
