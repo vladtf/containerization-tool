@@ -2,6 +2,7 @@ package vti.containerization.backend.kafka.consumers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -12,16 +13,18 @@ import java.util.List;
 import java.util.logging.Logger;
 
 @Component
+@AllArgsConstructor
 public class KafkaMonitoringConsumer {
     private static final Logger LOGGER = Logger.getLogger(KafkaMonitoringConsumer.class.getName());
     private static final int MAX_BUFFER_SIZE = 1000;
 
     private final List<MessageModel> messageBuffer = new ArrayList<>();
 
+    private final ObjectMapper objectMapper;
+
     private MessageModel deserializeMessage(String json) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(json, MessageModel.class);
+            return objectMapper.readValue(json, MessageModel.class);
         } catch (JsonProcessingException e) {
             LOGGER.warning("Failed to deserialize message: " + e.getMessage());
             return null;

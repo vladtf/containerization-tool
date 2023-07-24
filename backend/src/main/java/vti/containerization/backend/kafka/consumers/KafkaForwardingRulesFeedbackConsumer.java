@@ -2,6 +2,7 @@ package vti.containerization.backend.kafka.consumers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import vti.containerization.backend.kafka.entities.KafkaFeedbackMessage;
@@ -12,16 +13,17 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 @Component
+@AllArgsConstructor
 public class KafkaForwardingRulesFeedbackConsumer {
     private static final Logger LOGGER = Logger.getLogger(KafkaForwardingRulesFeedbackConsumer.class.getName());
 
     private final List<KafkaFeedbackMessage> feedbackMessages = new ArrayList<>();
 
+    private final ObjectMapper objectMapper;
+
     private Optional<KafkaFeedbackMessage> deserializeMessage(String json) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            KafkaFeedbackMessage message = mapper.readValue(json, KafkaFeedbackMessage.class);
-
+            KafkaFeedbackMessage message = objectMapper.readValue(json, KafkaFeedbackMessage.class);
             return Optional.ofNullable(message);
         } catch (JsonProcessingException e) {
             LOGGER.warning("Failed to deserialize message: " + e.getMessage());

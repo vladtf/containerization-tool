@@ -17,11 +17,12 @@ public class KafkaForwardingRulesProducer {
 
     private final KafkaProducerClient kafkaProducerClient;
 
+    private final ObjectMapper objectMapper;
+
     @SneakyThrows
     public void sendForwardingRules(ForwardingController.AddForwardingRuleRequest message) {
         LOGGER.info("Sending forwarding rules to Kafka" + message);
 
-        ObjectMapper objectMapper = new ObjectMapper();
         String messageJson = objectMapper.writeValueAsString(message);
         kafkaProducerClient.sendMessage("add-forwarding-rules", messageJson);
     }
@@ -30,7 +31,6 @@ public class KafkaForwardingRulesProducer {
     public void sendClearForwardingRules(ForwardingController.ClearForwardingRulesRequest message) {
         LOGGER.info("Sending clear forwarding rules to Kafka" + message);
 
-        ObjectMapper objectMapper = new ObjectMapper();
         String messageJson = objectMapper.writeValueAsString(message);
         kafkaProducerClient.sendMessage("clear-forwarding-rules", messageJson);
     }

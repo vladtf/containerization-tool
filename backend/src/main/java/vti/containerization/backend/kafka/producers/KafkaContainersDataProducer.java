@@ -16,9 +16,9 @@ public class KafkaContainersDataProducer {
 
     private final KafkaProducerClient kafkaProducerClient;
 
-    public void sendCreateContainerRequest(ContainersController.CreateContainerRequest message) {
+    private final ObjectMapper objectMapper;
 
-        ObjectMapper objectMapper = new ObjectMapper();
+    public void sendCreateContainerRequest(ContainersController.CreateContainerRequest message) {
 
         try {
             String messageJson = objectMapper.writeValueAsString(message);
