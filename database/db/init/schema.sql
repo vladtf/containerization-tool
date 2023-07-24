@@ -22,3 +22,23 @@ CREATE TABLE
         message TEXT,
         FOREIGN KEY (ident) REFERENCES containers (id) ON DELETE CASCADE
     );
+
+# A procedure to insert a container if it doesn't exist
+DELIMITER //
+CREATE PROCEDURE InsertContainerIfMissing(IN container_id VARCHAR(12))
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM containers WHERE id = container_id) THEN
+        INSERT INTO containers (id) VALUES (container_id);
+    END IF;
+END//
+DELIMITER ;
+
+
+CREATE TRIGGER BeforeInsertFluentdLog
+BEFORE INSERT ON fluentd_logs
+FOR EACH ROW
+BEGIN
+    CALL InsertContainerIfMissing(NEW.ident);
+END;
+
+

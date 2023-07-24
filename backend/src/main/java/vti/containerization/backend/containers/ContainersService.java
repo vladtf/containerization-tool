@@ -22,6 +22,7 @@ public class ContainersService {
     private final KafkaContainersDataConsumer kafkaContainersDataConsumer;
     private final KafkaContainersDataProducer kafkaContainersDataProducer;
     private final UploadArtifactService uploadArtifactService;
+    private final ContainerDataRepository containerDataRepository;
 
     public List<ContainerDataModel> getAllContainers() {
         return kafkaContainersDataConsumer.getContainersData();
@@ -40,6 +41,7 @@ public class ContainersService {
 
     public void deleteContainer(String containerId) {
         kafkaContainersDataProducer.sendDeleteContainerRequest(containerId);
+        containerDataRepository.deleteById(containerId);
         log.info("Container deleted successfully");
     }
 
