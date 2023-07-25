@@ -61,7 +61,7 @@ def monitor_containers_task(containers_data_producer: Producer, network_name: st
                     network_name, len(containers_data))
 
         containers_data = json.dumps([data.to_dict()
-                                     for data in containers_data])
+                                      for data in containers_data])
 
         containers_data_producer.produce(CONTAINERS_DATA_TOPIC, key='my_key',
                                          value=containers_data)
@@ -136,11 +136,11 @@ def create_container_task(consumer: Consumer, containers_data_producer: Producer
         )
 
 
-def delete_container_task(consumer: Consumer, containers_data_producer: Producer):
+def delete_container_task(delete_container_consumer: Consumer, containers_data_producer: Producer):
     logger.debug("Start 'delete_container_task' task...")
 
     try:
-        message = consume_kafka_message(consumer)
+        message = consume_kafka_message(delete_container_consumer)
         if message is None:
             return
 
@@ -149,6 +149,9 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
         def delete_container():
             try:
                 logger.info("Deleting container with id: %s", message)
+                deleted_container = docker_client.get_container_data(container_id=container_id)
+                deleted_container.status = "deleted"
+
                 docker_client.delete_docker_container(
                     container_id=container_id)
                 logger.info("Container deleted successfully")
@@ -159,6 +162,9 @@ def delete_container_task(consumer: Consumer, containers_data_producer: Producer
                     producer=containers_data_producer,
                     topic=CONTAINERS_DATA_FEEDBACK_TOPIC
                 )
+
+                containers_data_producer.produce(CONTAINERS_DATA_TOPIC, key='my_key',
+                                                 value=json.dumps([deleted_container.to_dict()]))
 
             except Exception as exc:
                 logger.error("Error deleting container: %s", exc)

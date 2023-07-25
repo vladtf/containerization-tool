@@ -86,7 +86,8 @@ def create_docker_container(create_request: dict,
 
         # Check if the base image was built successfully
         if base_image is None:
-            raise DockerClientException("Failed to build base image for container")
+            raise DockerClientException(
+                "Failed to build base image for container")
 
         # Build the new image
         new_image, _ = client.images.build(
@@ -94,7 +95,8 @@ def create_docker_container(create_request: dict,
 
         # Check if the new image was built successfully
         if new_image is None:
-            raise DockerClientException("Failed to build new image for container")
+            raise DockerClientException(
+                "Failed to build new image for container")
 
         log_config = {
             'type': fluentd_driver,
@@ -118,6 +120,27 @@ def create_docker_container(create_request: dict,
             f"Failed to create Docker container with name {container_name}: {e}")
 
 
+def get_container_data(container_id: str) -> ContainerData:
+    try:
+        client = docker.from_env()
+        container = client.containers.get(container_id)
+
+        networks = container.attrs["NetworkSettings"]["Networks"]
+        ip = networks[list(networks.keys())[0]]["IPAddress"]
+
+        return ContainerData(
+            # Only show the first 12 characters of the container id
+            id=container.id[:12],
+            name=container.name,
+            status=container.status,
+            ip=ip,
+            created=container.attrs["Created"],
+            image=container.attrs["Config"]["Image"]
+        )
+    except Exception as e:
+        raise DockerClientException(f"Failed to get container data: {e}")
+
+
 def list_containers_on_network(network_name: str) -> list[ContainerData]:
     try:
         client = docker.from_env()
@@ -126,7 +149,8 @@ def list_containers_on_network(network_name: str) -> list[ContainerData]:
         containers_data = []
         for container in containers:
             containers_data.append(ContainerData(
-                id=container.id[:12],  # Only show the first 12 characters of the container id
+                # Only show the first 12 characters of the container id
+                id=container.id[:12],
                 name=container.name,
                 status=container.status,
                 ip=container.attrs["NetworkSettings"]["Networks"][network_name]["IPAddress"],

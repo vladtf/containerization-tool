@@ -40,3 +40,19 @@ FOR EACH ROW
 BEGIN
     CALL InsertContainerIfMissing(NEW.ident);
 END;
+
+
+# A trigger to prevent updating a container with status 'deleted'
+DELIMITER //
+CREATE TRIGGER BeforeUpdateContainers
+BEFORE UPDATE ON containers
+FOR EACH ROW
+BEGIN
+    IF OLD.status = 'deleted' THEN
+        -- Prevent updating if the current status is 'deleted'
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Updates not allowed for rows with status "deleted".';
+    END IF;
+END;
+//
+DELIMITER ;
