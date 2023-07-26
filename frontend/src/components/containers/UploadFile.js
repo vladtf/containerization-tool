@@ -139,6 +139,13 @@ const UploadFile = () => {
                 <strong>Name:</strong> {file.name}
                 <br />
                 <strong>Type:</strong> {file.type}
+                {/* If type is jar, display the main class name */}
+                {file.type === "JAR" && (
+                  <>
+                    <br />
+                    <strong>Main:</strong> {file.javaMainClass}
+                  </>
+                )}
                 <br />
                 <strong>Size:</strong> {file.size}
               </Card.Body>
@@ -169,6 +176,7 @@ const UploadFile = () => {
         displayJarInfo={displayJarInfo}
         setDisplayJarInfo={setDisplayJarInfo}
         file={file}
+        fetchUploadedFiles={fetchUploadedFiles}
       />
     </>
   );

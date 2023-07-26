@@ -3,9 +3,14 @@ import { useEffect, useState } from "react";
 import { Button, Modal, Spinner, Alert } from "react-bootstrap";
 import { BACKEND_URL } from "../../config/BackendConfiguration";
 import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 
-const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
+const JarFileInfo = ({
+  displayJarInfo,
+  setDisplayJarInfo,
+  file,
+  fetchUploadedFiles,
+}) => {
   const [jarFile, setJarFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +40,7 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
 
     setLoading(true);
     axios
-      .post(`${BACKEND_URL}/upload/jar`, formData, {
+      .post(`${BACKEND_URL}/upload/jar/info`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -54,7 +59,25 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
   }, [file]);
 
   const sendSelectionToBackend = (className) => {
-    console.log(`Sending selection to backend: ${className}`);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("selectedMainClass", className);
+
+
+      axios.post(`${BACKEND_URL}/upload/jar`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      fetchUploadedFiles();
+      toast.success("File uploaded successfully");
+      setDisplayJarInfo(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error uploading file");
+    }
   };
 
   // Destructure for easier readability
@@ -77,7 +100,7 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
           {loading ? (
             <Spinner animation="border" variant="primary" />
           ) : !jarInfo ? (
-            <Alert variant='danger'>No info available</Alert>
+            <Alert variant="danger">No info available</Alert>
           ) : (
             <>
               <p>

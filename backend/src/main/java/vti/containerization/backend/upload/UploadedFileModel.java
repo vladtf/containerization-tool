@@ -14,6 +14,7 @@ public class UploadedFileModel {
     private FileType type;
     private String size;
     private String path;
+    private String javaMainClass;
 
     public enum FileType {
         JAR(".jar"),
