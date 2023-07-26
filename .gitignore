@@ -19,3 +19,6 @@ logs/
 
 # any target folder
 target/
+
+# file to ignore
+entrypoint.bin
