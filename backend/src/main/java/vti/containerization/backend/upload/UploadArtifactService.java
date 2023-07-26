@@ -181,16 +181,15 @@ public class UploadArtifactService {
         return classesWithMain;
     }
 
-    public void handleJarUpload(MultipartFile file, String selectedMainClass) throws IOException {
+    @SneakyThrows
+    public void handleJarUpload(MultipartFile file, String selectedMainClass) {
         JarInfoResponse jarInfo = getJarInfo(file);
 
-        // Check if the selected main class is already in Main-Class attribute in the JAR's manifest
         if (jarInfo.getMainClassName() != null && jarInfo.getMainClassName().equals(selectedMainClass)) {
             handleArtifactUpload(file);
             return;
         }
 
-        // Check if the selected main class is in the list of classes with main method
         if (!jarInfo.getClassesWithMainMethod().contains(selectedMainClass)) {
             throw new RuntimeException("The selected main class doesn't contain a main method");
         }
@@ -200,34 +199,39 @@ public class UploadArtifactService {
         Path jarPath = tempDir.resolve(file.getOriginalFilename());
         Files.copy(file.getInputStream(), jarPath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Load the JAR file and get the manifest
-        JarFile jar = new JarFile(jarPath.toFile());
-        Manifest manifest = jar.getManifest();
+        try (JarFile jar = new JarFile(jarPath.toFile())) {
+            // Load the JAR file and get the manifest
+            Manifest manifest = jar.getManifest();
 
-        // Update the Main-Class attribute in the manifest
-        manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, selectedMainClass);
+            // Update the Main-Class attribute in the manifest
+            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, selectedMainClass);
 
-        // Write the updated manifest back into the JAR file
-        JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarPath.toFile()), manifest);
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        for (JarEntry entry : Collections.list(jar.entries())) {
-            InputStream is = jar.getInputStream(entry);
-            // Create new entry so it doesn't carry over extra data such as compressed size
-            jos.putNextEntry(new JarEntry(entry.getName()));
-            while ((bytesRead = is.read(buffer)) != -1) {
-                jos.write(buffer, 0, bytesRead);
+            // Create an in-memory buffer to store the updated JAR
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (JarOutputStream jos = new JarOutputStream(baos, manifest)) {
+                for (JarEntry entry : Collections.list(jar.entries())) {
+                    if (!entry.getName().equalsIgnoreCase("META-INF/MANIFEST.MF")) {
+                        try (InputStream is = jar.getInputStream(entry)) {
+                            jos.putNextEntry(new JarEntry(entry.getName()));
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            while ((bytesRead = is.read(buffer)) != -1) {
+                                jos.write(buffer, 0, bytesRead);
+                            }
+                            jos.flush();
+                            jos.closeEntry();
+                        }
+                    }
+                }
             }
-            is.close();
-            jos.flush();
-            jos.closeEntry();
-        }
-        jos.close();
-        jar.close();
 
-        // Now handle the updated JAR file
-        File updatedJarFile = jarPath.toFile();
-        handleArtifactUpload(updatedJarFile);
+            // Save the updated JAR to disk
+            Files.write(jarPath, baos.toByteArray());
+
+            // Now handle the updated JAR file
+            File updatedJarFile = jarPath.toFile();
+            handleArtifactUpload(updatedJarFile);
+        }
 
         // Clean up the temporary file
         Files.delete(jarPath);
