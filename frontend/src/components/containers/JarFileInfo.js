@@ -1,11 +1,13 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { Button, Modal } from "react-bootstrap";
+import { Button, Modal, Spinner, Alert } from "react-bootstrap";
 import { BACKEND_URL } from "../../config/BackendConfiguration";
 import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
   const [jarFile, setJarFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [jarInfo, setJarInfo] = useState({
     classesWithMainMethod: [],
@@ -31,6 +33,7 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
     const formData = new FormData();
     formData.append("file", file);
 
+    setLoading(true);
     axios
       .post(`${BACKEND_URL}/upload/jar`, formData, {
         headers: {
@@ -41,16 +44,22 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
         setJarInfo(response.data);
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         toast.error("Error getting jar file info");
         setDisplayJarInfo(false);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, [file]);
 
-  // Function to send a request to the backend confirming the selection
   const sendSelectionToBackend = (className) => {
     console.log(`Sending selection to backend: ${className}`);
   };
+
+  // Destructure for easier readability
+  const { mainClassName, classesWithMainMethod } = jarInfo;
+
   return (
     <>
       <ToastContainer />
@@ -62,24 +71,24 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>File Info</Modal.Title>
+          <Modal.Title>Jar Main Class Selection</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {!jarInfo ? (
-            <p>No info available</p>
+          {loading ? (
+            <Spinner animation="border" variant="primary" />
+          ) : !jarInfo ? (
+            <Alert variant='danger'>No info available</Alert>
           ) : (
             <>
               <p>
                 <strong>Main method in manifest:</strong>{" "}
-                {jarInfo.mainClassName ? (
+                {mainClassName ? (
                   <>
-                    {jarInfo.mainClassName}
+                    {mainClassName}
                     <Button
-                      onClick={() => {
-                        sendSelectionToBackend(jarInfo.mainClassName);
-                      }}
+                      onClick={() => sendSelectionToBackend(mainClassName)}
                       variant="outline-primary"
-                      style={{ borderRadius: "20px" }}
+                      className="mx-2 rounded-pill"
                     >
                       Confirm Selection
                     </Button>
@@ -91,15 +100,13 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
               <p>
                 <strong>Classes with main method:</strong>
               </p>
-              {jarInfo.classesWithMainMethod.map((className) => (
-                <div key={className}>
+              {classesWithMainMethod.map((className) => (
+                <div key={className} className="my-2">
                   <span>{className}</span>
                   <Button
-                    onClick={() => {
-                      sendSelectionToBackend(className);
-                    }}
+                    onClick={() => sendSelectionToBackend(className)}
                     variant="outline-primary"
-                    style={{ borderRadius: "20px" }}
+                    className="mx-2 rounded-pill"
                   >
                     Confirm Selection
                   </Button>
@@ -112,7 +119,7 @@ const JarFileInfo = ({ displayJarInfo, setDisplayJarInfo, file }) => {
           <Button
             onClick={() => setDisplayJarInfo(false)}
             variant="outline-primary"
-            style={{ borderRadius: "20px" }}
+            className="rounded-pill"
           >
             Close
           </Button>
