@@ -9,12 +9,6 @@ const UploadFile = () => {
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
-  const [jarInfo, setJarInfo] = useState({
-    classesWithMainMethod: [],
-    mainClassName: "",
-    mainMethodInManifest: false,
-  });
-
   const [displayJarInfo, setDisplayJarInfo] = useState(false);
 
   const acceptedFileTypes = [".jar", ".war", ".sh", ".py"];
@@ -56,24 +50,7 @@ const UploadFile = () => {
     }
 
     if (fileExtension === "jar") {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      axios
-        .post(`${BACKEND_URL}/upload/jar`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        .then((response) => {
-          console.log("Jar info:", response.data);
-          setJarInfo(response.data);
-          setDisplayJarInfo(true);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-
+      setDisplayJarInfo(true);
       return;
     }
 
@@ -191,7 +168,7 @@ const UploadFile = () => {
       <JarFileInfo
         displayJarInfo={displayJarInfo}
         setDisplayJarInfo={setDisplayJarInfo}
-        jarInfo={jarInfo}
+        file={file}
       />
     </>
   );
