@@ -59,25 +59,29 @@ const JarFileInfo = ({
   }, [file]);
 
   const sendSelectionToBackend = (className) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("selectedMainClass", className);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("selectedMainClass", className);
 
-
-      axios.post(`${BACKEND_URL}/upload/jar`, formData, {
+    setLoading(true);
+    axios
+      .post(`${BACKEND_URL}/upload/jar`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+      })
+      .then((response) => {
+        fetchUploadedFiles();
+        toast.success("File uploaded successfully");
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Error uploading file: " + error.response.data);
+      })
+      .finally(() => {
+        setLoading(false);
+        setDisplayJarInfo(false);
       });
-
-      fetchUploadedFiles();
-      toast.success("File uploaded successfully");
-      setDisplayJarInfo(false);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error uploading file");
-    }
   };
 
   // Destructure for easier readability
