@@ -3,10 +3,19 @@ import React, { useEffect, useState } from "react";
 import { Button, Card, Form } from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
 import { BACKEND_URL } from "../../config/BackendConfiguration";
+import JarFileInfo from "./JarFileInfo";
 
 const UploadFile = () => {
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  const [jarInfo, setJarInfo] = useState({
+    classesWithMainMethod: [],
+    mainClassName: "",
+    mainMethodInManifest: false,
+  });
+
+  const [displayJarInfo, setDisplayJarInfo] = useState(false);
 
   const acceptedFileTypes = [".jar", ".war", ".sh", ".py"];
 
@@ -27,11 +36,44 @@ const UploadFile = () => {
     setFile(selectedFile);
   };
 
-  const handleSubmit = async (event) => {
+  const handleFileUpload = async (event) => {
     event.preventDefault();
 
     if (!file) {
       toast.error("Please select a file to upload");
+      return;
+    }
+
+    // Get the file extension
+    const fileExtension = file.name.split(".").pop();
+
+    if (!acceptedFileTypes.includes(`.${fileExtension}`)) {
+      toast.error(
+        "Please select a file with one of the following extensions: " +
+          acceptedFileTypes.join(", ")
+      );
+      return;
+    }
+
+    if (fileExtension === "jar") {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      axios
+        .post(`${BACKEND_URL}/upload/jar`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((response) => {
+          console.log("Jar info:", response.data);
+          setJarInfo(response.data);
+          setDisplayJarInfo(true);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+
       return;
     }
 
@@ -92,7 +134,7 @@ const UploadFile = () => {
       <Card className="my-4">
         <Card.Body>
           <h3 className="mb-4">Upload File</h3>
-          <Form onSubmit={handleSubmit}>
+          <Form onSubmit={handleFileUpload}>
             <Form.Group>
               <Form.Label>
                 Select a file with one of the following extensions:{" "}
@@ -145,6 +187,12 @@ const UploadFile = () => {
           ))}
         </Card.Body>
       </Card>
+
+      <JarFileInfo
+        displayJarInfo={displayJarInfo}
+        setDisplayJarInfo={setDisplayJarInfo}
+        jarInfo={jarInfo}
+      />
     </>
   );
 };

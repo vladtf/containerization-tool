@@ -12,4 +12,3 @@
 * fix missing logs from python scripts
 * to add an alarm when a build of an container is expected to take longer (also to handle the case when is desired to build without cache)
 * to add posibility to set main class for jar/war
-* block update a container in database when it is deleted

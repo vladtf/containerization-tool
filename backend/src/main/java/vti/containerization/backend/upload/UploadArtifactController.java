@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vti.containerization.backend.upload.jar.JarInfoResponse;
 
 import java.util.List;
 
@@ -20,12 +21,22 @@ public class UploadArtifactController {
     @PostMapping
     public ResponseEntity<String> uploadArtifact(@RequestParam("file") MultipartFile file) {
         try {
-            // Invoke your service to handle the uploaded file, e.g., store it in Azure Blob storage
             uploadArtifactService.handleArtifactUpload(file);
             return ResponseEntity.ok("File uploaded successfully!");
         } catch (Exception e) {
             log.log(java.util.logging.Level.SEVERE, "Failed to upload the file: " + e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload the file: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/jar")
+    public ResponseEntity<JarInfoResponse> checkJarInfo(@RequestParam("file") MultipartFile file) {
+        try {
+            JarInfoResponse jarInfo = uploadArtifactService.getJarInfo(file);
+            return ResponseEntity.ok(jarInfo);
+        } catch (Exception e) {
+            log.log(java.util.logging.Level.SEVERE, "Failed to upload the file: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 

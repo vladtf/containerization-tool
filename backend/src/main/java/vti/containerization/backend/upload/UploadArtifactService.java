@@ -1,6 +1,13 @@
 package vti.containerization.backend.upload;
 
-import static vti.containerization.backend.utils.FileUtils.generateUniqueFileName;
+import aj.org.objectweb.asm.ClassReader;
+import lombok.AllArgsConstructor;
+import lombok.extern.java.Log;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import vti.containerization.backend.configuration.ContainerizationToolProperties;
+import vti.containerization.backend.upload.jar.JarInfoResponse;
+import vti.containerization.backend.upload.jar.MainClassVisitor;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,13 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import lombok.AllArgsConstructor;
-import lombok.extern.java.Log;
-import vti.containerization.backend.configuration.ContainerizationToolProperties;
+import static vti.containerization.backend.utils.FileUtils.generateUniqueFileName;
 
 @AllArgsConstructor
 @Service
@@ -105,4 +111,54 @@ public class UploadArtifactService {
             }
         }
     }
+
+
+    public JarInfoResponse getJarInfo(MultipartFile jar) {
+        JarInfoResponse response = new JarInfoResponse();
+
+        try (JarInputStream jarInputStream = new JarInputStream(jar.getInputStream())) {
+            // Check if the JAR contains a Manifest file
+            Manifest manifest = jarInputStream.getManifest();
+
+            String mainClassNameFromManifest = getMainClassNameFromManifest(manifest);
+            response.setMainClassName(mainClassNameFromManifest);
+            
+            response.setClassesWithMainMethod(scanForClassesWithMain(jarInputStream));
+            return response;
+        } catch (IOException e) {
+            // Handle any potential IOException here
+            e.printStackTrace();
+            // You may also set an error flag in the response or throw a custom exception
+        }
+
+        throw new RuntimeException("Failed to get JAR info");
+    }
+
+    private String getMainClassNameFromManifest(Manifest manifest) throws IOException {
+        if (manifest == null) {
+            return null;
+        }
+
+        Attributes attributes = manifest.getMainAttributes();
+        return attributes.getValue("Main-Class");
+    }
+
+    private List<String> scanForClassesWithMain(JarInputStream jarInputStream) throws IOException {
+        List<String> classesWithMain = new ArrayList<>();
+
+        JarEntry entry;
+        while ((entry = jarInputStream.getNextJarEntry()) != null) {
+            if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
+                ClassReader classReader = new ClassReader(jarInputStream);
+                MainClassVisitor visitor = new MainClassVisitor();
+                classReader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                if (visitor.hasMainMethod()) {
+                    classesWithMain.add(visitor.getClassName());
+                }
+            }
+        }
+
+        return classesWithMain;
+    }
+
 }
