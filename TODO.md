@@ -13,3 +13,4 @@
 * to add an alarm when a build of an container is expected to take longer (also to handle the case when is desired to build without cache)
 * to add posibility to set main class for jar/war
 * to fix not fetching files when upload a jar/war
+* fix jar being uploaded with temp name

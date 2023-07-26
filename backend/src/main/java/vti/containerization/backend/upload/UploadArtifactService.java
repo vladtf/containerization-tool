@@ -6,10 +6,10 @@ import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vti.containerization.backend.configuration.ContainerizationToolProperties;
+import vti.containerization.backend.upload.jar.JarInfoResponse;
 import vti.containerization.backend.upload.jar.JarUploadService;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -17,8 +17,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 
 import static vti.containerization.backend.utils.FileUtils.generateUniqueFileName;
 
@@ -88,11 +86,8 @@ public class UploadArtifactService {
 
             // Get the main class name if the file is a JAR
             if (uploadedFileModel.getType() == UploadedFileModel.FileType.JAR) {
-                try (JarInputStream jarInputStream = new JarInputStream(new FileInputStream(file))) {
-                    Manifest manifest = jarInputStream.getManifest();
-                    String mainClassNameFromManifest = jarUploadService.getMainClassNameFromManifest(manifest);
-                    uploadedFileModel.setJavaMainClass(mainClassNameFromManifest);
-                }
+                String mainClassNameFromManifest = jarUploadService.getMainClassNameFromManifest(file);
+                uploadedFileModel.setJavaMainClass(mainClassNameFromManifest);
             }
         }
 
@@ -134,8 +129,12 @@ public class UploadArtifactService {
 
     @SneakyThrows
     public void handleJarUpload(MultipartFile file, String selectedMainClass) {
-        File jarUpload = jarUploadService.handleJarUpload(file, selectedMainClass);
+        File jarUpload = jarUploadService.buildJarToUpload(file, selectedMainClass);
         handleArtifactUpload(jarUpload);
         Files.deleteIfExists(jarUpload.toPath());
+    }
+
+    public JarInfoResponse getJarInfo(MultipartFile file) {
+        return jarUploadService.getJarInfo(file);
     }
 }

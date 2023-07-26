@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vti.containerization.backend.upload.jar.JarInfoResponse;
-import vti.containerization.backend.upload.jar.JarUploadService;
 
 import java.util.List;
 
@@ -18,7 +17,6 @@ import java.util.List;
 public class UploadArtifactController {
 
     private final UploadArtifactService uploadArtifactService;
-    private final JarUploadService jarUploadService;
 
     @PostMapping
     public ResponseEntity<String> uploadArtifact(@RequestParam("file") MultipartFile file) {
@@ -34,7 +32,7 @@ public class UploadArtifactController {
     @PostMapping("/jar/info")
     public ResponseEntity<JarInfoResponse> getJarInfo(@RequestParam("file") MultipartFile file) {
         try {
-            JarInfoResponse jarInfo = jarUploadService.getJarInfo(file);
+            JarInfoResponse jarInfo = uploadArtifactService.getJarInfo(file);
             return ResponseEntity.ok(jarInfo);
         } catch (Exception e) {
             log.log(java.util.logging.Level.SEVERE, "Failed to upload the file: " + e.getMessage(), e);
