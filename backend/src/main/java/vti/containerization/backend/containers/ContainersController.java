@@ -29,6 +29,12 @@ public class ContainersController {
         log.info("Container created successfully");
     }
 
+    @PostMapping("/deploy")
+    public String deployContainer(@RequestBody CreateContainerRequest request) {
+        // You can implement the logic to create a container here using the data from the request
+        return containersService.deployContainer(request);
+    }
+
     @DeleteMapping("/{containerId}")
     public void deleteContainer(@PathVariable String containerId) {
         // You can implement the logic to delete a container here using the provided containerId

@@ -93,6 +93,27 @@ const ContainersData = () => {
     }
   };
 
+  const handleDeployToAzure = async (container) => {
+    console.log("Deploying container:", container);
+
+    axios
+      .post(`${BACKEND_URL}/containers/deploy`, container)
+      .then((response) => {
+        console.log(response);
+
+        // TODO: to show the info about deploy here
+        toast.success("Container deployed to Azure: " + response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error(
+          "Failed to deploy container to Azure. Please try again later."
+        );
+      });
+
+    toast.success("Sent request to deploy container to Azure");
+  };
+
   return (
     <>
       <ToastContainer />
@@ -133,6 +154,14 @@ const ContainersData = () => {
                   >
                     Delete Container
                   </Button>
+
+                  <Button
+                    onClick={() => handleDeployToAzure(container)}
+                    variant="outline-success"
+                    style={{ borderRadius: "20px", marginLeft: "10px" }}
+                  >
+                    Deploy to Azure
+                  </Button>
                 </Card.Footer>
               </Card>
             ))
@@ -151,12 +180,13 @@ const ContainersData = () => {
         </Modal.Header>
         <Modal.Body>
           <pre
-            style={{ background: "#f1f1f1", padding: "1rem", overflow: "auto"
-          }}
+            style={{ background: "#f1f1f1", padding: "1rem", overflow: "auto" }}
           >
             {selectedLogs.map((log, index) => (
               <React.Fragment key={index}>
-                <span style={{ display: "inline-block" }}>{currentPage*pageSize - pageSize + index + 1}.</span>
+                <span style={{ display: "inline-block" }}>
+                  {currentPage * pageSize - pageSize + index + 1}.
+                </span>
                 {log.message}
                 <br />
               </React.Fragment>
