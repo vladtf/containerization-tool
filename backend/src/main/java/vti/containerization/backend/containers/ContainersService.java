@@ -1,5 +1,11 @@
 package vti.containerization.backend.containers;
 
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.azure.resourcemanager.containerinstance.ContainerInstanceManager;
+import com.azure.resourcemanager.containerinstance.models.ContainerGroups;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
@@ -48,7 +54,27 @@ public class ContainersService {
         return kafkaContainersFeedbackConsumer.getFeedbackMessages();
     }
 
-    public String deployContainer(ContainersController.CreateContainerRequest request) {
+    public String deployContainer(ContainerDataModel container) {
+        AzureProfile profile = new AzureProfile(
+                "placeholder",
+                "placeholder",
+                AzureEnvironment.AZURE);
+
+
+        TokenCredential credential = new DefaultAzureCredentialBuilder()
+                .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
+                .build();
+
+
+        ContainerInstanceManager manager = ContainerInstanceManager
+                .authenticate(credential, profile);
+
+        ContainerGroups containerGroups = manager.containerGroups();
+
+        System.out.println("Listing container groups...");
+        containerGroups.list().forEach(containerGroup -> {
+            System.out.println(containerGroup.name());
+        });
         return "Deployed successfully";
     }
 }

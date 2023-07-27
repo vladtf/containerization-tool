@@ -30,9 +30,9 @@ public class ContainersController {
     }
 
     @PostMapping("/deploy")
-    public String deployContainer(@RequestBody CreateContainerRequest request) {
+    public String deployContainer(@RequestBody ContainerDataModel container) {
         // You can implement the logic to create a container here using the data from the request
-        return containersService.deployContainer(request);
+        return containersService.deployContainer(container);
     }
 
     @DeleteMapping("/{containerId}")
