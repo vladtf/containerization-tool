@@ -1,22 +1,17 @@
 package vti.containerization.backend.containers;
 
-import com.azure.core.credential.TokenCredential;
-import com.azure.core.management.AzureEnvironment;
-import com.azure.core.management.profile.AzureProfile;
-import com.azure.identity.DefaultAzureCredentialBuilder;
-import com.azure.resourcemanager.containerinstance.ContainerInstanceManager;
-import com.azure.resourcemanager.containerinstance.models.ContainerGroups;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
-import org.springframework.stereotype.Service;
 import vti.containerization.backend.kafka.consumers.KafkaContainersDataConsumer;
 import vti.containerization.backend.kafka.consumers.KafkaContainersFeedbackConsumer;
 import vti.containerization.backend.kafka.entities.KafkaFeedbackMessage;
 import vti.containerization.backend.kafka.producers.KafkaContainersDataProducer;
 import vti.containerization.backend.upload.UploadArtifactService;
 import vti.containerization.backend.upload.UploadedFileModel;
-
-import java.util.List;
 
 @Service
 @AllArgsConstructor

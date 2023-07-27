@@ -1,3 +1,4 @@
+import configparser
 import json
 import logging
 import os
@@ -200,8 +201,15 @@ from azure.mgmt.containerinstance.models import (ContainerGroup, Container, Cont
                                                  ResourceRequirements, ImageRegistryCredential)
 
 
-def deploy_container_task(consumer: Consumer, containers_data_producer: Producer):
+def deploy_container_task(consumer: Consumer, containers_data_producer: Producer, config: configparser.ConfigParser):
     logger.debug("Start 'deploy_container_task' task...")
+
+    subscription_id = config.get("azure", "subscription_id")
+    resource_group = config.get("azure", "resource_group")
+    location = config.get("azure", "location")
+    acr_server = config.get("azure", "acr_server")
+    acr_username = config.get("azure", "acr_username")
+    acr_password = config.get("azure", "acr_password")
 
     try:
         message = consume_kafka_message(consumer)
@@ -209,30 +217,22 @@ def deploy_container_task(consumer: Consumer, containers_data_producer: Producer
         if message is None:
             return
 
-        containerData: ContainerData = ContainerData.from_dict(json.loads(message))
+        container_data: ContainerData = ContainerData.from_dict(json.loads(message))
 
-        logger.info("Deploying container: %s", containerData)
+        logger.info("Deploying container: %s", container_data)
         credential = DefaultAzureCredential()
-        subscription_id = "ae68c2fa-17e3-48cc-bf21-4e4511e416ac"
-        resource_group = "containerization-tool"
-        location = "UK South"
 
         # Create a container instance
         container_group_name = "container-test-ping-sh"
-        container_image = "containerizationtool.azurecr.io/container-test-ping.sh_image:latest"
+        container_image = f"{acr_server}/{container_data.image}:latest"
 
         # Configure the container properties
         container = Container(
             name="container-test-ping-sh",
             image=container_image,
-            resources=ResourceRequirements(requests={"cpu": "1.0", "memoryInGB": "1.5"}),
+            resources=ResourceRequirements(requests={"cpu": "1.0", "memoryInGB": "1.5"}), # TODO: get from frontend
             ports=[ContainerPort(port=80)],
         )
-
-        # Image registry credentials configuration
-        acr_server = "containerizationtool.azurecr.io"
-        acr_username = "placeholder"
-        acr_password = "placeholder"
 
         # Create ImageRegistryCredential object
         image_registry_credentials = [ImageRegistryCredential(
@@ -253,7 +253,6 @@ def deploy_container_task(consumer: Consumer, containers_data_producer: Producer
         container_client = ContainerInstanceManagementClient(credential, subscription_id)
         container_client.container_groups.begin_create_or_update(resource_group, container_group_name,
                                                                  container_group).result()
-
 
     except Exception as exc:
         logger.error("Error deploying container: %s", exc)
@@ -306,7 +305,7 @@ def main():
                          args=(delete_container_consumer, containers_data_producer))
 
     thread_pool.add_task(name='deploy_container', target=deploy_container_task,
-                         args=(deploy_container_consumer, containers_data_producer))
+                         args=(deploy_container_consumer, containers_data_producer, config))
 
     # Set up signal handler for Ctrl+C
     signal.signal(signal.SIGINT, stop_threads_handler(
