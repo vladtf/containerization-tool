@@ -34,25 +34,31 @@ public class UploadArtifactService {
         Path tempFile = Files.createTempFile("upload-", multipartFile.getOriginalFilename());
         multipartFile.transferTo(tempFile.toFile());
 
-        handleArtifactUpload(tempFile.toFile());
+        handleArtifactUpload(tempFile.toFile(), multipartFile.getOriginalFilename());
 
         // Clean up the temporary file
         Files.delete(tempFile);
     }
 
     @SneakyThrows
-    public void handleArtifactUpload(File file) {
+    public void handleArtifactUpload(File file, String originalFileName) {
         log.info("Received file: " + file.getName());
 
         // Get the list of already uploaded files
         List<UploadedFileModel> uploadedFiles = getUploadedFiles();
 
         // Generate a unique filename
-        String fileName = generateUniqueFileName(file.getName(), uploadedFiles);
+        String fileName = generateUniqueFileName(originalFileName, uploadedFiles);
 
         log.info(MessageFormat.format("Saving file {0} to {1}", file.getName(), fileName));
 
         // Create the target directory if it doesn't exist
+        Path targetPath = getPath(fileName);
+        Files.copy(file.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        log.info("File saved to: " + targetPath.toAbsolutePath());
+    }
+
+    private Path getPath(String fileName) {
         File targetDirectory = new File(containerizationToolProperties.getUpload().getDirectory());
         if (!targetDirectory.exists()) {
             boolean mkdirs = targetDirectory.mkdirs();
@@ -62,9 +68,7 @@ public class UploadArtifactService {
         }
 
         // Save the file to the target directory
-        Path targetPath = targetDirectory.toPath().resolve(fileName);
-        Files.copy(file.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-        log.info("File saved to: " + targetPath.toAbsolutePath());
+        return targetDirectory.toPath().resolve(fileName);
     }
 
     @SneakyThrows
@@ -128,9 +132,9 @@ public class UploadArtifactService {
     }
 
     @SneakyThrows
-    public void handleJarUpload(MultipartFile file, String selectedMainClass) {
-        File jarUpload = jarUploadService.buildJarToUpload(file, selectedMainClass);
-        handleArtifactUpload(jarUpload);
+    public void handleJarUpload(MultipartFile multipartFile, String selectedMainClass) {
+        File jarUpload = jarUploadService.buildJarToUpload(multipartFile, selectedMainClass);
+        handleArtifactUpload(jarUpload, multipartFile.getOriginalFilename());
         Files.deleteIfExists(jarUpload.toPath());
     }
 

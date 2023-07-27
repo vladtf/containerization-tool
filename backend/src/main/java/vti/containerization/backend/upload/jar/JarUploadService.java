@@ -17,6 +17,7 @@ import java.util.jar.*;
 @Service
 public class JarUploadService {
 
+    @SneakyThrows
     public JarInfoResponse getJarInfo(MultipartFile jar) {
         try (JarInputStream jarInputStream = new JarInputStream(jar.getInputStream())) {
             JarInfoResponse response = new JarInfoResponse();
@@ -28,11 +29,6 @@ public class JarUploadService {
 
             response.setClassesWithMainMethod(scanForClassesWithMain(jarInputStream));
             return response;
-        } catch (IOException e) {
-            // Handle any potential IOException here
-            e.printStackTrace();
-            // You may also set an error flag in the response or throw a custom exception
-            throw new RuntimeException("Failed to get JAR info", e);
         }
     }
 
@@ -66,11 +62,6 @@ public class JarUploadService {
 
             // Return the updated JAR file
             return jarPath.toFile();
-        } catch (IOException e) {
-            // Handle any potential IOException here
-            e.printStackTrace();
-            // You may also set an error flag in the response or throw a custom exception
-            throw new RuntimeException("Failed to build JAR", e);
         }
     }
 
@@ -132,17 +123,19 @@ public class JarUploadService {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (JarOutputStream jos = new JarOutputStream(baos, manifest)) {
             for (JarEntry entry : Collections.list(jar.entries())) {
-                if (!entry.getName().equalsIgnoreCase("META-INF/MANIFEST.MF")) {
-                    try (InputStream is = jar.getInputStream(entry)) {
-                        jos.putNextEntry(new JarEntry(entry.getName()));
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = is.read(buffer)) != -1) {
-                            jos.write(buffer, 0, bytesRead);
-                        }
-                        jos.flush();
-                        jos.closeEntry();
+                if (entry.getName().equalsIgnoreCase("META-INF/MANIFEST.MF")) {
+                    continue;
+                }
+
+                try (InputStream is = jar.getInputStream(entry)) {
+                    jos.putNextEntry(new JarEntry(entry.getName()));
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        jos.write(buffer, 0, bytesRead);
                     }
+                    jos.flush();
+                    jos.closeEntry();
                 }
             }
         }
