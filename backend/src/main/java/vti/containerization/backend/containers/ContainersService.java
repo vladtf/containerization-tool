@@ -55,26 +55,7 @@ public class ContainersService {
     }
 
     public String deployContainer(ContainerDataModel container) {
-        AzureProfile profile = new AzureProfile(
-                "placeholder",
-                "placeholder",
-                AzureEnvironment.AZURE);
-
-
-        TokenCredential credential = new DefaultAzureCredentialBuilder()
-                .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
-                .build();
-
-
-        ContainerInstanceManager manager = ContainerInstanceManager
-                .authenticate(credential, profile);
-
-        ContainerGroups containerGroups = manager.containerGroups();
-
-        System.out.println("Listing container groups...");
-        containerGroups.list().forEach(containerGroup -> {
-            System.out.println(containerGroup.name());
-        });
-        return "Deployed successfully";
+        kafkaContainersDataProducer.sendDeployContainerRequest(container);
+        return "Container deployed successfully";
     }
 }

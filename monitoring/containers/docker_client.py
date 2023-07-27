@@ -33,6 +33,10 @@ class ContainerData:
     def to_json(self):
         return json.dumps(self.to_dict(), cls=DataClassEncoder)
 
+    @classmethod
+    def from_dict(cls, param):
+        return cls(**param)
+
 
 def check_container_exists(container_id: str):
     client = docker.from_env()
