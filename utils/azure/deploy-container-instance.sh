@@ -18,28 +18,42 @@ docker push "containerizationtool.azurecr.io/container-test-ping.sh_image:latest
 
 # create container instance
 az container create \
-  --resource-group <resource-group-name> \
-  --name <container-name> \
-  --image <docker-image-name> \
-  --ports <port-number> \
-  --cpu <cpu-value> \
-  --memory <memory-value> \
-  --registry-username <registry-username> \
-  --registry-password <registry-password> \
-  --dns-name-label <dns-name-label> \
-  --environment-variables <key=value> \
-  --location <azure-region>
+  --resource-group "containerization-tool" \
+  --name "container-test-ping-sh" \
+  --image "containerizationtool.azurecr.io/container-test-ping.sh_image:latest" \
+  --registry-username "containerizationtool" \
+  --registry-password "${password}" \
+  --ports 80
+
+#   --cpu 1 \
+#   --memory 1 \
+#   --location <azure-region>
+#   --dns-name-label <dns-name-label> \
+#   --environment-variables <key=value> \
+#   --registry-username <registry-username> \
+#   --registry-password <registry-password> \
 
 
 # show container instance
 az container show \
-  --resource-group <resource-group-name> \
-  --name <container-name> \
+  --resource-group "containerization-tool" \
+  --name "container-test-ping-sh" \
   --query instanceView.state
+
+
+# show container instance logs
+az container logs \
+  --resource-group "containerization-tool" \
+  --name "container-test-ping-sh"
 
 # delete container instance
 az container delete \
-  --resource-group <resource-group-name> \
-  --name <container-name> \
+  --resource-group "containerization-tool" \
+  --name "container-test-ping-sh" \
   --yes
+
+# show container instance list
+az container list \
+    --resource-group "containerization-tool" \
+    --output table
 
