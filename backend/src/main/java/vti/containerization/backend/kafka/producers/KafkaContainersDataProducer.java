@@ -4,7 +4,6 @@ package vti.containerization.backend.kafka.producers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
-import vti.containerization.backend.containers.ContainerDataModel;
 import vti.containerization.backend.containers.ContainersController;
 
 import java.util.logging.Logger;
@@ -35,17 +34,6 @@ public class KafkaContainersDataProducer {
         try {
             LOGGER.info("Sending delete container request: " + containerId);
             kafkaProducerClient.sendMessage("delete-container", containerId);
-        } catch (Exception e) {
-            LOGGER.severe("Failed to serialize message: " + e.getMessage());
-        }
-    }
-
-    public void sendDeployContainerRequest(ContainerDataModel container) {
-        try {
-            String messageJson = objectMapper.writeValueAsString(container);
-            LOGGER.info("Sending deploy container request: " + messageJson);
-
-            kafkaProducerClient.sendMessage("deploy-container", messageJson);
         } catch (Exception e) {
             LOGGER.severe("Failed to serialize message: " + e.getMessage());
         }

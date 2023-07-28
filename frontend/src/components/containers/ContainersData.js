@@ -107,7 +107,7 @@ const ContainersData = () => {
       .catch((error) => {
         console.error(error);
         toast.error(
-          "Failed to deploy container to Azure. Please try again later."
+          "Failed to deploy container to Azure: " + error.response.data
         );
       });
 

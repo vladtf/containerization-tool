@@ -1,17 +1,16 @@
 package vti.containerization.backend.containers;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
+import org.springframework.stereotype.Service;
 import vti.containerization.backend.kafka.consumers.KafkaContainersDataConsumer;
 import vti.containerization.backend.kafka.consumers.KafkaContainersFeedbackConsumer;
 import vti.containerization.backend.kafka.entities.KafkaFeedbackMessage;
 import vti.containerization.backend.kafka.producers.KafkaContainersDataProducer;
 import vti.containerization.backend.upload.UploadArtifactService;
 import vti.containerization.backend.upload.UploadedFileModel;
+
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -49,8 +48,4 @@ public class ContainersService {
         return kafkaContainersFeedbackConsumer.getFeedbackMessages();
     }
 
-    public String deployContainer(ContainerDataModel container) {
-        kafkaContainersDataProducer.sendDeployContainerRequest(container);
-        return "Container deployed successfully";
-    }
 }

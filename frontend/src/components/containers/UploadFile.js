@@ -134,7 +134,7 @@ const UploadFile = () => {
         <Card.Body>
           <h3 className="mb-4">Uploaded Files</h3>
           {uploadedFiles.map((file) => (
-            <Card className="mb-3" key={file.id}>
+            <Card className="mb-3" key={file.name}>
               <Card.Body>
                 <strong>Name:</strong> {file.name}
                 <br />
