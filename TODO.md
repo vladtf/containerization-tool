@@ -21,3 +21,4 @@
 * to check the acr before pushing to it
 * to handle acr login by asking for credentials directly from azure
 * to send to frontend intermediate message about deploy to azure (image upload, container creation, etc)
+* add separate page to handle azure stuff

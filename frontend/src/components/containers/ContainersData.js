@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Button, Card, Modal } from "react-bootstrap";
+import { Button, Card, Modal, Spinner } from "react-bootstrap";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import { BACKEND_URL, PYTHON_BACKEND_URL } from "../../config/BackendConfiguration";
+import {
+  BACKEND_URL,
+  PYTHON_BACKEND_URL,
+} from "../../config/BackendConfiguration";
 
 const ContainersData = () => {
+  const [loading, setLoading] = useState(false);
   const [containers, setContainers] = useState([]);
   const [selectedLogs, setSelectedLogs] = useState([]);
   const [showLogsModal, setShowLogsModal] = useState(false); // State to manage log popup visibility
@@ -96,6 +100,7 @@ const ContainersData = () => {
   const handleDeployToAzure = async (container) => {
     console.log("Deploying container:", container);
 
+    setLoading(true);
     axios
       .post(`${PYTHON_BACKEND_URL}/azure/deploy`, container)
       .then((response) => {
@@ -109,6 +114,9 @@ const ContainersData = () => {
         toast.error(
           "Failed to deploy container to Azure: " + error.response.data
         );
+      })
+      .finally(() => {
+        setLoading(false);
       });
 
     toast.success("Sent request to deploy container to Azure");
@@ -160,7 +168,10 @@ const ContainersData = () => {
                     variant="outline-success"
                     style={{ borderRadius: "20px", marginLeft: "10px" }}
                   >
-                    Deploy to Azure
+                    Deploy to Azure{" "}
+                    {loading && (
+                      <Spinner animation="border" variant="success" size="sm" />
+                    )}
                   </Button>
                 </Card.Footer>
               </Card>

@@ -1,14 +1,16 @@
-import json
 import logging
 import os
 
-from flask import Flask, request
-from flask_cors import CORS
+import docker
+from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, IpAddress, Port,
-                                                 ResourceRequirements, ImageRegistryCredential)
+from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, ResourceRequirements,
+                                                 ImageRegistryCredential)
+from azure.mgmt.containerregistry import ContainerRegistryManagementClient
 from azure.mgmt.subscription import SubscriptionClient
+from flask import Flask, request
+from flask_cors import CORS
 
 from configuration import config_loader
 from containers.docker_client import ContainerData
@@ -23,10 +25,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-def get_subscription_id(subscription_name):
-    # Use DefaultAzureCredential to authenticate with Azure using Managed Identity
-    credential = DefaultAzureCredential()
-
+def get_subscription_id(subscription_name, credential):
     # Create a SubscriptionClient to get the subscription ID
     subscription_client = SubscriptionClient(credential)
 
@@ -40,6 +39,54 @@ def get_subscription_id(subscription_name):
 
     # Return None if the subscription with the given name is not found
     return None
+
+
+def get_acr_url(subscription_id, resource_group, acr_server, credential):
+    acr_client = ContainerRegistryManagementClient(credential, subscription_id)
+
+    try:
+        acr = acr_client.registries.get(resource_group, acr_server)
+        logger.info(f"Container registry '{acr_server}' exists in the Azure subscription.")
+        return acr.login_server
+    except ResourceNotFoundError:
+        logger.warning(f"Container registry '{acr_server}' not found in the Azure subscription.")
+        return None
+
+
+def push_image_to_acr(container_data: ContainerData, acr_url, credential, acr_username, acr_password):
+    # Get the docker client
+    docker_client = docker.from_env()
+
+    # Login to the ACR
+    docker_client.login(username=acr_username,
+                        password=acr_password,
+                        registry=acr_url)
+
+    # Check if the image exists locally
+    image = docker_client.images.get(container_data.image)
+    logger.info(f"Image {container_data.image} found locally.")
+
+    # Tag the image with the ACR URL
+    acr_image_name = f"{acr_url}/{container_data.image}:latest"
+    image.tag(acr_image_name)
+
+    # Push the image to the ACR
+    resp = docker_client.images.push(repository=acr_image_name,
+                                     stream=True,
+                                     decode=True)
+
+    # Print the push response
+    for line in resp:
+        if "error" in line:
+            logger.error(f"Error while pushing image: {line}")
+            raise Exception(f"Error while pushing image: {line}")
+        elif "status" in line:
+            logger.info(f"Pushing image: {line}")
+
+    logger.info(f"Image {container_data.image} pushed to ACR {acr_url}.")
+    return acr_image_name
+
+
 @app.route('/azure/deploy', methods=['POST'])
 def deploy_to_azure():
     config = app.app_config
@@ -47,7 +94,7 @@ def deploy_to_azure():
     subscription_name = config.get("azure", "subscription_name")
     resource_group = config.get("azure", "resource_group")
     location = config.get("azure", "location")
-    acr_server = config.get("azure", "acr_server")
+    acr_name = config.get("azure", "acr_name")
     acr_username = config.get("azure", "acr_username")
     acr_password = config.get("azure", "acr_password")
 
@@ -60,28 +107,30 @@ def deploy_to_azure():
         credential = DefaultAzureCredential()
 
         # Get the subscription ID
-        subscription_id = get_subscription_id(subscription_name)
+        subscription_id = get_subscription_id(subscription_name, credential)
+        if subscription_id is None:
+            return f"Could not find a subscription with the name: {subscription_name}", 400
 
-        # Create a container instance
-        container_group_name = "container-test-ping-sh"
-        container_image = f"{acr_server}/{container_data.image}:latest"
-        # container_image = f"{acr_server}/container-test-ping.sh_image:latest"
+        # Get the ACR URL
+        acr_url = get_acr_url(subscription_id, resource_group, acr_name, credential)
+        if acr_url is None:
+            return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
 
-        message=f"Subscription ID: {subscription_id}"
-        return message, 200
-
+        # Push the image to the ACR
+        acr_image_name = push_image_to_acr(container_data, acr_url, credential, acr_username, acr_password)
 
         # Configure the container properties
+        container_group_name = container_data.name
         container = Container(
-            name="container-test-ping-sh",
-            image=container_image,
+            name=container_group_name,
+            image=acr_image_name,
             resources=ResourceRequirements(requests={"cpu": "1.0", "memoryInGB": "1.5"}),  # TODO: get from frontend
             ports=[ContainerPort(port=80)],
         )
 
         # Create ImageRegistryCredential object
         image_registry_credentials = [ImageRegistryCredential(
-            server=acr_server,
+            server=acr_url,
             username=acr_username,
             password=acr_password
         )]
