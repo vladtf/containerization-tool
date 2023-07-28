@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Card, Modal } from "react-bootstrap";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import { BACKEND_URL } from "../../config/BackendConfiguration";
+import { BACKEND_URL, PYTHON_BACKEND_URL } from "../../config/BackendConfiguration";
 
 const ContainersData = () => {
   const [containers, setContainers] = useState([]);
@@ -97,7 +97,7 @@ const ContainersData = () => {
     console.log("Deploying container:", container);
 
     axios
-      .post(`${BACKEND_URL}/containers/deploy`, container)
+      .post(`${PYTHON_BACKEND_URL}/azure/deploy`, container)
       .then((response) => {
         console.log(response);
 
