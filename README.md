@@ -34,7 +34,40 @@ The developer can see the report in an web interface and decide how to map the n
 
 #### Prerequisites
 
-TODO
+> Following prerequisites are required to run the tool locally and were tested during development.
+
+1. Os: *Ubuntu 23.04*
+
+2. Bash Requirements:
+
+> TODO: to add bash requirements as a table
+
+3. Pyton Version:
+```bash
+❯ python --version
+Python 3.11.2
+```
+
+4. Python Requirements: [requirements.txt](requirements.txt) (does not require manual installation, handled by [prepare.sh](prepare.sh))
+
+5. Java Requirements:
+```bash
+❯ mvn --version
+Apache Maven 3.8.7
+Maven home: /usr/share/maven
+Java version: 17.0.7, vendor: Private Build, runtime: /usr/lib/jvm/java-17-openjdk-amd64
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "6.2.0-26-generic", arch: "amd64", family: "unix"
+```
+
+6. Docker Requirements:
+```bash
+❯ docker --version
+Docker version 24.0.4, build 3713ee1
+
+❯ docker-compose --version
+docker-compose version 1.29.2, build unknown
+```
 
 #### Start-up scripts
 
@@ -113,14 +146,18 @@ Directory [util](util) contains some useful scripts that can be used to see how 
 ## Screenshots
 
 Home Page:
+
 <img src="documentation/screenshots/home-page.jpeg" width="50%">
 
 Containers Page:
+
 <img src="documentation/screenshots/containers-page.jpeg" width="50%">
 
 
 Forwarding Rules Page:
+
 <img src="documentation/screenshots/forwarding-page.jpeg" width="50%">
 
 Messages Page:
+
 <img src="documentation/screenshots/messages-page.jpeg" width="50%">
