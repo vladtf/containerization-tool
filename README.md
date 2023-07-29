@@ -6,7 +6,7 @@
   - [Table of Contents](#table-of-contents)
   - [Description](#description)
   - [Documentation](#documentation)
-  - [Start](#start)
+  - [Start the Tool](#start-the-tool)
     - [Local Environment](#local-environment)
       - [Prerequisites](#prerequisites)
       - [Start-up scripts](#start-up-scripts)
@@ -28,7 +28,7 @@ The developer can see the report in an web interface and decide how to map the n
 - [Similar Tools](documentation/similar-tools.md)
 - [Implementation](documentation/implementation.md)
 
-## Start
+## Start the Tool
 
 ### Local Environment
 
@@ -38,7 +38,7 @@ The developer can see the report in an web interface and decide how to map the n
 
 1. Os: *Ubuntu 23.04*
 
-2. Bash Requirements:
+2. Bash:
 
 > TODO: to add bash requirements as a table
 
@@ -47,10 +47,9 @@ The developer can see the report in an web interface and decide how to map the n
 ❯ python --version
 Python 3.11.2
 ```
+4. Python: [requirements.txt](requirements.txt) (does not require manual installation, handled by [prepare.sh](prepare.sh))
 
-4. Python Requirements: [requirements.txt](requirements.txt) (does not require manual installation, handled by [prepare.sh](prepare.sh))
-
-5. Java Requirements:
+5. Java:
 ```bash
 ❯ mvn --version
 Apache Maven 3.8.7
@@ -60,7 +59,7 @@ Default locale: en_US, platform encoding: UTF-8
 OS name: "linux", version: "6.2.0-26-generic", arch: "amd64", family: "unix"
 ```
 
-6. Docker Requirements:
+6. Docker:
 ```bash
 ❯ docker --version
 Docker version 24.0.4, build 3713ee1
@@ -117,6 +116,8 @@ source prepare.sh
 4. Start the frontend server
 ```bash
 cd frontend
+
+npm install
 npm start
 ```
 
@@ -132,6 +133,8 @@ cd monitoring
 export FLASK_APP=azure-backend
 flask run
 ```
+
+7. Azure setup: TODO
 
 #### Start the tool in Docker
 
