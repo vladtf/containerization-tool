@@ -22,3 +22,4 @@
 * to handle acr login by asking for credentials directly from azure
 * to send to frontend intermediate message about deploy to azure (image upload, container creation, etc)
 * add separate page to handle azure stuff
+* when click deploy to azure to redirect to azure page with the container selected
