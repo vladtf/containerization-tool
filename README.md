@@ -113,14 +113,14 @@ Directory [util](util) contains some useful scripts that can be used to see how 
 ## Screenshots
 
 Home Page:
-![](documentation/screenshots/home-page.jpeg)
+<img src="documentation/screenshots/home-page.jpeg" width="50%">
 
 Containers Page:
-![](documentation/screenshots/containers-page.jpeg)
+<img src="documentation/screenshots/containers-page.jpeg" width="50%">
+
 
 Forwarding Rules Page:
-![](documentation/screenshots/forwarding-page.jpeg)
+<img src="documentation/screenshots/forwarding-page.jpeg" width="50%">
 
 Messages Page:
-![](documentation/screenshots/messages-page.jpeg)
-
+<img src="documentation/screenshots/messages-page.jpeg" width="50%">
