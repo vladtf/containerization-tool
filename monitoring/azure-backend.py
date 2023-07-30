@@ -179,6 +179,41 @@ def deploy_to_azure():
     except Exception as e:
         logger.error("An error occurred during deployment", e)
         return f'An error occurred during deployment: {e}', 500
+    
+@app.route('/azure/get', methods=['GET'])
+def get_all_containers():
+    config = app.app_config
+
+    subscription_name = config.get("azure", "subscription_name")
+    resource_group = config.get("azure", "resource_group")
+    location = config.get("azure", "location")
+    acr_name = config.get("azure", "acr_name")
+
+    try:
+        credentials = DefaultAzureCredential()
+
+        # Get the subscription ID
+        subscription_id = get_subscription_id(subscription_name, credentials)
+        if subscription_id is None:
+            return f"Could not find a subscription with the name: {subscription_name}", 400
+
+        # Get the ACR URL
+        acr_url = get_acr_url(subscription_id, resource_group, acr_name, credentials)
+        if acr_url is None:
+            return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
+
+        # Login to the ACR
+        docker_client = login_to_acr(acr_url)
+
+        # Get all the images from the ACR
+        images = docker_client.images.list()
+
+        # Return the images
+        return json.dumps([image.tags[0] for image in images]), 200
+
+    except Exception as e:
+        logger.error("An error occurred while getting images", e)
+        return f'An error occurred while getting images: {e}', 500
 
 
 if __name__ == '__main__':
