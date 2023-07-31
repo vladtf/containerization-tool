@@ -1,12 +1,13 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Navbar, Nav } from "react-bootstrap";
+import { Nav, Navbar } from "react-bootstrap";
+import { FaCloud } from "react-icons/fa";
 import {
-  IoHome,
   IoChatbox,
-  IoSettingsSharp,
   IoCubeOutline,
+  IoHome,
+  IoSettingsSharp,
 } from "react-icons/io5";
+import { Link, useLocation } from "react-router-dom";
 
 const CustomNavbar = () => {
   const location = useLocation();
@@ -51,6 +52,14 @@ const CustomNavbar = () => {
           >
             <IoCubeOutline size={20} style={{ marginRight: "5px" }} />
             Containers
+          </Nav.Link>
+          <Nav.Link
+            as={Link}
+            to="/azure"
+            className={isActive("/azure")}
+          >
+            <FaCloud size={20} style={{ marginRight: "5px" }} />
+            Azure
           </Nav.Link>
         </Nav>
       </Navbar.Collapse>
