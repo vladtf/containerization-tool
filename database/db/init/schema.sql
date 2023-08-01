@@ -11,6 +11,12 @@ CREATE TABLE
     );
 
 CREATE TABLE
+    azure_contianer (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255)
+    );
+
+CREATE TABLE
     fluentd_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
         time DATETIME,
@@ -23,36 +29,44 @@ CREATE TABLE
         FOREIGN KEY (ident) REFERENCES containers (id) ON DELETE CASCADE
     );
 
-# A procedure to insert a container if it doesn't exist
+# A procedure to insert a container if it doesn't exist 
+
 DELIMITER //
-CREATE PROCEDURE InsertContainerIfMissing(IN container_id VARCHAR(12))
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM containers WHERE id = container_id) THEN
-        INSERT INTO containers (id) VALUES (container_id);
-    END IF;
-END//
+
+CREATE PROCEDURE INSERTCONTAINERIFMISSING(IN CONTAINER_ID 
+VARCHAR(12)) BEGIN 
+	IF NOT EXISTS (
+	    SELECT 1
+	    FROM containers
+	    WHERE
+	        id = container_id
+	) THEN
+	INSERT INTO containers (id)
+	VALUES (container_id);
+	END IF;
+	END// 
+
+
 DELIMITER ;
 
-
-CREATE TRIGGER BeforeInsertFluentdLog
-BEFORE INSERT ON fluentd_logs
-FOR EACH ROW
-BEGIN
-    CALL InsertContainerIfMissing(NEW.ident);
-END;
-
+CREATE TRIGGER BEFOREINSERTFLUENTDLOG BEFORE INSERT 
+ON FLUENTD_LOGS FOR EACH ROW BEGIN 
+	CALL InsertContainerIfMissing(NEW.ident);
+END; 
 
 # A trigger to prevent updating a container with status 'deleted'
+
 DELIMITER //
-CREATE TRIGGER BeforeUpdateContainers
-BEFORE UPDATE ON containers
-FOR EACH ROW
-BEGIN
-    IF OLD.status = 'deleted' THEN
-        -- Prevent updating if the current status is 'deleted'
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Updates not allowed for rows with status "deleted".';
-    END IF;
-END;
-//
+
+CREATE TRIGGER BEFOREUPDATECONTAINERS BEFORE UPDATE 
+ON CONTAINERS FOR EACH ROW BEGIN 
+	IF OLD.status = 'deleted' THEN -- Prevent updating if the current status is 'deleted'
+	SIGNAL SQLSTATE '45000'
+	SET
+	    MESSAGE_TEXT = 'Updates not allowed for rows with status "deleted".';
+	END IF;
+END; 
+
+// 
+
 DELIMITER ;

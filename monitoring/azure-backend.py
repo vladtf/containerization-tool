@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 
+import MySQLdb
 import docker
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
@@ -114,6 +115,13 @@ def push_image_to_acr(container_data: ContainerData, acr_url):
     logger.info(f"Image {container_data.image} pushed to ACR {acr_url}.")
     return acr_image_name
 
+def connect_to_database():
+    return MySQLdb.connect(
+        host=app.config['MYSQL_HOST'],
+        user=app.config['MYSQL_USER'],
+        passwd=app.config['MYSQL_PASSWORD'],
+        db=app.config['MYSQL_DB']
+    )
 
 @app.route('/azure/deploy', methods=['POST'])
 def deploy_to_azure():
