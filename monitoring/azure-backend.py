@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import subprocess
+from dataclasses import dataclass, asdict
 
 import docker
 from azure.core.exceptions import ResourceNotFoundError
@@ -17,6 +18,7 @@ from flask_mysqldb import MySQL
 
 from configuration import config_loader
 from containers.docker_client import ContainerData
+from kafka.kafka_client import DataClassEncoder
 
 # Configure flask and CORS
 app = Flask(__name__)
@@ -26,6 +28,24 @@ app.logger.setLevel(logging.INFO)  # Set the desired logging level
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class AzureContainer:
+    id: int
+    name: str
+    status: str
+    image: str
+
+    def to_dict(self):
+        return asdict(self)
+
+    def to_json(self):
+        return json.dumps(self.to_dict(), cls=DataClassEncoder)
+
+    @classmethod
+    def from_dict(cls, param):
+        return cls(**param)
 
 
 def get_subscription_id(subscription_name, credentials):
@@ -149,9 +169,11 @@ def get_all_azure_container():
 
         result = cursor.fetchall()
 
+        azure_containers = [AzureContainer(*row) for row in result]
+
         cursor.close()
 
-        return jsonify(result), 200
+        return jsonify([container.to_dict() for container in azure_containers]), 200
 
     except Exception as e:
         logger.error(f"Failed to get all container: {e}")

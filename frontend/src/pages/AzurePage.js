@@ -1,4 +1,4 @@
-import { Button, Container } from "react-bootstrap";
+import { Button, Card, Container, Spinner } from "react-bootstrap";
 import CustomNavbar from "../components/CustomNavbar";
 import { ToastContainer, toast } from "react-toastify";
 import CustomFooter from "../components/CustomFooter";
@@ -33,6 +33,10 @@ const AzurePage = () => {
       toast.error("Failed to fetch containers. Please try again later.");
     }
   };
+
+  const container = containers.find(
+    (container) => container.id === selectedContainer
+  );
 
   return (
     <Container>
@@ -81,6 +85,40 @@ const AzurePage = () => {
           </Button>
         ))}
       </div>
+
+      {selectedContainer && (
+        <Card className="mb-3">
+          <Card.Body>
+            <strong>ID:</strong> {container.id}
+            <br />
+            <strong>Name:</strong> {container.name}
+            <br />
+            <strong>Status:</strong> {container.status}
+            <br />
+            <strong>Image:</strong> {container.image}
+          </Card.Body>
+          <Card.Footer>
+            <Button
+              // onClick={() => handleDeleteContainer(container.id)}
+              variant="outline-danger"
+              style={{ borderRadius: "20px" }}
+            >
+              Delete Container
+            </Button>
+
+            <Button
+              // onClick={() => handleDeployToAzure(container)}
+              variant="outline-success"
+              style={{ borderRadius: "20px", marginLeft: "10px" }}
+            >
+              Deploy to Azure{" "}
+              {loading && (
+                <Spinner animation="border" variant="success" size="sm" />
+              )}
+            </Button>
+          </Card.Footer>
+        </Card>
+      )}
 
       <CustomFooter />
     </Container>
