@@ -3,7 +3,6 @@ import logging
 import os
 import subprocess
 
-import MySQLdb
 import docker
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
@@ -14,6 +13,7 @@ from azure.mgmt.containerregistry import ContainerRegistryManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_mysqldb import MySQL
 
 from configuration import config_loader
 from containers.docker_client import ContainerData
@@ -116,16 +116,6 @@ def push_image_to_acr(container_data: ContainerData, acr_url):
     return acr_image_name
 
 
-def connect_to_database():
-    config = app.app_config
-    return MySQLdb.connect(
-        host=config.get("mysql", "host"),
-        user=config.get("mysql", "user"),
-        passwd=config.get("mysql", "password"),
-        db=config.get("mysql", "database")
-    )
-
-
 @app.route('/azure/pre-deploy', methods=['POST'])
 def pre_deploy_to_azure():
     config = app.app_config
@@ -134,17 +124,14 @@ def pre_deploy_to_azure():
         container_data: ContainerData = ContainerData.from_dict(request.get_json())
         logger.info(f"Starting pre-deployment of container {container_data}")
 
-        db_connection = connect_to_database()
-
-        cursor = db_connection.cursor()
+        cursor = app.mysql.connection.cursor()
 
         query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name}', 'ready', '{container_data.image}')"
         cursor.execute(query)
 
-        db_connection.commit()
+        app.mysql.connection.commit()
 
         cursor.close()
-        db_connection.close()
 
         return "Container pre-deployed successfully", 200
     except Exception as e:
@@ -152,12 +139,10 @@ def pre_deploy_to_azure():
         return f"Failed to deploy container: {e}", 500
 
 
-@app.route('/azure/deploy', methods=['GET'])
+@app.route('/azure/all', methods=['GET'])
 def get_all_azure_container():
     try:
-        db_connection = connect_to_database()
-
-        cursor = db_connection.cursor()
+        cursor = app.mysql.connection.cursor()
 
         query = f"SELECT * FROM azure_container"
         cursor.execute(query)
@@ -165,7 +150,6 @@ def get_all_azure_container():
         result = cursor.fetchall()
 
         cursor.close()
-        db_connection.close()
 
         return jsonify(result), 200
 
@@ -281,5 +265,13 @@ if __name__ == '__main__':
     app_config = config_loader.load_config(os.path.abspath(__file__))
 
     app.app_config = app_config
+
+    app.config['MYSQL_HOST'] = app_config.get("mysql", "host")
+    app.config['MYSQL_USER'] = app_config.get("mysql", "user")
+    app.config['MYSQL_PASSWORD'] = app_config.get("mysql", "password")
+    app.config['MYSQL_DB'] = app_config.get("mysql", "database")
+
+    mysql = MySQL(app)
+    app.mysql = mysql
 
     app.run(debug=True)
