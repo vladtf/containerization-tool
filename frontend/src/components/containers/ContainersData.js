@@ -102,12 +102,15 @@ const ContainersData = () => {
 
     setLoading(true);
     axios
-      .post(`${PYTHON_BACKEND_URL}/azure/deploy`, container)
+      .post(`${PYTHON_BACKEND_URL}/azure/pre-deploy`, container)
       .then((response) => {
         console.log(response);
 
         // TODO: to show the info about deploy here
-        toast.success("Container deployed to Azure: " + response.data);
+        toast.success("Initiated deplot to Azure: " + response.data);
+
+        // Redirect to the azure page
+        window.location.href = "/azure"; // Replace '/azure' with the desired destination URL
       })
       .catch((error) => {
         console.error(error);

@@ -11,9 +11,11 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    azure_contianer (
+    azure_container (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255)
+        name VARCHAR(255),
+        status VARCHAR(50),
+        image VARCHAR(255),
     );
 
 CREATE TABLE

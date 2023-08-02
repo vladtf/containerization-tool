@@ -12,7 +12,7 @@ from azure.mgmt.containerinstance.models import (ContainerGroup, Container, Cont
                                                  ImageRegistryCredential)
 from azure.mgmt.containerregistry import ContainerRegistryManagementClient
 from azure.mgmt.subscription import SubscriptionClient
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from configuration import config_loader
@@ -115,13 +115,64 @@ def push_image_to_acr(container_data: ContainerData, acr_url):
     logger.info(f"Image {container_data.image} pushed to ACR {acr_url}.")
     return acr_image_name
 
+
 def connect_to_database():
+    config = app.app_config
     return MySQLdb.connect(
-        host=app.config['MYSQL_HOST'],
-        user=app.config['MYSQL_USER'],
-        passwd=app.config['MYSQL_PASSWORD'],
-        db=app.config['MYSQL_DB']
+        host=config.get("mysql", "host"),
+        user=config.get("mysql", "user"),
+        passwd=config.get("mysql", "password"),
+        db=config.get("mysql", "database")
     )
+
+
+@app.route('/azure/pre-deploy', methods=['POST'])
+def pre_deploy_to_azure():
+    config = app.app_config
+
+    try:
+        container_data: ContainerData = ContainerData.from_dict(request.get_json())
+        logger.info(f"Starting pre-deployment of container {container_data}")
+
+        db_connection = connect_to_database()
+
+        cursor = db_connection.cursor()
+
+        query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name}', 'ready', '{container_data.image}')"
+        cursor.execute(query)
+
+        db_connection.commit()
+
+        cursor.close()
+        db_connection.close()
+
+        return "Container pre-deployed successfully", 200
+    except Exception as e:
+        logger.error("Failed to pre-deploy container", e)
+        return f"Failed to deploy container: {e}", 500
+
+
+@app.route('/azure/deploy', methods=['GET'])
+def get_all_azure_container():
+    try:
+        db_connection = connect_to_database()
+
+        cursor = db_connection.cursor()
+
+        query = f"SELECT * FROM azure_container"
+        cursor.execute(query)
+
+        result = cursor.fetchall()
+
+        cursor.close()
+        db_connection.close()
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        logger.error(f"Failed to get all container: {e}")
+        return f"Failed to get all container: {e}", 500
+
 
 @app.route('/azure/deploy', methods=['POST'])
 def deploy_to_azure():
@@ -187,7 +238,8 @@ def deploy_to_azure():
     except Exception as e:
         logger.error("An error occurred during deployment", e)
         return f'An error occurred during deployment: {e}', 500
-    
+
+
 @app.route('/azure/get', methods=['GET'])
 def get_all_containers():
     config = app.app_config
