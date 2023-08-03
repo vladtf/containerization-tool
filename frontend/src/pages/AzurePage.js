@@ -34,6 +34,32 @@ const AzurePage = () => {
     }
   };
 
+  const handleDeployToAzure = async (container) => {
+    console.log("Deploying container:", container);
+
+    setLoading(true);
+    axios
+      .post(`${PYTHON_BACKEND_URL}/azure/deploy`, container)
+      .then((response) => {
+        console.log(response);
+
+        // TODO: to show the info about deploy here
+        toast.success("Initiated deplot to Azure: " + response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error(
+          "Failed to deploy container to Azure: " + error.response.data
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+        fetchContainers();
+      });
+
+    toast.success("Sent request to deploy container to Azure");
+  };
+
   const container = containers.find(
     (container) => container.id === selectedContainer
   );
@@ -107,7 +133,7 @@ const AzurePage = () => {
             </Button>
 
             <Button
-              // onClick={() => handleDeployToAzure(container)}
+              onClick={() => handleDeployToAzure(container)}
               variant="outline-success"
               style={{ borderRadius: "20px", marginLeft: "10px" }}
             >

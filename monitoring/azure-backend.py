@@ -107,7 +107,7 @@ def login_to_acr(acr_url):
     return docker_client
 
 
-def push_image_to_acr(container_data: ContainerData, acr_url):
+def push_image_to_acr(container_data: AzureContainer, acr_url):
     # Login to the ACR
     docker_client = login_to_acr(acr_url)
 
@@ -138,8 +138,6 @@ def push_image_to_acr(container_data: ContainerData, acr_url):
 
 @app.route('/azure/pre-deploy', methods=['POST'])
 def pre_deploy_to_azure():
-    config = app.app_config
-
     try:
         container_data: ContainerData = ContainerData.from_dict(request.get_json())
         logger.info(f"Starting pre-deployment of container {container_data}")
@@ -190,7 +188,7 @@ def deploy_to_azure():
     acr_name = config.get("azure", "acr_name")
 
     try:
-        container_data: ContainerData = ContainerData.from_dict(request.get_json())
+        container_data: AzureContainer = AzureContainer.from_dict(request.get_json())
         logger.info(f"Starting deployment of container {container_data}")
 
         logger.info("Deploying container: %s", container_data)
@@ -237,6 +235,16 @@ def deploy_to_azure():
         container_client = ContainerInstanceManagementClient(credentials, subscription_id)
         container_client.container_groups.begin_create_or_update(resource_group, container_group_name,
                                                                  container_group).result()
+
+        # Update the container status in the database
+        cursor = app.mysql.connection.cursor()
+
+        query = f"UPDATE azure_container SET status='deployed' WHERE name='{container_data.name}'"
+        cursor.execute(query)
+
+        app.mysql.connection.commit()
+
+        cursor.close()
 
         # For example, let's just return a success message for demonstration purposes
         return 'Container deployed successfully to Azure', 200
