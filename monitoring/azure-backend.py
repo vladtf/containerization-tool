@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 from dataclasses import dataclass, asdict
+from time import sleep
 
 import docker
 from azure.core.exceptions import ResourceNotFoundError
@@ -292,6 +293,90 @@ def get_azure_instance_data(azure_container: AzureContainer):
     return azure_instance
 
 
+@app.route('/azure/deploy/<container_id>', methods=['DELETE'])
+def undeploy_from_azure(container_id):
+    config = app.app_config
+
+    subscription_name = config.get("azure", "subscription_name")
+    resource_group = config.get("azure", "resource_group")
+
+    try:
+        logger.info(f"Starting undeployment of container {container_id}")
+
+        # Get the container from the database
+        cursor = app.mysql.connection.cursor()
+
+        query = f"SELECT * FROM azure_container WHERE id={container_id}"
+        cursor.execute(query)
+
+        result = cursor.fetchone()
+
+        azure_container = AzureContainer(*result)
+
+        cursor.close()
+
+        logger.info("Undeploying container: %s", container_id)
+        credentials = DefaultAzureCredential()
+
+        # Get the subscription ID
+        subscription_id = get_subscription_id(subscription_name, credentials)
+        if subscription_id is None:
+            return f"Could not find a subscription with the name: {subscription_name}", 400
+
+        # Get the container instance using the ID
+        container_client = ContainerInstanceManagementClient(credentials, subscription_id)
+        container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
+
+        # Delete the container instance
+        response = container_client.container_groups.begin_delete(resource_group,
+                                                                  azure_container.instance_name).result()
+
+        # Wait for the container to be deleted
+        while container_group.containers[0].instance_view.current_state.state != "Terminated":
+            sleep(1)
+            container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
+
+        # TODO: check if the container was deleted successfully
+
+        # TODO: delete image from ACR
+
+        # Update the container status and azure container instance ID
+        cursor = app.mysql.connection.cursor()
+
+        query = (f"UPDATE azure_container "
+                 f"SET status='ready', instance_id=NULL, instance_name=NULL "
+                 f"WHERE name='{container_id}'")
+
+        cursor.execute(query)
+
+        app.mysql.connection.commit()
+
+        cursor.close()
+
+        # For example, let's just return a success message for demonstration purposes
+        return 'Container undeployed successfully from Azure', 200
+
+    except ResourceNotFoundError as e:
+        logger.error("Could not find the container instance", e)
+        # update the container status and azure container instance ID
+        cursor = app.mysql.connection.cursor()
+
+        query = (f"UPDATE azure_container "
+                 f"SET status='ready', instance_id=NULL, instance_name=NULL "
+                 f"WHERE id='{container_id}'")
+
+        cursor.execute(query)
+
+        app.mysql.connection.commit()
+
+        cursor.close()
+
+        return f"Could not find the container instance: {e}", 404
+    except Exception as e:
+        logger.error("An error occurred during undeployment", e)
+        return f'An error occurred during undeployment: {e}', 500
+
+
 @app.route('/azure/container/<container_id>', methods=['GET'])
 def get_container(container_id):
     try:
@@ -313,6 +398,27 @@ def get_container(container_id):
     except Exception as e:
         logger.error(f"Failed to get container with id {container_id}: {e}")
         return f"Failed to get container with id {container_id}: {e}", 500
+
+
+# listener to handle delete from database of 'ready' container
+@app.route('/azure/container/<container_id>', methods=['DELETE'])
+def delete_container(container_id):
+    try:
+        cursor = app.mysql.connection.cursor()
+
+        query = f"DELETE FROM azure_container WHERE id={container_id}"
+
+        cursor.execute(query)
+
+        app.mysql.connection.commit()
+
+        cursor.close()
+
+        return f"Container with id {container_id} deleted successfully", 200
+
+    except Exception as e:
+        logger.error(f"Failed to delete container with id {container_id}: {e}")
+        return f"Failed to delete container with id {container_id}: {e}", 500
 
 
 if __name__ == '__main__':

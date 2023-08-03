@@ -16,9 +16,11 @@ const AzurePage = () => {
 
   useEffect(() => {
     fetchContainers();
+    fetchAzureContainerData(selectedContainer);
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
+      fetchAzureContainerData(selectedContainer);
     }, 2000); // Refresh data
 
     return () => {
@@ -34,25 +36,35 @@ const AzurePage = () => {
       );
 
       if (container.status === "deployed") {
-        setAzureLoading(true);
-        axios
-          .get(`${PYTHON_BACKEND_URL}/azure/container/${container.id}`)
-          .then((response) => {
-            console.log(response);
-            setAzureContainerData(response.data);
-          })
-          .catch((error) => {
-            console.error(error);
-            toast.error(
-              "Failed to fetch Azure container data: " + error.response.data
-            );
-          })
-          .finally(() => {
-            setAzureLoading(false);
-          });
+        fetchAzureContainerData(selectedContainer);
       }
     }
   }, [selectedContainer]);
+
+  const fetchAzureContainerData = async (containerId) => {
+    if (!containerId) {
+      return;
+    }
+
+    console.log("Fetching Azure container data:", containerId);
+
+    setAzureLoading(true);
+    axios
+      .get(`${PYTHON_BACKEND_URL}/azure/container/${containerId}`)
+      .then((response) => {
+        console.log(response);
+        setAzureContainerData(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error(
+          "Failed to fetch Azure container data: " + error.response.data
+        );
+      })
+      .finally(() => {
+        setAzureLoading(false);
+      });
+  };
 
   const fetchContainers = async () => {
     try {
@@ -92,7 +104,45 @@ const AzurePage = () => {
 
   const handleDeleteContainer = async (containerId) => {
     console.log("Deleting container:", containerId);
-    toast.success("TODO: Delete container: " + containerId);
+
+    axios
+      .delete(`${PYTHON_BACKEND_URL}/azure/container/${containerId}`)
+      .then((response) => {
+        console.log(response);
+        toast.success("Container deleted successfully");
+
+        setSelectedContainer("");
+        fetchContainers();
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to delete container: " + error.response.data);
+      });
+  };
+
+  const handleUndeployContainer = async (containerId) => {
+    console.log("Undeploying container:", containerId);
+
+    setLoading(true);
+    axios
+      .delete(`${PYTHON_BACKEND_URL}/azure/deploy/${containerId}`)
+      .then((response) => {
+        console.log(response);
+        toast.success("Container undeployed successfully");
+        fetchContainers();
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to undeploy container: " + error.response.data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  const fetchContainerLogs = async (container) => {
+    console.log("Fetching container logs:", container);
+    toast.success("TODO: Fetch container logs: " + container);
   };
 
   const container = containers.find(
@@ -236,25 +286,7 @@ const AzurePage = () => {
               </>
             )}
           </Card.Body>
-          <Card.Footer>
-            <Button
-              onClick={() => handleDeleteContainer(container.id)}
-              variant="outline-danger"
-              style={{ borderRadius: "20px" }}
-            >
-              Delete Container
-            </Button>
-            <Button
-              onClick={() => handleDeployToAzure(container)}
-              variant="outline-success"
-              style={{ borderRadius: "20px", marginLeft: "10px" }}
-            >
-              Deploy to Azure{" "}
-              {loading && (
-                <Spinner animation="border" variant="success" size="sm" />
-              )}
-            </Button>
-          </Card.Footer>
+          <Card.Footer>{renderContainersButtons(container)}</Card.Footer>
         </Card>
       )}
 
@@ -272,6 +304,62 @@ const AzurePage = () => {
     return container.id === selectedContainer
       ? "secondary"
       : "outline-secondary";
+  }
+
+  function renderContainersButtons(container) {
+    // if container is ready show delete and deploy buttons
+    if (container.status === "ready") {
+      return (
+        <>
+          <Button
+            onClick={() => handleDeleteContainer(container.id)}
+            variant="outline-danger"
+            style={{ borderRadius: "20px" }}
+          >
+            Delete Container
+          </Button>
+          <Button
+            onClick={() => handleDeployToAzure(container)}
+            variant="outline-success"
+            style={{ borderRadius: "20px", marginLeft: "10px" }}
+          >
+            Deploy to Azure{" "}
+            {loading && (
+              <Spinner animation="border" variant="success" size="sm" />
+            )}
+          </Button>
+        </>
+      );
+    }
+
+    // if container is deployed show un-deploy button and logs button
+    if (container.status === "deployed") {
+      return (
+        <>
+          <Button
+            onClick={() => handleUndeployContainer(container.id)}
+            variant="outline-danger"
+            style={{ borderRadius: "20px" }}
+          >
+            Undeploy from Azure{" "}
+            {loading && (
+              <Spinner animation="border" variant="danger" size="sm" />
+            )}
+          </Button>
+          <Button
+            onClick={() => fetchContainerLogs(container)}
+            variant="outline-primary"
+            style={{ borderRadius: "20px", marginLeft: "10px" }}
+          >
+            See Logs
+          </Button>
+        </>
+      );
+
+      // if container is not ready or deployed show nothing
+    } else {
+      return null;
+    }
   }
 };
 
