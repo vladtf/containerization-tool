@@ -254,40 +254,25 @@ def deploy_to_azure():
         return f'An error occurred during deployment: {e}', 500
 
 
-@app.route('/azure/get', methods=['GET'])
-def get_all_containers():
-    config = app.app_config
-
-    subscription_name = config.get("azure", "subscription_name")
-    resource_group = config.get("azure", "resource_group")
-    location = config.get("azure", "location")
-    acr_name = config.get("azure", "acr_name")
-
+@app.route('/azure/container/<container_id>', methods=['GET'])
+def get_container(container_id):
     try:
-        credentials = DefaultAzureCredential()
+        cursor = app.mysql.connection.cursor()
 
-        # Get the subscription ID
-        subscription_id = get_subscription_id(subscription_name, credentials)
-        if subscription_id is None:
-            return f"Could not find a subscription with the name: {subscription_name}", 400
+        query = f"SELECT * FROM azure_container WHERE id={container_id}"
+        cursor.execute(query)
 
-        # Get the ACR URL
-        acr_url = get_acr_url(subscription_id, resource_group, acr_name, credentials)
-        if acr_url is None:
-            return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
+        result = cursor.fetchone()
 
-        # Login to the ACR
-        docker_client = login_to_acr(acr_url)
+        azure_container = AzureContainer(*result)
 
-        # Get all the images from the ACR
-        images = docker_client.images.list()
+        cursor.close()
 
-        # Return the images
-        return json.dumps([image.tags[0] for image in images]), 200
+        return jsonify(azure_container.to_dict()), 200
 
     except Exception as e:
-        logger.error("An error occurred while getting images", e)
-        return f'An error occurred while getting images: {e}', 500
+        logger.error(f"Failed to get container with id {container_id}: {e}")
+        return f"Failed to get container with id {container_id}: {e}", 500
 
 
 if __name__ == '__main__':

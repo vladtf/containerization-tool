@@ -9,8 +9,10 @@ import { IoCubeOutline } from "react-icons/io5";
 
 const AzurePage = () => {
   const [loading, setLoading] = useState(false);
+  const [azureLoading, setAzureLoading] = useState(false);
   const [containers, setContainers] = useState([]);
   const [selectedContainer, setSelectedContainer] = useState("");
+  const [azureContainerData, setAzureContainerData] = useState([]);
 
   useEffect(() => {
     fetchContainers();
@@ -23,6 +25,34 @@ const AzurePage = () => {
       clearInterval(refreshInterval);
     };
   }, []);
+
+  // when selectedContainer changes, fetch azure container data if container is deployed
+  useEffect(() => {
+    if (selectedContainer) {
+      const container = containers.find(
+        (container) => container.id === selectedContainer
+      );
+
+      if (container.status === "deployed") {
+        setAzureLoading(true);
+        axios
+          .get(`${PYTHON_BACKEND_URL}/azure/container/${container.id}`)
+          .then((response) => {
+            console.log(response);
+            setAzureContainerData(response.data);
+          })
+          .catch((error) => {
+            console.error(error);
+            toast.error(
+              "Failed to fetch Azure container data: " + error.response.data
+            );
+          })
+          .finally(() => {
+            setAzureLoading(false);
+          });
+      }
+    }
+  }, [selectedContainer]);
 
   const fetchContainers = async () => {
     try {
@@ -122,6 +152,39 @@ const AzurePage = () => {
             <strong>Status:</strong> {container.status}
             <br />
             <strong>Image:</strong> {container.image}
+            {/* If container is in 'deployed' status then fetch azure container data */}
+            {container.status === "deployed" && (
+              <>
+                <br />
+                <br />
+                <strong>Azure Container Data:</strong>
+                {azureLoading ? (
+                  <>
+                    <br />
+                    <Spinner animation="border" variant="primary" size="md" />
+                  </>
+                ) : (
+                  <>
+                    <br />
+                    <strong>Container ID:</strong>{" "}
+                    {container.azure_container_id}
+                    <br />
+                    <strong>Container Name:</strong>{" "}
+                    {container.azure_container_name}
+                    <br />
+                    <strong>Container Status:</strong>{" "}
+                    {container.azure_container_status}
+                    <br />
+                    <strong>Container Image:</strong>{" "}
+                    {container.azure_container_image}
+                    <br />
+                    <strong>Container URL:</strong>{" "}
+                    {container.azure_container_url}
+                    <br />
+                  </>
+                )}
+              </>
+            )}
           </Card.Body>
           <Card.Footer>
             <Button
