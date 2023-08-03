@@ -332,9 +332,12 @@ def undeploy_from_azure(container_id):
                                                                   azure_container.instance_name).result()
 
         # Wait for the container to be deleted
-        while container_group.containers[0].instance_view.current_state.state != "Terminated":
-            sleep(1)
-            container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
+        try:
+            while container_group.containers[0].instance_view.current_state.state != "Terminated":
+                container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
+                sleep(1)
+        except Exception as e: # TODO: to properly check the deletion status
+            logger.error("An error occurred while waiting for the container to be deleted", e)
 
         # TODO: check if the container was deleted successfully
 
@@ -345,7 +348,7 @@ def undeploy_from_azure(container_id):
 
         query = (f"UPDATE azure_container "
                  f"SET status='ready', instance_id=NULL, instance_name=NULL "
-                 f"WHERE name='{container_id}'")
+                 f"WHERE id='{container_id}'")
 
         cursor.execute(query)
 
