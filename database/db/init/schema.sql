@@ -15,7 +15,9 @@ CREATE TABLE
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255),
         status VARCHAR(50),
-        image VARCHAR(255)
+        image VARCHAR(255),
+        instance_id VARCHAR(255),
+        instance_name VARCHAR(255)
     );
 
 CREATE TABLE

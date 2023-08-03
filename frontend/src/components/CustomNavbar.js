@@ -3,6 +3,7 @@ import { Nav, Navbar } from "react-bootstrap";
 import { FaCloud } from "react-icons/fa";
 import {
   IoChatbox,
+  IoCube,
   IoCubeOutline,
   IoHome,
   IoSettingsSharp,
@@ -50,7 +51,7 @@ const CustomNavbar = () => {
             to="/containers"
             className={isActive("/containers")}
           >
-            <IoCubeOutline size={20} style={{ marginRight: "5px" }} />
+            <IoCube size={20} style={{ marginRight: "5px" }} />
             Containers
           </Nav.Link>
           <Nav.Link

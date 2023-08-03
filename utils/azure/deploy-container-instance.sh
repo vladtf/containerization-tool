@@ -57,3 +57,6 @@ az container list \
     --resource-group "containerization-tool" \
     --output table
 
+az container show \
+  --resource-group "containerization-tool" \
+  --name "my-ubuntu" > container.json

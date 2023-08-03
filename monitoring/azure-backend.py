@@ -36,6 +36,8 @@ class AzureContainer:
     name: str
     status: str
     image: str
+    instance_id: str
+    instance_name: str
 
     def to_dict(self):
         return asdict(self)
@@ -233,13 +235,19 @@ def deploy_to_azure():
 
         # Create the Azure Container Instance
         container_client = ContainerInstanceManagementClient(credentials, subscription_id)
-        container_client.container_groups.begin_create_or_update(resource_group, container_group_name,
-                                                                 container_group).result()
+        deploy_response = container_client.container_groups.begin_create_or_update(
+            resource_group,
+            container_group_name,
+            container_group
+        ).result()
 
-        # Update the container status in the database
+        # Update the container status and azure container instance ID
         cursor = app.mysql.connection.cursor()
 
-        query = f"UPDATE azure_container SET status='deployed' WHERE name='{container_data.name}'"
+        query = (f"UPDATE azure_container "
+                 f"SET status='deployed', instance_id='{deploy_response.id}', instance_name='{deploy_response.name}' "
+                 f"WHERE name='{container_data.name}'")
+
         cursor.execute(query)
 
         app.mysql.connection.commit()
@@ -252,6 +260,36 @@ def deploy_to_azure():
     except Exception as e:
         logger.error("An error occurred during deployment", e)
         return f'An error occurred during deployment: {e}', 500
+
+
+def get_azure_instance_data(azure_container: AzureContainer):
+    config = app.app_config
+
+    subscription_name = config.get("azure", "subscription_name")
+    resource_group = config.get("azure", "resource_group")
+
+    azure_instance = azure_container.to_dict()
+
+    credentials = DefaultAzureCredential()
+
+    # Get the subscription ID
+    subscription_id = get_subscription_id(subscription_name, credentials)
+    if subscription_id is None:
+        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
+
+    # Get the container instance using the ID
+    container_client = ContainerInstanceManagementClient(credentials, subscription_id)
+    container_group = container_client.container_groups.get(resource_group, azure_container.name)
+
+    azure_instance["instance_id"] = container_group.id
+    azure_instance["instance_name"] = container_group.name
+    azure_instance["instance_status"] = container_group.containers[0].instance_view.current_state.state
+    # azure_instance["instance_ip"] = container_group.ip_address.ip # TODO: get IP address
+    azure_instance["instance_ports"] = [port.port for port in container_group.containers[0].ports]
+    azure_instance["instance_image"] = container_group.containers[0].image
+    azure_instance["instance_start_time"] = container_group.containers[0].instance_view.current_state.start_time
+
+    return azure_instance
 
 
 @app.route('/azure/container/<container_id>', methods=['GET'])
@@ -268,7 +306,9 @@ def get_container(container_id):
 
         cursor.close()
 
-        return jsonify(azure_container.to_dict()), 200
+        azure_instance = get_azure_instance_data(azure_container)
+
+        return jsonify(azure_instance), 200
 
     except Exception as e:
         logger.error(f"Failed to get container with id {container_id}: {e}")
