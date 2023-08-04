@@ -17,13 +17,18 @@ const AzurePage = () => {
   const [azureContainerInstances, setAzureContainerInstances] = useState([]);
   const [loadingInstances, setLoadingInstances] = useState(false);
 
+  const [azureContainerRepositories, setAzureContainerRepositories] = useState([]);
+  const [loadingRepositories, setLoadingRepositories] = useState(false);
+
   useEffect(() => {
     fetchContainers();
     fetchAzureContainerInstances();
+    fetchAzureContainerRepositories();
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
       fetchAzureContainerInstances();
+      fetchAzureContainerRepositories();
     }, 5000); // Refresh data
 
     return () => {
@@ -97,6 +102,27 @@ const AzurePage = () => {
       })
       .finally(() => {
         setLoadingInstances(false);
+      });
+  };
+
+  const fetchAzureContainerRepositories = () => {
+    console.log("Fetching Azure container repositories");
+
+    setLoadingRepositories(true);
+    axios
+      .get(`${PYTHON_BACKEND_URL}/azure/repositories`)
+      .then((response) => {
+        console.log(response);
+        setAzureContainerRepositories(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error(
+          "Failed to fetch Azure container repositories: " + error.response.data
+        );
+      })
+      .finally(() => {
+        setLoadingRepositories(false);
       });
   };
 
@@ -324,7 +350,7 @@ const AzurePage = () => {
             <Table striped bordered hover responsive>
               <thead>
                 <tr>
-                  <th>Instance ID</th>
+                  {/* <th>Instance ID</th> */}
                   <th>Instance Name</th>
                   <th>Instance Image</th>
                   <th>Action</th>
@@ -333,7 +359,7 @@ const AzurePage = () => {
               <tbody>
                 {azureContainerInstances.map((instance) => (
                   <tr key={instance.id}>
-                    <td>{instance.id}</td>
+                    {/* <td>{instance.id}</td> */}
                     <td>{instance.name}</td>
                     <td>{instance.image}</td>
                     <td>
@@ -348,6 +374,47 @@ const AzurePage = () => {
                   </tr>
                 ))}
                 {loadingInstances && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: "center" }}>
+                      <Spinner animation="border" variant="primary" size="md" />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* Component to display all the container repositories in a table with delete button */}
+      <Card className="mb-3">
+        <Card.Body>
+          <h5>Container Repositories</h5>
+          <hr />
+          <div style={{ overflowX: "auto" }}>
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Reposiory Name</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {azureContainerRepositories.map((repository) => (
+                  <tr key={repository.id}>
+                    <td>{repository.name}</td>
+                    <td>
+                      <Button
+                        // onClick={() => handleDeleteContainer(repository.id)}
+                        variant="outline-danger"
+                        style={{ borderRadius: "20px" }}
+                      >
+                        Delete Repository
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {loadingRepositories && (
                   <tr>
                     <td colSpan={4} style={{ textAlign: "center" }}>
                       <Spinner animation="border" variant="primary" size="md" />

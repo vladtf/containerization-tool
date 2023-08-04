@@ -62,6 +62,25 @@ def pre_deploy_to_azure():
         return f"Failed to deploy container: {e}", 500
 
 
+@app.route('/azure/repositories', methods=['GET'])
+def get_all_azure_repositories():
+    try:
+
+        subscription_name = app.app_config.get("azure", "subscription_name")
+        azure_repositories = azure_client.get_all_azure_repositories(
+            credentials=app.azure_credentials,
+            subscription_name=subscription_name,
+            registry_name=app.app_config.get("azure", "acr_name"),
+            resource_group=app.app_config.get("azure", "resource_group")
+        )
+
+        return jsonify(azure_repositories), 200
+
+    except Exception as e:
+        logger.error(f"Failed to get all registries: {e}")
+        return f"Failed to get all registries: {e}", 500
+
+
 @app.route('/azure/instances', methods=['GET'])
 def get_all_azure_container_instances():
     try:

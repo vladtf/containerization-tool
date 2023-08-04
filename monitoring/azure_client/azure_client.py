@@ -10,6 +10,7 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerregistry import ContainerRegistryManagementClient
 from azure.mgmt.subscription import SubscriptionClient
+from azure.containerregistry import ContainerRegistryClient
 
 from kafka.kafka_client import DataClassEncoder
 
@@ -179,3 +180,25 @@ def get_all_azure_container_instances(credentials, subscription_name: str) -> li
         azure_instances.append(azure_instance)
 
     return azure_instances
+
+
+def get_all_azure_repositories(credentials, subscription_name: str, registry_name: str, resource_group: str) -> list:
+    # Get the subscription ID
+    subscription_id = get_subscription_id(subscription_name, credentials)
+    if subscription_id is None:
+        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
+
+    # Get acr url
+    acr_url = get_acr_url(subscription_id, resource_group, registry_name, credentials)
+
+    with ContainerRegistryClient(acr_url, credentials) as client:
+        repositories = client.list_repository_names()
+
+        repositories_response = []
+        for repository in repositories:
+            repostiory_response = {}
+            repostiory_response["name"] = repository
+
+            repositories_response.append(repostiory_response)
+
+        return repositories_response
