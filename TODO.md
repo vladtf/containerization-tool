@@ -16,7 +16,7 @@
 * to document authentication to azure and other required steps
 * to add monitoring for containers from azure
 * to send to frontend intermediate message about deploy to azure (image upload, container creation, etc)
-* add separate page to handle azure stuff
 * when click deploy to azure to redirect to azure page with the container selected
 * add caching for docker login
 * to test azure keyvault and to add it to the tool
+* to list containers and images from azure linked to current account

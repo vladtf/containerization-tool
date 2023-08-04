@@ -23,7 +23,7 @@ from kafka.kafka_client import DataClassEncoder
 
 # Configure flask and CORS
 app = Flask(__name__)
-CORS(app) # TODO: be more restrictive
+CORS(app)  # TODO: be more restrictive
 app.logger.setLevel(logging.INFO)  # Set the desired logging level
 
 # Configure the logger
@@ -119,7 +119,7 @@ def push_image_to_acr(container_data: AzureContainer, acr_url):
     logger.info(f"Image {container_data.image} found locally.")
 
     # Tag the image with the ACR URL
-    acr_image_name = f"{acr_url}/{container_data.image}:latest"
+    acr_image_name = f"{acr_url}/{container_data.name}:latest"
     image.tag(acr_image_name)
 
     # Push the image to the ACR
@@ -147,7 +147,16 @@ def pre_deploy_to_azure():
 
         cursor = app.mysql.connection.cursor()
 
-        query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name}', 'ready', '{container_data.image}')"
+        # Check if the name is already in use
+        query = f"SELECT * FROM azure_container WHERE name = '{container_data.name.replace('.', '-')}'"
+        cursor.execute(query)
+
+        result = cursor.fetchall()
+
+        if len(result) > 0:
+            return f"Container with name {container_data.name} already exists", 400
+
+        query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name.replace('.', '-')}', 'ready', '{container_data.image}')"
         cursor.execute(query)
 
         app.mysql.connection.commit()
@@ -336,7 +345,7 @@ def undeploy_from_azure(container_id):
             while container_group.containers[0].instance_view.current_state.state != "Terminated":
                 container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
                 sleep(1)
-        except Exception as e: # TODO: to properly check the deletion status
+        except Exception as e:  # TODO: to properly check the deletion status
             logger.error("An error occurred while waiting for the container to be deleted", e)
 
         # TODO: check if the container was deleted successfully

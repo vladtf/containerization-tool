@@ -322,6 +322,7 @@ const AzurePage = () => {
             onClick={() => handleDeployToAzure(container)}
             variant="outline-success"
             style={{ borderRadius: "20px", marginLeft: "10px" }}
+            disabled={loading}
           >
             Deploy to Azure{" "}
             {loading && (
@@ -340,6 +341,7 @@ const AzurePage = () => {
             onClick={() => handleUndeployContainer(container.id)}
             variant="outline-danger"
             style={{ borderRadius: "20px" }}
+            disabled={loading}
           >
             Undeploy from Azure{" "}
             {loading && (
