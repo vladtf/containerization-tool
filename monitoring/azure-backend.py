@@ -148,7 +148,7 @@ def pre_deploy_to_azure():
         cursor = app.mysql.connection.cursor()
 
         # Check if the name is already in use
-        query = f"SELECT * FROM azure_container WHERE name = '{container_data.name.replace('.', '-')}'"
+        query = f"SELECT * FROM azure_container WHERE name = '{container_data.name}'"
         cursor.execute(query)
 
         result = cursor.fetchall()
@@ -156,7 +156,7 @@ def pre_deploy_to_azure():
         if len(result) > 0:
             return f"Container with name {container_data.name} already exists", 400
 
-        query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name.replace('.', '-')}', 'ready', '{container_data.image}')"
+        query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name}', 'ready', '{container_data.image}')"
         cursor.execute(query)
 
         app.mysql.connection.commit()

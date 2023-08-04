@@ -16,11 +16,9 @@ const AzurePage = () => {
 
   useEffect(() => {
     fetchContainers();
-    fetchAzureContainerData(selectedContainer);
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
-      fetchAzureContainerData(selectedContainer); // TODO: this is not working
     }, 2000); // Refresh data
 
     return () => {
@@ -86,7 +84,8 @@ const AzurePage = () => {
         console.log(response);
 
         // TODO: to show the info about deploy here
-        toast.success("Initiated deplot to Azure: " + response.data);
+        toast.success("Container deployed successfully: " + response.data);
+        fetchAzureContainerData(container.id);
       })
       .catch((error) => {
         console.error(error);

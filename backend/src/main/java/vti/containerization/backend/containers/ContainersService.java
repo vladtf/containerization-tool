@@ -31,7 +31,7 @@ public class ContainersService {
         UploadedFileModel uploadedFile = uploadArtifactService.getUploadedFileByName(request.getFileId())
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        request.setContainerName("container-" + request.getFileId());
+        request.setContainerName("container-" + request.getFileId().replace(".", "-").replace("_", "-"));
         request.setFilePath("/" + uploadedFile.getPath());
 
         kafkaContainersDataProducer.sendCreateContainerRequest(request);
