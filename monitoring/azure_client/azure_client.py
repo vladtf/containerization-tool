@@ -1,3 +1,4 @@
+import configparser
 import json
 import logging
 import subprocess
@@ -15,6 +16,10 @@ from kafka.kafka_client import DataClassEncoder
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Disable the Azure SDK logging for HTTP requests
+azure_logger = logging.getLogger('azure')
+azure_logger.setLevel(logging.WARNING)
 
 
 @dataclass
@@ -125,7 +130,7 @@ def get_acr_url(subscription_id, resource_group, acr_server, credentials):
         return None
 
 
-def get_azure_instance_data(azure_container: AzureContainer, config):
+def get_azure_instance_data(azure_container: AzureContainer, config: configparser.ConfigParser):
     subscription_name = config.get("azure", "subscription_name")
     resource_group = config.get("azure", "resource_group")
 
@@ -151,3 +156,26 @@ def get_azure_instance_data(azure_container: AzureContainer, config):
     azure_instance["instance_start_time"] = container_group.containers[0].instance_view.current_state.start_time
 
     return azure_instance
+
+
+def get_all_azure_container_instances(credentials, subscription_name: str) -> list:
+    # Get the subscription ID
+    subscription_id = get_subscription_id(subscription_name, credentials)
+    if subscription_id is None:
+        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
+
+    # Get the container instances
+    container_client = ContainerInstanceManagementClient(credentials, subscription_id)
+    container_groups = container_client.container_groups.list()
+
+    # Get the container instances
+    azure_instances = []
+    for container_group in container_groups:
+        azure_instance = {}
+        azure_instance["id"] = container_group.id
+        azure_instance["name"] = container_group.name
+        azure_instance["image"] = container_group.containers[0].image
+
+        azure_instances.append(azure_instance)
+
+    return azure_instances

@@ -14,12 +14,17 @@ const AzurePage = () => {
   const [selectedContainer, setSelectedContainer] = useState("");
   const [azureContainerData, setAzureContainerData] = useState([]);
 
+  const [azureContainerInstances, setAzureContainerInstances] = useState([]);
+  const [loadingInstances, setLoadingInstances] = useState(false);
+
   useEffect(() => {
     fetchContainers();
+    fetchAzureContainerInstances();
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
-    }, 2000); // Refresh data
+      fetchAzureContainerInstances();
+    }, 5000); // Refresh data
 
     return () => {
       clearInterval(refreshInterval);
@@ -72,6 +77,27 @@ const AzurePage = () => {
       console.error("Failed to fetch containers:", error);
       toast.error("Failed to fetch containers. Please try again later.");
     }
+  };
+
+  const fetchAzureContainerInstances = () => {
+    console.log("Fetching Azure container instances");
+
+    setLoadingInstances(true);
+    axios
+      .get(`${PYTHON_BACKEND_URL}/azure/instances`)
+      .then((response) => {
+        console.log(response);
+        setAzureContainerInstances(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error(
+          "Failed to fetch Azure container instances: " + error.response.data
+        );
+      })
+      .finally(() => {
+        setLoadingInstances(false);
+      });
   };
 
   const handleDeployToAzure = async (container) => {
@@ -288,6 +314,51 @@ const AzurePage = () => {
           <Card.Footer>{renderContainersButtons(container)}</Card.Footer>
         </Card>
       )}
+
+      {/* Component to display all the container instances in a table with delete button */}
+      <Card className="mb-3">
+        <Card.Body>
+          <h5>Container Instances</h5>
+          <hr />
+          <div style={{ overflowX: "auto" }}>
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Instance ID</th>
+                  <th>Instance Name</th>
+                  <th>Instance Image</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {azureContainerInstances.map((instance) => (
+                  <tr key={instance.id}>
+                    <td>{instance.id}</td>
+                    <td>{instance.name}</td>
+                    <td>{instance.image}</td>
+                    <td>
+                      <Button
+                        // onClick={() => handleDeleteContainer(instance.id)}
+                        variant="outline-danger"
+                        style={{ borderRadius: "20px" }}
+                      >
+                        Delete Instance
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {loadingInstances && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: "center" }}>
+                      <Spinner animation="border" variant="primary" size="md" />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </Card.Body>
+      </Card>
 
       <CustomFooter />
     </Container>

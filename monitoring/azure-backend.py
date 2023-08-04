@@ -12,8 +12,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mysqldb import MySQL
 
+from azure_client import azure_client
 from azure_client.azure_client import get_acr_access_token, get_subscription_id, AzureContainer, \
-    get_acr_url, push_image_to_acr, get_azure_instance_data
+    get_acr_url, push_image_to_acr, get_azure_instance_data, get_all_azure_container_instances
 from configuration import config_loader
 from containers.docker_client import ContainerData
 
@@ -25,6 +26,10 @@ app.logger.setLevel(logging.INFO)  # Set the desired logging level
 # Configure the logger
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Disable the Azure SDK logging for HTTP requests
+azure_logger = logging.getLogger('azure')
+azure_logger.setLevel(logging.WARNING)
 
 
 @app.route('/azure/pre-deploy', methods=['POST'])
@@ -55,6 +60,21 @@ def pre_deploy_to_azure():
     except Exception as e:
         logger.error("Failed to pre-deploy container", e)
         return f"Failed to deploy container: {e}", 500
+
+
+@app.route('/azure/instances', methods=['GET'])
+def get_all_azure_container_instances():
+    try:
+        azure_credentials = app.azure_credentials
+
+        subscription_name = app.app_config.get("azure", "subscription_name")
+        azure_instances = azure_client.get_all_azure_container_instances(app.azure_credentials, subscription_name)
+
+        return jsonify(azure_instances), 200
+
+    except Exception as e:
+        logger.error(f"Failed to get all container instances: {e}")
+        return f"Failed to get all container instances: {e}", 500
 
 
 @app.route('/azure/all', methods=['GET'])
@@ -304,5 +324,9 @@ if __name__ == '__main__':
 
     mysql = MySQL(app)
     app.mysql = mysql
+
+    # Init Azure Credentials
+    credentials = DefaultAzureCredential()
+    app.azure_credentials = credentials
 
     app.run(debug=True)
