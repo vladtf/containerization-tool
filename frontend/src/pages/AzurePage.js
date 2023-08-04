@@ -20,7 +20,7 @@ const AzurePage = () => {
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
-      fetchAzureContainerData(selectedContainer);
+      fetchAzureContainerData(selectedContainer); // TODO: this is not working
     }, 2000); // Refresh data
 
     return () => {

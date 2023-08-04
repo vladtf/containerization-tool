@@ -23,7 +23,7 @@ from kafka.kafka_client import DataClassEncoder
 
 # Configure flask and CORS
 app = Flask(__name__)
-CORS(app)
+CORS(app) # TODO: be more restrictive
 app.logger.setLevel(logging.INFO)  # Set the desired logging level
 
 # Configure the logger
