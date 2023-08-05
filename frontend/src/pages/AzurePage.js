@@ -140,6 +140,25 @@ const AzurePage = () => {
       });
   };
 
+  const handleDeleteRepository = (repositoryName) => {
+    console.log("Deleting repository:", repositoryName);
+    toast.success("Deleting repository: " + repositoryName);
+
+    axios
+      .delete(`${PYTHON_BACKEND_URL}/azure/repository/${repositoryName}`)
+      .then((response) => {
+        console.log(response);
+        toast.success(
+          "Repository '" + repositoryName + "' deleted successfully"
+        );
+        fetchAzureContainerRepositories();
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to delete repository: " + error.response.data);
+      });
+  };
+
   const handleDeployToAzure = async (container) => {
     console.log("Deploying container:", container);
 
@@ -415,11 +434,11 @@ const AzurePage = () => {
               </thead>
               <tbody>
                 {azureContainerRepositories.map((repository) => (
-                  <tr key={repository.id}>
+                  <tr key={repository.name}>
                     <td>{repository.name}</td>
                     <td>
                       <Button
-                        // onClick={() => handleDeleteContainer(repository.id)}
+                        onClick={() => handleDeleteRepository(repository.name)}
                         variant="outline-danger"
                         style={{ borderRadius: "20px" }}
                       >

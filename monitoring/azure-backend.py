@@ -77,7 +77,7 @@ def get_all_azure_repositories():
         return jsonify(azure_repositories), 200
 
     except Exception as e:
-        logger.error(f"Failed to get all registries: {e}")
+        logger.error(f"Failed to get all registries", e)
         return f"Failed to get all registries: {e}", 500
 
 
@@ -92,7 +92,7 @@ def get_all_azure_container_instances():
         return jsonify(azure_instances), 200
 
     except Exception as e:
-        logger.error(f"Failed to get all container instances: {e}")
+        logger.error(f"Failed to get all container instances", e)
         return f"Failed to get all container instances: {e}", 500
 
 
@@ -113,7 +113,7 @@ def get_all_azure_container():
         return jsonify([container.to_dict() for container in azure_containers]), 200
 
     except Exception as e:
-        logger.error(f"Failed to get all container: {e}")
+        logger.error(f"Failed to get all container", e)
         return f"Failed to get all container: {e}", 500
 
 
@@ -212,7 +212,7 @@ def undeploy_from_azure(container_id):
         # Get the container from the database
         cursor = app.mysql.connection.cursor()
 
-        query = f"SELECT * FROM azure_container WHERE id={container_id}"
+        query = f"SELECT * FROM azure_container WHERE id='{container_id}'"
         cursor.execute(query)
 
         result = cursor.fetchone()
@@ -291,7 +291,7 @@ def get_container(container_name):
     try:
         cursor = app.mysql.connection.cursor()
 
-        query = f"SELECT * FROM azure_container WHERE name={container_name}"
+        query = f"SELECT * FROM azure_container WHERE name='{container_name}'"
         cursor.execute(query)
 
         result = cursor.fetchone()
@@ -305,7 +305,7 @@ def get_container(container_name):
         return jsonify(azure_instance), 200
 
     except Exception as e:
-        logger.error(f"Failed to get container with name {container_name}: {e}")
+        logger.error(f"Failed to get container with name {container_name}", e)
         return f"Failed to get container with name {container_name}: {e}", 500
 
 
@@ -315,7 +315,7 @@ def delete_container(container_id):
     try:
         cursor = app.mysql.connection.cursor()
 
-        query = f"DELETE FROM azure_container WHERE id={container_id}"
+        query = f"DELETE FROM azure_container WHERE id='{container_id}'"
 
         cursor.execute(query)
 
@@ -326,8 +326,31 @@ def delete_container(container_id):
         return f"Container with id {container_id} deleted successfully", 200
 
     except Exception as e:
-        logger.error(f"Failed to delete container with id {container_id}: {e}")
+        logger.error(f"Failed to delete container with id {container_id}", e)
         return f"Failed to delete container with id {container_id}: {e}", 500
+
+
+# listener to handle delete of an repository from ACR
+@app.route('/azure/repository/<repository_name>', methods=['DELETE'])
+def delete_repository(repository_name):
+    try:
+        config = app.app_config
+        resource_group = config.get("azure", "resource_group")
+        acr_name = config.get("azure", "acr_name")
+
+        azure_client.delete_azure_repository(
+            credentials=app.azure_credentials,
+            subscription_id=app.azure_subscription_id,
+            registry_name=acr_name,
+            resource_group=resource_group,
+            repository_name=repository_name
+        )
+
+        return f"Repository with name {repository_name} deleted successfully", 200
+
+    except Exception as e:
+        logger.error(f"Failed to delete repository with name {repository_name}", e)
+        return f"Failed to delete repository with name {repository_name}: {e}", 500
 
 
 if __name__ == '__main__':
@@ -347,5 +370,12 @@ if __name__ == '__main__':
     # Init Azure Credentials
     credentials = DefaultAzureCredential()
     app.azure_credentials = credentials
+
+    # Get Azure Subscription ID
+    subscription_name = app_config.get("azure", "subscription_name")
+    subscription_id = get_subscription_id(subscription_name, credentials)
+    if subscription_id is None:
+        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
+    app.azure_subscription_id = subscription_id
 
     app.run(debug=True)
