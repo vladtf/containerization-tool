@@ -159,6 +159,23 @@ const AzurePage = () => {
       });
   };
 
+  const handleDeleteContainerInstance = (instanceName) => {
+    console.log("Deleting instance:", instanceName);
+    toast.success("Deleting instance: " + instanceName);
+
+    axios
+      .delete(`${PYTHON_BACKEND_URL}/azure/instances/${instanceName}`)
+      .then((response) => {
+        console.log(response);
+        toast.success("Instance '" + instanceName + "' deleted successfully");
+        fetchAzureContainerInstances();
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to delete instance: " + error.response.data);
+      });
+  };
+
   const handleDeployToAzure = async (container) => {
     console.log("Deploying container:", container);
 
@@ -397,7 +414,9 @@ const AzurePage = () => {
                     <td>{instance.image}</td>
                     <td>
                       <Button
-                        // onClick={() => handleDeleteContainer(instance.id)}
+                        onClick={() =>
+                          handleDeleteContainerInstance(instance.name)
+                        }
                         variant="outline-danger"
                         style={{ borderRadius: "20px" }}
                       >
@@ -410,6 +429,15 @@ const AzurePage = () => {
                   <tr>
                     <td colSpan={4} style={{ textAlign: "center" }}>
                       <Spinner animation="border" variant="primary" size="md" />
+                    </td>
+                  </tr>
+                )}
+
+                {/* if no instances are present and loading is false */}
+                {!loadingInstances && azureContainerInstances.length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: "center" }}>
+                      No instances found
                     </td>
                   </tr>
                 )}
@@ -454,6 +482,16 @@ const AzurePage = () => {
                     </td>
                   </tr>
                 )}
+
+                {/* if no repositories are present and loading is false */}
+                {!loadingRepositories &&
+                  azureContainerRepositories.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: "center" }}>
+                        No repositories found
+                      </td>
+                    </tr>
+                  )}
               </tbody>
             </Table>
           </div>

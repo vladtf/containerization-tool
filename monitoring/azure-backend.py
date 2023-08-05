@@ -353,6 +353,25 @@ def delete_repository(repository_name):
         return f"Failed to delete repository with name {repository_name}: {e}", 500
 
 
+# listener to handle delete of container instance from Azure
+@app.route('/azure/instances/<instance_name>', methods=['DELETE'])
+def delete_azure_instance(instance_name):
+    try:
+
+        azure_client.delete_azure_container_instance(
+            credentials=app.azure_credentials,
+            subscription_id=app.azure_subscription_id,
+            resource_group=app.app_config.get("azure", "resource_group"),
+            instance_name=instance_name
+        )
+
+        return f"Container instance with name {instance_name} deleted successfully", 200
+
+    except Exception as e:
+        logger.error(f"Failed to delete container instance with name {instance_name}", e)
+        return f"Failed to delete container instance with name {instance_name}: {e}", 500
+
+
 if __name__ == '__main__':
     # Load the configuration
     app_config = config_loader.load_config(os.path.abspath(__file__))
