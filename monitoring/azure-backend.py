@@ -286,12 +286,12 @@ def undeploy_from_azure(container_id):
         return f'An error occurred during undeployment: {e}', 500
 
 
-@app.route('/azure/container/<container_id>', methods=['GET'])
-def get_container(container_id):
+@app.route('/azure/container/<container_name>', methods=['GET'])
+def get_container(container_name):
     try:
         cursor = app.mysql.connection.cursor()
 
-        query = f"SELECT * FROM azure_container WHERE id={container_id}"
+        query = f"SELECT * FROM azure_container WHERE name={container_name}"
         cursor.execute(query)
 
         result = cursor.fetchone()
@@ -305,8 +305,8 @@ def get_container(container_id):
         return jsonify(azure_instance), 200
 
     except Exception as e:
-        logger.error(f"Failed to get container with id {container_id}: {e}")
-        return f"Failed to get container with id {container_id}: {e}", 500
+        logger.error(f"Failed to get container with name {container_name}: {e}")
+        return f"Failed to get container with name {container_name}: {e}", 500
 
 
 # listener to handle delete from database of 'ready' container

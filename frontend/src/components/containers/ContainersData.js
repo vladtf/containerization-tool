@@ -110,7 +110,7 @@ const ContainersData = () => {
         toast.success("Initiated deplot to Azure: " + response.data);
 
         // Redirect to the azure page
-        window.location.href = "/azure"; // Replace '/azure' with the desired destination URL
+        window.location.href = "/azure?container=" + container.name;
       })
       .catch((error) => {
         console.error(error);

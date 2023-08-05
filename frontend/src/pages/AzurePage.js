@@ -15,15 +15,25 @@ const AzurePage = () => {
   const [azureContainerData, setAzureContainerData] = useState([]);
 
   const [azureContainerInstances, setAzureContainerInstances] = useState([]);
-  const [loadingInstances, setLoadingInstances] = useState(false);
+  const [loadingInstances, setLoadingInstances] = useState(true);
 
-  const [azureContainerRepositories, setAzureContainerRepositories] = useState([]);
-  const [loadingRepositories, setLoadingRepositories] = useState(false);
+  const [azureContainerRepositories, setAzureContainerRepositories] = useState(
+    []
+  );
+  const [loadingRepositories, setLoadingRepositories] = useState(true);
 
   useEffect(() => {
     fetchContainers();
     fetchAzureContainerInstances();
     fetchAzureContainerRepositories();
+
+    const selectedContainerFromUrl = new URLSearchParams(
+      window.location.search
+    ).get("container");
+
+    if (selectedContainerFromUrl) {
+      setSelectedContainer(selectedContainerFromUrl);
+    }
 
     const refreshInterval = setInterval(() => {
       fetchContainers();
@@ -40,8 +50,12 @@ const AzurePage = () => {
   useEffect(() => {
     if (selectedContainer) {
       const container = containers.find(
-        (container) => container.id === selectedContainer
+        (container) => container.name === selectedContainer
       );
+
+      if (!container) {
+        return;
+      }
 
       if (container.status === "deployed") {
         fetchAzureContainerData(selectedContainer);
@@ -87,7 +101,7 @@ const AzurePage = () => {
   const fetchAzureContainerInstances = () => {
     console.log("Fetching Azure container instances");
 
-    setLoadingInstances(true);
+    // setLoadingInstances(true);
     axios
       .get(`${PYTHON_BACKEND_URL}/azure/instances`)
       .then((response) => {
@@ -108,7 +122,7 @@ const AzurePage = () => {
   const fetchAzureContainerRepositories = () => {
     console.log("Fetching Azure container repositories");
 
-    setLoadingRepositories(true);
+    // setLoadingRepositories(true);
     axios
       .get(`${PYTHON_BACKEND_URL}/azure/repositories`)
       .then((response) => {
@@ -197,7 +211,7 @@ const AzurePage = () => {
   };
 
   const container = containers.find(
-    (container) => container.id === selectedContainer
+    (container) => container.name === selectedContainer
   );
 
   return (
@@ -225,7 +239,7 @@ const AzurePage = () => {
                   position: "relative",
                 }}
                 variant={renderContainerSelectionVariant(container)}
-                onClick={() => setSelectedContainer(container.id)}
+                onClick={() => setSelectedContainer(container.name)}
               >
                 <div
                   style={{
@@ -256,7 +270,7 @@ const AzurePage = () => {
         </Card.Body>
       </Card>
 
-      {selectedContainer && (
+      {selectedContainer && container && (
         <Card className="mb-3">
           <Card.Body>
             <h5>ID: {container.id}</h5>
@@ -434,11 +448,13 @@ const AzurePage = () => {
   function renderContainerSelectionVariant(container) {
     // if container is deployed
     if (container.status === "deployed") {
-      return container.id === selectedContainer ? "success" : "outline-success";
+      return container.name === selectedContainer
+        ? "success"
+        : "outline-success";
     }
 
     // if container is not deployed
-    return container.id === selectedContainer
+    return container.name === selectedContainer
       ? "secondary"
       : "outline-secondary";
   }
