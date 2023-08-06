@@ -3,7 +3,7 @@ USE localdb;
 CREATE TABLE
     containers (
         id VARCHAR(12) PRIMARY KEY,
-        name VARCHAR(255),
+        name VARCHAR(255) UNIQUE,
         status VARCHAR(50),
         ip VARCHAR(20),
         image VARCHAR(255),
@@ -13,7 +13,7 @@ CREATE TABLE
 CREATE TABLE
     azure_container (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255),
+        name VARCHAR(255) UNIQUE,
         status VARCHAR(50),
         image VARCHAR(255),
         instance_id VARCHAR(255),
