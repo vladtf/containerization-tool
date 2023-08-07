@@ -1,5 +1,4 @@
 import logging
-import logging
 import os
 from time import sleep
 
@@ -12,9 +11,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mysqldb import MySQL
 
+import mysql_client.mysql_client
 from azure_client import azure_client
 from azure_client.azure_client import get_acr_access_token, get_subscription_id, AzureContainer, \
-    get_acr_url, push_image_to_acr, get_azure_instance_data, get_all_azure_container_instances
+    get_acr_url, push_image_to_acr, get_azure_instance_data
 from configuration import config_loader
 from containers.docker_client import ContainerData
 
@@ -38,23 +38,21 @@ def pre_deploy_to_azure():
         container_data: ContainerData = ContainerData.from_dict(request.get_json())
         logger.info(f"Starting pre-deployment of container {container_data}")
 
-        cursor = app.mysql.connection.cursor()
-
         # Check if the name is already in use
-        query = f"SELECT * FROM azure_container WHERE name = '{container_data.name}'"
-        cursor.execute(query)
-
-        result = cursor.fetchall()
-
-        if len(result) > 0:
+        if mysql_client.mysql_client.azure_container_exists_by_name(mysql=app.mysql,
+                                                                    container_name=container_data.name):
             return f"Container with name {container_data.name} already exists", 400
 
-        query = f"INSERT INTO azure_container (name, status, image) VALUES ('{container_data.name}', 'ready', '{container_data.image}')"
-        cursor.execute(query)
+        azure_container = AzureContainer(
+            name=container_data.name,
+            status="ready",
+            image=container_data.image,
+            instance_id="",
+            instance_name="",
+            id=-1
+        )
 
-        app.mysql.connection.commit()
-
-        cursor.close()
+        mysql_client.mysql_client.insert_azure_container(mysql=app.mysql, azure_container=azure_container)
 
         return "Container pre-deployed successfully", 200
     except Exception as e:
@@ -65,11 +63,9 @@ def pre_deploy_to_azure():
 @app.route('/azure/repositories', methods=['GET'])
 def get_all_azure_repositories():
     try:
-
-        subscription_name = app.app_config.get("azure", "subscription_name")
         azure_repositories = azure_client.get_all_azure_repositories(
             credentials=app.azure_credentials,
-            subscription_name=subscription_name,
+            subscription_id=app.azure_subscription_id,
             registry_name=app.app_config.get("azure", "acr_name"),
             resource_group=app.app_config.get("azure", "resource_group")
         )
@@ -86,8 +82,9 @@ def get_all_azure_container_instances():
     try:
         azure_credentials = app.azure_credentials
 
-        subscription_name = app.app_config.get("azure", "subscription_name")
-        azure_instances = azure_client.get_all_azure_container_instances(app.azure_credentials, subscription_name)
+        azure_instances = azure_client.get_all_azure_container_instances(
+            credentials=azure_credentials,
+            subscription_id=app.azure_subscription_id)
 
         return jsonify(azure_instances), 200
 
@@ -99,16 +96,9 @@ def get_all_azure_container_instances():
 @app.route('/azure/all', methods=['GET'])
 def get_all_azure_container():
     try:
-        cursor = app.mysql.connection.cursor()
-
-        query = f"SELECT * FROM azure_container"
-        cursor.execute(query)
-
-        result = cursor.fetchall()
-
-        azure_containers = [AzureContainer(*row) for row in result]
-
-        cursor.close()
+        azure_containers = mysql_client.mysql_client.get_all_azure_containers(
+            mysql=app.mysql,
+        )
 
         return jsonify([container.to_dict() for container in azure_containers]), 200
 
@@ -121,7 +111,6 @@ def get_all_azure_container():
 def deploy_to_azure():
     config = app.app_config
 
-    subscription_name = config.get("azure", "subscription_name")
     resource_group = config.get("azure", "resource_group")
     location = config.get("azure", "location")
     acr_name = config.get("azure", "acr_name")
@@ -131,15 +120,9 @@ def deploy_to_azure():
         logger.info(f"Starting deployment of container {container_data}")
 
         logger.info("Deploying container: %s", container_data)
-        credentials = DefaultAzureCredential()
-
-        # Get the subscription ID
-        subscription_id = get_subscription_id(subscription_name, credentials)
-        if subscription_id is None:
-            return f"Could not find a subscription with the name: {subscription_name}", 400
 
         # Get the ACR URL
-        acr_url = get_acr_url(subscription_id, resource_group, acr_name, credentials)
+        acr_url = get_acr_url(app.azure_subscription_id, resource_group, acr_name, app.azure_credentials)
         if acr_url is None:
             return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
 
@@ -178,18 +161,15 @@ def deploy_to_azure():
             container_group
         ).result()
 
-        # Update the container status and azure container instance ID
-        cursor = app.mysql.connection.cursor()
+        azure_container = mysql_client.mysql_client.get_azure_container_by_name(
+            mysql=app.mysql,
+            container_name=container_data.name)
 
-        query = (f"UPDATE azure_container "
-                 f"SET status='deployed', instance_id='{deploy_response.id}', instance_name='{deploy_response.name}' "
-                 f"WHERE name='{container_data.name}'")
+        azure_container.status = "deployed"
+        azure_container.instance_id = deploy_response.id
+        azure_container.instance_name = deploy_response.name
 
-        cursor.execute(query)
-
-        app.mysql.connection.commit()
-
-        cursor.close()
+        mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
 
         # For example, let's just return a success message for demonstration purposes
         return 'Container deployed successfully to Azure', 200
@@ -203,34 +183,24 @@ def deploy_to_azure():
 def undeploy_from_azure(container_id):
     config = app.app_config
 
-    subscription_name = config.get("azure", "subscription_name")
     resource_group = config.get("azure", "resource_group")
 
     try:
         logger.info(f"Starting undeployment of container {container_id}")
 
-        # Get the container from the database
-        cursor = app.mysql.connection.cursor()
-
-        query = f"SELECT * FROM azure_container WHERE id='{container_id}'"
-        cursor.execute(query)
-
-        result = cursor.fetchone()
-
-        azure_container = AzureContainer(*result)
-
-        cursor.close()
+        azure_container = mysql_client.mysql_client.get_azure_container_by_id(
+            mysql=app.mysql,
+            container_id=container_id
+        )
 
         logger.info("Undeploying container: %s", container_id)
-        credentials = DefaultAzureCredential()
-
-        # Get the subscription ID
-        subscription_id = get_subscription_id(subscription_name, credentials)
-        if subscription_id is None:
-            return f"Could not find a subscription with the name: {subscription_name}", 400
 
         # Get the container instance using the ID
-        container_client = ContainerInstanceManagementClient(credentials, subscription_id)
+        container_client = ContainerInstanceManagementClient(
+            credential=app.azure_credentials,
+            subscription_id=app.azure_subscription_id
+        )
+
         container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
 
         # Delete the container instance
@@ -249,36 +219,33 @@ def undeploy_from_azure(container_id):
 
         # TODO: delete image from ACR
 
-        # Update the container status and azure container instance ID
-        cursor = app.mysql.connection.cursor()
+        azure_container = mysql_client.mysql_client.get_azure_container_by_id(
+            mysql=app.mysql,
+            container_id=container_id
+        )
 
-        query = (f"UPDATE azure_container "
-                 f"SET status='ready', instance_id=NULL, instance_name=NULL "
-                 f"WHERE id='{container_id}'")
+        azure_container.status = "ready"
+        azure_container.instance_id = None
+        azure_container.instance_name = None
 
-        cursor.execute(query)
-
-        app.mysql.connection.commit()
-
-        cursor.close()
+        mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
 
         # For example, let's just return a success message for demonstration purposes
         return 'Container undeployed successfully from Azure', 200
 
     except ResourceNotFoundError as e:
         logger.error("Could not find the container instance", e)
-        # update the container status and azure container instance ID
-        cursor = app.mysql.connection.cursor()
 
-        query = (f"UPDATE azure_container "
-                 f"SET status='ready', instance_id=NULL, instance_name=NULL "
-                 f"WHERE id='{container_id}'")
+        azure_container = mysql_client.mysql_client.get_azure_container_by_id(
+            mysql=app.mysql,
+            container_id=container_id
+        )
 
-        cursor.execute(query)
+        azure_container.status = "ready"
+        azure_container.instance_id = None
+        azure_container.instance_name = None
 
-        app.mysql.connection.commit()
-
-        cursor.close()
+        mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
 
         return f"Could not find the container instance: {e}", 404
     except Exception as e:
@@ -289,18 +256,17 @@ def undeploy_from_azure(container_id):
 @app.route('/azure/container/<container_name>', methods=['GET'])
 def get_container(container_name):
     try:
-        cursor = app.mysql.connection.cursor()
+        azure_container = mysql_client.mysql_client.get_azure_container_by_name(
+            mysql=app.mysql,
+            container_name=container_name
+        )
 
-        query = f"SELECT * FROM azure_container WHERE name='{container_name}'"
-        cursor.execute(query)
-
-        result = cursor.fetchone()
-
-        azure_container = AzureContainer(*result)
-
-        cursor.close()
-
-        azure_instance = get_azure_instance_data(azure_container, app.app_config)
+        azure_instance = get_azure_instance_data(
+            credentials=app.azure_credentials,
+            resource_group=app.app_config.get("azure", "resource_group"),
+            azure_container=azure_container,
+            subscription_id=app.azure_subscription_id
+        )
 
         return jsonify(azure_instance), 200
 
@@ -313,15 +279,10 @@ def get_container(container_name):
 @app.route('/azure/container/<container_id>', methods=['DELETE'])
 def delete_container(container_id):
     try:
-        cursor = app.mysql.connection.cursor()
-
-        query = f"DELETE FROM azure_container WHERE id='{container_id}'"
-
-        cursor.execute(query)
-
-        app.mysql.connection.commit()
-
-        cursor.close()
+        mysql_client.mysql_client.delete_azure_container_by_id(
+            mysql=app.mysql,
+            container_id=container_id
+        )
 
         return f"Container with id {container_id} deleted successfully", 200
 
@@ -330,7 +291,7 @@ def delete_container(container_id):
         return f"Failed to delete container with id {container_id}: {e}", 500
 
 
-# listener to handle delete of an repository from ACR
+# listener to handle delete of a repository from ACR
 @app.route('/azure/repository/<repository_name>', methods=['DELETE'])
 def delete_repository(repository_name):
     try:

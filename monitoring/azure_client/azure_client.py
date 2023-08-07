@@ -1,16 +1,14 @@
-import configparser
 import json
 import logging
 import subprocess
 from dataclasses import dataclass, asdict
 
 import docker
+from azure.containerregistry import ContainerRegistryClient
 from azure.core.exceptions import ResourceNotFoundError
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerregistry import ContainerRegistryManagementClient
 from azure.mgmt.subscription import SubscriptionClient
-from azure.containerregistry import ContainerRegistryClient
 
 from kafka.kafka_client import DataClassEncoder
 
@@ -131,18 +129,10 @@ def get_acr_url(subscription_id, resource_group, acr_server, credentials):
         return None
 
 
-def get_azure_instance_data(azure_container: AzureContainer, config: configparser.ConfigParser):
-    subscription_name = config.get("azure", "subscription_name")
-    resource_group = config.get("azure", "resource_group")
-
+def get_azure_instance_data(azure_container: AzureContainer, subscription_id: str, resource_group: str,
+                            credentials) -> dict:
     azure_instance = azure_container.to_dict()
 
-    credentials = DefaultAzureCredential()
-
-    # Get the subscription ID
-    subscription_id = get_subscription_id(subscription_name, credentials)
-    if subscription_id is None:
-        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
 
     # Get the container instance using the ID
     container_client = ContainerInstanceManagementClient(credentials, subscription_id)
@@ -159,12 +149,7 @@ def get_azure_instance_data(azure_container: AzureContainer, config: configparse
     return azure_instance
 
 
-def get_all_azure_container_instances(credentials, subscription_name: str) -> list:
-    # Get the subscription ID
-    subscription_id = get_subscription_id(subscription_name, credentials)
-    if subscription_id is None:
-        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
-
+def get_all_azure_container_instances(credentials, subscription_id: str) -> list:
     # Get the container instances
     container_client = ContainerInstanceManagementClient(credentials, subscription_id)
     container_groups = container_client.container_groups.list()
@@ -182,12 +167,7 @@ def get_all_azure_container_instances(credentials, subscription_name: str) -> li
     return azure_instances
 
 
-def get_all_azure_repositories(credentials, subscription_name: str, registry_name: str, resource_group: str) -> list:
-    # Get the subscription ID
-    subscription_id = get_subscription_id(subscription_name, credentials)
-    if subscription_id is None:
-        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
-
+def get_all_azure_repositories(credentials, subscription_id: str, registry_name: str, resource_group: str) -> list:
     # Get acr url
     acr_url = get_acr_url(subscription_id, resource_group, registry_name, credentials)
 
