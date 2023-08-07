@@ -32,9 +32,11 @@ def get_azure_container_by_id(mysql: MySQL, container_id: str) -> AzureContainer
 
     cursor.execute(query, (container_id,))
 
+    column_names = [desc[0] for desc in cursor.description]
+
     result = cursor.fetchone()
 
-    azure_container = AzureContainer(*result)
+    azure_container = AzureContainer.from_dict(dict(zip(column_names, result)))
 
     cursor.close()
 
@@ -48,9 +50,11 @@ def get_azure_container_by_name(mysql: MySQL, container_name: str) -> AzureConta
 
     cursor.execute(query, (container_name,))
 
+    column_names = [desc[0] for desc in cursor.description]
+
     result = cursor.fetchone()
 
-    azure_container = AzureContainer(*result)
+    azure_container = AzureContainer.from_dict(dict(zip(column_names, result)))
 
     cursor.close()
 
