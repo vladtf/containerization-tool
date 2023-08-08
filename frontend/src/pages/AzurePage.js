@@ -1,11 +1,16 @@
-import { Button, Card, Container, Spinner, Table } from "react-bootstrap";
-import CustomNavbar from "../components/CustomNavbar";
-import { ToastContainer, toast } from "react-toastify";
-import CustomFooter from "../components/CustomFooter";
-import { PYTHON_BACKEND_URL } from "../config/BackendConfiguration";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { Button, Card, Container, Spinner, Table } from "react-bootstrap";
 import { IoCubeOutline } from "react-icons/io5";
+import { ToastContainer, toast } from "react-toastify";
+import CustomFooter from "../components/CustomFooter";
+import CustomNavbar from "../components/CustomNavbar";
+import { PYTHON_BACKEND_URL } from "../config/BackendConfiguration";
 
 const AzurePage = () => {
   const [loading, setLoading] = useState(false);
@@ -14,6 +19,9 @@ const AzurePage = () => {
   const [selectedContainer, setSelectedContainer] = useState("");
   const [azureContainerData, setAzureContainerData] = useState([]);
 
+  const [selectedRepository, setSelectedRepository] = useState("");
+  const [selectedInstance, setSelectedInstance] = useState("");
+
   const [azureContainerInstances, setAzureContainerInstances] = useState([]);
   const [loadingInstances, setLoadingInstances] = useState(true);
 
@@ -21,6 +29,18 @@ const AzurePage = () => {
     []
   );
   const [loadingRepositories, setLoadingRepositories] = useState(true);
+
+  const [openDeleteContainerDialog, setOpenDeleteContainerDialog] =
+    useState(false);
+
+  const [openUndeployContainerDialog, setOpenUndeployContainerDialog] =
+    useState(false);
+
+  const [openDeleteRepositoryDialog, setOpenDeleteRepositoryDialog] =
+    useState(false);
+
+  const [openDeleteInstanceDialog, setOpenDeleteInstanceDialog] =
+    useState(false);
 
   useEffect(() => {
     fetchContainers();
@@ -203,7 +223,9 @@ const AzurePage = () => {
     toast.success("Sent request to deploy container to Azure");
   };
 
-  const handleDeleteContainer = async (containerId) => {
+  const handleDeleteContainer = async (container) => {
+    const containerId = container.id;
+
     console.log("Deleting container:", containerId);
 
     axios
@@ -221,7 +243,9 @@ const AzurePage = () => {
       });
   };
 
-  const handleUndeployContainer = async (containerId) => {
+  const handleUndeployContainer = async (container) => {
+    const containerId = container.id;
+
     console.log("Undeploying container:", containerId);
 
     setLoading(true);
@@ -414,9 +438,10 @@ const AzurePage = () => {
                     <td>{instance.image}</td>
                     <td>
                       <Button
-                        onClick={() =>
-                          handleDeleteContainerInstance(instance.name)
-                        }
+                        onClick={() => {
+                          setSelectedInstance(instance.name);
+                          setOpenDeleteInstanceDialog(true);
+                        }}
                         variant="outline-danger"
                         style={{ borderRadius: "20px" }}
                       >
@@ -466,7 +491,10 @@ const AzurePage = () => {
                     <td>{repository.name}</td>
                     <td>
                       <Button
-                        onClick={() => handleDeleteRepository(repository.name)}
+                        onClick={() => {
+                          setSelectedRepository(repository.name);
+                          setOpenDeleteRepositoryDialog(true);
+                        }}
                         variant="outline-danger"
                         style={{ borderRadius: "20px" }}
                       >
@@ -498,6 +526,131 @@ const AzurePage = () => {
         </Card.Body>
       </Card>
 
+      <Dialog
+        open={openDeleteContainerDialog}
+        onClose={() => setOpenDeleteContainerDialog(false)}
+      >
+        <DialogTitle>Delete Container</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this container:
+            {container && container.name}?
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            variant="primary"
+            onClick={() => setOpenDeleteContainerDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="outline-danger"
+            onClick={() => {
+              setOpenDeleteContainerDialog(false);
+              handleDeleteContainer(container);
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* dialog to confirm undeploy container */}
+      <Dialog
+        open={openUndeployContainerDialog}
+        onClose={() => setOpenUndeployContainerDialog(false)}
+      >
+        <DialogTitle>Undeploy Container</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to undeploy this container:
+            {container && container.name}?
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            variant="primary"
+            onClick={() => setOpenUndeployContainerDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="outline-danger"
+            onClick={() => {
+              setOpenUndeployContainerDialog(false);
+              handleUndeployContainer(container);
+            }}
+          >
+            Undeploy
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* dialog to confirm delete repository */}
+      <Dialog
+        open={openDeleteRepositoryDialog}
+        onClose={() => setOpenDeleteRepositoryDialog(false)}
+      >
+        <DialogTitle>Delete Repository</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this repository:{" "}
+            {selectedRepository}?
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            variant="primary"
+            onClick={() => setOpenDeleteRepositoryDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="outline-danger"
+            onClick={() => {
+              setOpenDeleteRepositoryDialog(false);
+              handleDeleteRepository(selectedRepository);
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* dialog to confirm delete instance */}
+      <Dialog
+        open={openDeleteInstanceDialog}
+        onClose={() => setOpenDeleteInstanceDialog(false)}
+      >
+        <DialogTitle>Delete Instance</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this instance: {selectedInstance}?
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            variant="primary"
+            onClick={() => setOpenDeleteInstanceDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="outline-danger"
+            onClick={() => {
+              setOpenDeleteInstanceDialog(false);
+              handleDeleteContainerInstance(selectedInstance);
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       <CustomFooter />
     </Container>
   );
@@ -522,7 +675,7 @@ const AzurePage = () => {
       return (
         <>
           <Button
-            onClick={() => handleDeleteContainer(container.id)}
+            onClick={() => setOpenDeleteContainerDialog(true)}
             variant="outline-danger"
             style={{ borderRadius: "20px" }}
           >
@@ -548,7 +701,7 @@ const AzurePage = () => {
       return (
         <>
           <Button
-            onClick={() => handleUndeployContainer(container.id)}
+            onClick={() => setOpenUndeployContainerDialog(true)}
             variant="outline-danger"
             style={{ borderRadius: "20px" }}
             disabled={loading}
