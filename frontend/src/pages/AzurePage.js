@@ -1,8 +1,3 @@
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button, Card, Container, Spinner, Table } from "react-bootstrap";
@@ -10,6 +5,10 @@ import { IoCubeOutline } from "react-icons/io5";
 import { ToastContainer, toast } from "react-toastify";
 import CustomFooter from "../components/CustomFooter";
 import CustomNavbar from "../components/CustomNavbar";
+import DeleteContainerDialog from "../components/azure/DeleteContainerDialog";
+import DeleteInstanceDialog from "../components/azure/DeleteInstanceDialog";
+import DeleteRepositoryDialog from "../components/azure/DeleteRepositoryDialog";
+import UndeployDialog from "../components/azure/UndeployDialog";
 import { PYTHON_BACKEND_URL } from "../config/BackendConfiguration";
 
 const AzurePage = () => {
@@ -160,42 +159,6 @@ const AzurePage = () => {
       });
   };
 
-  const handleDeleteRepository = (repositoryName) => {
-    console.log("Deleting repository:", repositoryName);
-    toast.success("Deleting repository: " + repositoryName);
-
-    axios
-      .delete(`${PYTHON_BACKEND_URL}/azure/repository/${repositoryName}`)
-      .then((response) => {
-        console.log(response);
-        toast.success(
-          "Repository '" + repositoryName + "' deleted successfully"
-        );
-        fetchAzureContainerRepositories();
-      })
-      .catch((error) => {
-        console.error(error);
-        toast.error("Failed to delete repository: " + error.response.data);
-      });
-  };
-
-  const handleDeleteContainerInstance = (instanceName) => {
-    console.log("Deleting instance:", instanceName);
-    toast.success("Deleting instance: " + instanceName);
-
-    axios
-      .delete(`${PYTHON_BACKEND_URL}/azure/instances/${instanceName}`)
-      .then((response) => {
-        console.log(response);
-        toast.success("Instance '" + instanceName + "' deleted successfully");
-        fetchAzureContainerInstances();
-      })
-      .catch((error) => {
-        console.error(error);
-        toast.error("Failed to delete instance: " + error.response.data);
-      });
-  };
-
   const handleDeployToAzure = async (container) => {
     console.log("Deploying container:", container);
 
@@ -221,48 +184,6 @@ const AzurePage = () => {
       });
 
     toast.success("Sent request to deploy container to Azure");
-  };
-
-  const handleDeleteContainer = async (container) => {
-    const containerId = container.id;
-
-    console.log("Deleting container:", containerId);
-
-    axios
-      .delete(`${PYTHON_BACKEND_URL}/azure/container/${containerId}`)
-      .then((response) => {
-        console.log(response);
-        toast.success("Container deleted successfully");
-
-        setSelectedContainer("");
-        fetchContainers();
-      })
-      .catch((error) => {
-        console.error(error);
-        toast.error("Failed to delete container: " + error.response.data);
-      });
-  };
-
-  const handleUndeployContainer = async (container) => {
-    const containerId = container.id;
-
-    console.log("Undeploying container:", containerId);
-
-    setLoading(true);
-    axios
-      .delete(`${PYTHON_BACKEND_URL}/azure/deploy/${containerId}`)
-      .then((response) => {
-        console.log(response);
-        toast.success("Container undeployed successfully");
-        fetchContainers();
-      })
-      .catch((error) => {
-        console.error(error);
-        toast.error("Failed to undeploy container: " + error.response.data);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
   };
 
   const fetchContainerLogs = async (container) => {
@@ -526,131 +447,36 @@ const AzurePage = () => {
         </Card.Body>
       </Card>
 
-      <Dialog
-        open={openDeleteContainerDialog}
-        onClose={() => setOpenDeleteContainerDialog(false)}
-      >
-        <DialogTitle>Delete Container</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this container:
-            {container && container.name}?
-          </DialogContentText>
-        </DialogContent>
+      <DeleteContainerDialog
+        openDeleteContainerDialog={openDeleteContainerDialog}
+        setOpenDeleteContainerDialog={setOpenDeleteContainerDialog}
+        container={container}openDeleteInstanceDialog
+        fetchContainers={fetchContainers}
+        setSelectedContainer={setSelectedContainer}
+      />
 
-        <DialogActions>
-          <Button
-            variant="primary"
-            onClick={() => setOpenDeleteContainerDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outline-danger"
-            onClick={() => {
-              setOpenDeleteContainerDialog(false);
-              handleDeleteContainer(container);
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <UndeployDialog
+        openUndeployContainerDialog={openUndeployContainerDialog}
+        setOpenUndeployContainerDialog={setOpenUndeployContainerDialog}
+        container={container}
+        fetchContainers={fetchContainers}
+        setLoading={setLoading}
+      />
 
-      {/* dialog to confirm undeploy container */}
-      <Dialog
-        open={openUndeployContainerDialog}
-        onClose={() => setOpenUndeployContainerDialog(false)}
-      >
-        <DialogTitle>Undeploy Container</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to undeploy this container:
-            {container && container.name}?
-          </DialogContentText>
-        </DialogContent>
+      <DeleteRepositoryDialog
+        openDeleteRepositoryDialog={openDeleteRepositoryDialog}
+        setOpenDeleteRepositoryDialog={setOpenDeleteRepositoryDialog}
+        selectedRepository={selectedRepository}
+        fetchAzureContainerRepositories={fetchAzureContainerRepositories}
+      />
 
-        <DialogActions>
-          <Button
-            variant="primary"
-            onClick={() => setOpenUndeployContainerDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outline-danger"
-            onClick={() => {
-              setOpenUndeployContainerDialog(false);
-              handleUndeployContainer(container);
-            }}
-          >
-            Undeploy
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteInstanceDialog
+        openDeleteInstanceDialog={openDeleteInstanceDialog}
+        setOpenDeleteInstanceDialog={setOpenDeleteInstanceDialog}
+        selectedInstance={selectedInstance}
+        fetchAzureContainerInstances={fetchAzureContainerInstances}
+      />
 
-      {/* dialog to confirm delete repository */}
-      <Dialog
-        open={openDeleteRepositoryDialog}
-        onClose={() => setOpenDeleteRepositoryDialog(false)}
-      >
-        <DialogTitle>Delete Repository</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this repository:{" "}
-            {selectedRepository}?
-          </DialogContentText>
-        </DialogContent>
-
-        <DialogActions>
-          <Button
-            variant="primary"
-            onClick={() => setOpenDeleteRepositoryDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outline-danger"
-            onClick={() => {
-              setOpenDeleteRepositoryDialog(false);
-              handleDeleteRepository(selectedRepository);
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* dialog to confirm delete instance */}
-      <Dialog
-        open={openDeleteInstanceDialog}
-        onClose={() => setOpenDeleteInstanceDialog(false)}
-      >
-        <DialogTitle>Delete Instance</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this instance: {selectedInstance}?
-          </DialogContentText>
-        </DialogContent>
-
-        <DialogActions>
-          <Button
-            variant="primary"
-            onClick={() => setOpenDeleteInstanceDialog(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outline-danger"
-            onClick={() => {
-              setOpenDeleteInstanceDialog(false);
-              handleDeleteContainerInstance(selectedInstance);
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
       <CustomFooter />
     </Container>
   );
