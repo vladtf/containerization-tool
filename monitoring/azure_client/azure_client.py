@@ -133,7 +133,6 @@ def get_azure_instance_data(azure_container: AzureContainer, subscription_id: st
                             credentials) -> dict:
     azure_instance = azure_container.to_dict()
 
-
     # Get the container instance using the ID
     container_client = ContainerInstanceManagementClient(credentials, subscription_id)
     container_group = container_client.container_groups.get(resource_group, azure_container.name)
@@ -141,8 +140,8 @@ def get_azure_instance_data(azure_container: AzureContainer, subscription_id: st
     azure_instance["instance_id"] = container_group.id
     azure_instance["instance_name"] = container_group.name
     azure_instance["instance_status"] = container_group.containers[0].instance_view.current_state.state
-    # azure_instance["instance_ip"] = container_group.ip_address.ip # TODO: get IP address
-    azure_instance["instance_ports"] = [port.port for port in container_group.containers[0].ports]
+    azure_instance["instance_ip"] = container_group.ip_address.ip if container_group.ip_address else None
+    azure_instance["instance_ports"] = [port.port for port in container_group.ip_address.ports] if container_group.ip_address else None
     azure_instance["instance_image"] = container_group.containers[0].image
     azure_instance["instance_start_time"] = container_group.containers[0].instance_view.current_state.start_time
 

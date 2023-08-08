@@ -305,7 +305,7 @@ const AzurePage = () => {
                           <td>
                             <strong>Ports:</strong>
                           </td>
-                          <td>{azureContainerData.instance_ports}</td>
+                          <td>{azureContainerData.instance_ports ?? "N/A"}</td>
                         </tr>
                         <tr>
                           <td>
