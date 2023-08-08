@@ -136,7 +136,7 @@ def deploy_to_azure():
             name=container_group_name,
             image=acr_image_name,
             resources=ResourceRequirements(requests={"cpu": "1.0", "memoryInGB": "1.5"}),  # TODO: get from frontend
-            ports=[ContainerPort(port=80)],
+            ports=[ContainerPort(port=8080)],
         )
 
         # Create ImageRegistryCredential object
@@ -148,7 +148,7 @@ def deploy_to_azure():
 
         # Configure IP address
         ip_address = IpAddress(
-            ports=[Port(protocol=ContainerGroupNetworkProtocol.tcp, port=80)],
+            ports=[Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080)],
             type=ContainerGroupIpAddressType.public
         )
 
@@ -268,6 +268,10 @@ def get_container(container_name):
             mysql=app.mysql,
             container_name=container_name
         )
+
+        # if the container is not deployed yet, return the container data from the database
+        if azure_container.status != "deployed":
+            return jsonify(azure_container), 200
 
         azure_instance = get_azure_instance_data(
             credentials=app.azure_credentials,
