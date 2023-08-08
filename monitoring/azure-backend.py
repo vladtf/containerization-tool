@@ -6,7 +6,8 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, ResourceRequirements,
-                                                 ImageRegistryCredential)
+                                                 ImageRegistryCredential, IpAddress, Port,
+                                                 ContainerGroupNetworkProtocol, ContainerGroupIpAddressType)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mysqldb import MySQL
@@ -145,12 +146,19 @@ def deploy_to_azure():
             password=get_acr_access_token(acr_url)
         )]
 
+        # Configure IP address
+        ip_address = IpAddress(
+            ports=[Port(protocol=ContainerGroupNetworkProtocol.tcp, port=80)],
+            type=ContainerGroupIpAddressType.public
+        )
+
         # Configure the container group properties
         container_group = ContainerGroup(
             location=location,
             containers=[container],
             os_type="Linux",
-            image_registry_credentials=image_registry_credentials
+            image_registry_credentials=image_registry_credentials,
+            ip_address=ip_address
         )
 
         # Create the Azure Container Instance

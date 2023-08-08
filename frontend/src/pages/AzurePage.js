@@ -51,7 +51,7 @@ const AzurePage = () => {
     ).get("container");
 
     if (selectedContainerFromUrl) {
-      setSelectedContainer(selectedContainerFromUrl);
+      setSelectedContainer(selectedContainerFromUrl); // TODO: to fix fetch instance data when loading the page
     }
 
     const refreshInterval = setInterval(() => {
