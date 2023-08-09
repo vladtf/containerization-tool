@@ -14,9 +14,7 @@
 * to improve azure deploy by providing more options (like resource group, memory, cpu, etc)
 * to add an easier way to authenticate to azure from python scripts
 * to document authentication to azure and other required steps
-* to add monitoring for containers from azure
 * to send to frontend intermediate message about deploy to azure (image upload, container creation, etc)
-* when click deploy to azure to redirect to azure page with the container selected
 * add caching for docker login
 * to test azure keyvault and to add it to the tool
-* to list containers and images from azure linked to current account
+* to add port selection when deploying container to azure
