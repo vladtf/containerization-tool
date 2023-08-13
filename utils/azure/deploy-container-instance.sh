@@ -60,3 +60,12 @@ az container list \
 az container show \
   --resource-group "containerization-tool" \
   --name "my-ubuntu" > container.json
+
+
+# show logs
+az container logs --resource-group "containerization-tool" --name "container-test-ping-sh"
+
+
+az container attach --resource-group "containerization-tool" --name "container-test-ping-sh"
+
+az container exec --resource-group "containerization-tool" --name "container-test-ping-sh" --exec-command "/bin/bash"

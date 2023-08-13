@@ -7,7 +7,9 @@ import docker
 from azure.containerregistry import ContainerRegistryClient
 from azure.core.exceptions import ResourceNotFoundError
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
+from azure.mgmt.containerinstance.models import ContainerGroupSubnetId
 from azure.mgmt.containerregistry import ContainerRegistryManagementClient
+from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 
 from kafka.kafka_client import DataClassEncoder
@@ -141,7 +143,8 @@ def get_azure_instance_data(azure_container: AzureContainer, subscription_id: st
     azure_instance["instance_name"] = container_group.name
     azure_instance["instance_status"] = container_group.containers[0].instance_view.current_state.state
     azure_instance["instance_ip"] = container_group.ip_address.ip if container_group.ip_address else None
-    azure_instance["instance_ports"] = [port.port for port in container_group.ip_address.ports] if container_group.ip_address else None
+    azure_instance["instance_ports"] = [port.port for port in
+                                        container_group.ip_address.ports] if container_group.ip_address else None
     azure_instance["instance_image"] = container_group.containers[0].image
     azure_instance["instance_start_time"] = container_group.containers[0].instance_view.current_state.start_time
 
@@ -195,3 +198,12 @@ def delete_azure_repository(credentials, subscription_id: str, registry_name: st
 def delete_azure_container_instance(credentials, subscription_id: str, resource_group: str, instance_name: str):
     with ContainerInstanceManagementClient(credentials, subscription_id) as client:
         client.container_groups.begin_delete(resource_group, instance_name)
+
+
+def get_subnet_id(credentials, subscription_id: str, resource_group: str, vnet_name: str,
+                  subnet_name: str) -> str:
+    # Get the subnet ID
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    subnet = network_client.subnets.get(resource_group, vnet_name, subnet_name)
+
+    return subnet.id

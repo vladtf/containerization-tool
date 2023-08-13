@@ -7,7 +7,8 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, ResourceRequirements,
                                                  ImageRegistryCredential, IpAddress, Port,
-                                                 ContainerGroupNetworkProtocol, ContainerGroupIpAddressType)
+                                                 ContainerGroupNetworkProtocol, ContainerGroupIpAddressType,
+                                                 ContainerGroupSubnetId)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mysqldb import MySQL
@@ -147,10 +148,23 @@ def deploy_to_azure():
         )]
 
         # Configure IP address
-        ip_address = IpAddress(
-            ports=[Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080)],
-            type=ContainerGroupIpAddressType.public
+        # ip_address = IpAddress(
+        #     ports=[Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080)],
+        #     type=ContainerGroupIpAddressType.public
+        # )
+
+        # Configure subnet
+        subnet_id = azure_client.get_subnet_id(
+            credentials=app.azure_credentials,
+            resource_group=resource_group,
+            vnet_name=config.get("azure", "vnet_name"),
+            subnet_name=config.get("azure", "subnet_name"),
+            subscription_id=app.azure_subscription_id
         )
+
+        subnet = ContainerGroupSubnetId(
+            name=config.get("azure", "subnet_name"),
+            id=subnet_id)
 
         # Configure the container group properties
         container_group = ContainerGroup(
@@ -158,7 +172,8 @@ def deploy_to_azure():
             containers=[container],
             os_type="Linux",
             image_registry_credentials=image_registry_credentials,
-            ip_address=ip_address
+            # ip_address=ip_address,
+            subnet_ids=[subnet]
         )
 
         # Create the Azure Container Instance
