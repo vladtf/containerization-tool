@@ -10,6 +10,7 @@ import DeleteInstanceDialog from "../components/azure/DeleteInstanceDialog";
 import DeleteRepositoryDialog from "../components/azure/DeleteRepositoryDialog";
 import UndeployDialog from "../components/azure/UndeployDialog";
 import { PYTHON_BACKEND_URL } from "../config/BackendConfiguration";
+import AddSecurityRuleDialog from "../components/azure/AddSecurityRuleDialog";
 
 const AzurePage = () => {
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,9 @@ const AzurePage = () => {
     useState(false);
 
   const [openDeleteInstanceDialog, setOpenDeleteInstanceDialog] =
+    useState(false);
+
+  const [openAddSecurityRuleDialog, setOpenAddSecurityRuleDialog] =
     useState(false);
 
   useEffect(() => {
@@ -451,7 +455,7 @@ const AzurePage = () => {
       <DeleteContainerDialog
         openDeleteContainerDialog={openDeleteContainerDialog}
         setOpenDeleteContainerDialog={setOpenDeleteContainerDialog}
-        container={container}openDeleteInstanceDialog
+        container={container}
         fetchContainers={fetchContainers}
         setSelectedContainer={setSelectedContainer}
       />
@@ -476,6 +480,12 @@ const AzurePage = () => {
         setOpenDeleteInstanceDialog={setOpenDeleteInstanceDialog}
         selectedInstance={selectedInstance}
         fetchAzureContainerInstances={fetchAzureContainerInstances}
+      />
+
+      <AddSecurityRuleDialog
+        openAddSecurityRuleDialog={openAddSecurityRuleDialog}
+        setOpenAddSecurityRuleDialog={setOpenAddSecurityRuleDialog}
+        container={container}
       />
 
       <CustomFooter />
@@ -544,6 +554,14 @@ const AzurePage = () => {
             style={{ borderRadius: "20px", marginLeft: "10px" }}
           >
             See Logs
+          </Button>
+          {/* Button to add Azure Network Security Group Rule */}
+          <Button
+            onClick={() => setOpenAddSecurityRuleDialog(true)}
+            variant="outline-secondary"
+            style={{ borderRadius: "20px", marginLeft: "10px" }}
+          >
+            Add Security Rule
           </Button>
         </>
       );

@@ -207,3 +207,55 @@ def get_subnet_id(credentials, subscription_id: str, resource_group: str, vnet_n
     subnet = network_client.subnets.get(resource_group, vnet_name, subnet_name)
 
     return subnet.id
+
+
+def add_rule_to_nsg(credentials, subscription_id: str, resource_group: str, nsg_name: str, rule_name: str,
+                    priority: int, source_address_prefix: str, destination_address_prefix: str,
+                    destination_port_range: str,
+                    access: str, protocol: str):
+    # Get the subnet ID
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    nsg = network_client.network_security_groups.get(resource_group, nsg_name)
+
+    # Add the rule to the NSG
+    nsg.security_rules.append({
+        "name": rule_name,
+        "priority": priority,
+        "source_address_prefix": source_address_prefix,
+        "destination_address_prefix": destination_address_prefix,
+        "destination_port_range": destination_port_range,
+        "access": access,
+        "protocol": protocol
+    })
+
+    # Update the NSG
+    network_client.network_security_groups.create_or_update(resource_group, nsg_name, nsg)
+
+
+def get_nsg_rules(credentials, subscription_id: str, resource_group: str, nsg_name: str):
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    nsg = network_client.network_security_groups.get(resource_group, nsg_name)
+
+    # combine default and custom rules
+    security_rules = nsg.security_rules + nsg.default_security_rules
+
+    output = []
+
+    for rule in security_rules:
+        security_rule = {}
+        security_rule["id"] = rule.id
+        security_rule["name"] = rule.name
+        security_rule["priority"] = rule.priority
+        security_rule["source_address_prefix"] = rule.source_address_prefix
+        security_rule["source_port_range"] = rule.source_port_range
+        security_rule["destination_address_prefix"] = rule.destination_address_prefix
+        security_rule["destination_port_range"] = rule.destination_port_range
+        security_rule["access"] = rule.access
+        security_rule["protocol"] = rule.protocol
+        security_rule["direction"] = rule.direction
+        security_rule["description"] = rule.description
+        security_rule["provisioning_state"] = rule.provisioning_state
+
+        output.append(security_rule)
+
+    return output

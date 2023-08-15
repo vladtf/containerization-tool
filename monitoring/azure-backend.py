@@ -360,6 +360,24 @@ def delete_azure_instance(instance_name):
         return f"Failed to delete container instance with name {instance_name}: {e}", 500
 
 
+# listener to get all the nsg rules
+@app.route('/azure/security-rules', methods=['GET'])
+def get_nsg_rules():
+    try:
+        nsg_rules = azure_client.get_nsg_rules(
+            credentials=app.azure_credentials,
+            subscription_id=app.azure_subscription_id,
+            resource_group=app.app_config.get("azure", "resource_group"),
+            nsg_name=app.app_config.get("azure", "nsg_name")
+        )
+
+        return jsonify(nsg_rules), 200
+
+    except Exception as e:
+        logger.error(f"Failed to get nsg rules", e)
+        return f"Failed to get nsg rules: {e}", 500
+
+
 if __name__ == '__main__':
     # Load the configuration
     app_config = config_loader.load_config(os.path.abspath(__file__))
