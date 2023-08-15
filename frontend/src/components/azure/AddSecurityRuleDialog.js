@@ -75,7 +75,10 @@ const AddSecurityRuleDialog = ({
               <tbody>
                 {/* Display firstly inbound rules */}
                 <tr>
-                  <td colSpan="5" style={{ textAlign: "center", fontWeight: "bold" }}>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "center", fontWeight: "bold" }}
+                  >
                     Inbound
                   </td>
                 </tr>
@@ -85,14 +88,25 @@ const AddSecurityRuleDialog = ({
                     <tr key={rule.name}>
                       <td>{rule.name}</td>
                       <td>{rule.priority}</td>
-                      <td>{rule.source_address_prefix + ":" + rule.source_port_range}</td>
-                      <td>{rule.destination_address_prefix + ":" + rule.destination_port_range}</td>
+                      <td>
+                        {rule.source_address_prefix +
+                          ":" +
+                          rule.source_port_range}
+                      </td>
+                      <td>
+                        {rule.destination_address_prefix +
+                          ":" +
+                          rule.destination_port_range}
+                      </td>
                       <td>{rule.protocol}</td>
                     </tr>
                   ))}
                 {/* Display secondly outbound rules */}
                 <tr>
-                  <td colSpan="5" style={{ textAlign: "center", fontWeight: "bold" }}>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "center", fontWeight: "bold" }}
+                  >
                     Outbound
                   </td>
                 </tr>
@@ -102,8 +116,16 @@ const AddSecurityRuleDialog = ({
                     <tr key={rule.name}>
                       <td>{rule.name}</td>
                       <td>{rule.priority}</td>
-                      <td>{rule.source_address_prefix + ":" + rule.source_port_range}</td>
-                      <td>{rule.destination_address_prefix + ":" + rule.destination_port_range}</td>
+                      <td>
+                        {rule.source_address_prefix +
+                          ":" +
+                          rule.source_port_range}
+                      </td>
+                      <td>
+                        {rule.destination_address_prefix +
+                          ":" +
+                          rule.destination_port_range}
+                      </td>
                       <td>{rule.protocol}</td>
                     </tr>
                   ))}
@@ -118,6 +140,95 @@ const AddSecurityRuleDialog = ({
           To add a new security rule, please enter the following information
           here.
         </DialogContentText>
+        {/* Form to add a new security rule */}
+        <form>
+          <div className="mb-3">
+            <label htmlFor="name" className="form-label">
+              Rule Name
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="name"
+              placeholder="Enter rule name"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="priority" className="form-label">
+              Priority
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              id="priority"
+              placeholder="Enter priority"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="direction" className="form-label">
+              Direction
+            </label>
+            <select className="form-select" id="direction">
+              <option value="Inbound">Inbound</option>
+              <option value="Outbound">Outbound</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="source" className="form-label">
+              Source
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="source"
+              placeholder="Enter source"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="destination" className="form-label">
+              Destination
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="destination"
+              placeholder="Enter destination"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="protocol" className="form-label">
+              Protocol
+            </label>
+            <select className="form-select" id="protocol">
+              <option value="ANY">ANY</option>
+              <option value="TCP">TCP</option>
+              <option value="UDP">UDP</option>
+              <option value="ICMP">ICMP</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="source_port_range" className="form-label">
+              Source Port Range
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="source_port_range"
+              placeholder="Enter source port range"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="destination_port_range" className="form-label">
+              Destination Port Range
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="destination_port_range"
+              placeholder="Enter destination port range"
+            />
+          </div>
+        </form>
       </DialogContent>
       <DialogActions>
         <Button
