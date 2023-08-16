@@ -19,6 +19,19 @@ const AddSecurityRuleDialog = ({
   const [securityRules, setSecurityRules] = useState([]);
   const [loadingSecurityRules, setLoadingSecurityRules] = useState(false);
 
+  const [name, setName] = useState("");
+  const [priority, setPriority] = useState("");
+  const [direction, setDirection] = useState("Inbound");
+  const [source, setSource] = useState("");
+  const [destination, setDestination] = useState("");
+  const [protocol, setProtocol] = useState("");
+  const [access, setAccess] = useState("Allow");
+  const [description, setDescription] = useState("");
+  const [sourcePortRange, setSourcePortRange] = useState("");
+  const [destinationPortRange, setDestinationPortRange] = useState("");
+
+  const [loadingAddSecurityRule, setLoadingAddSecurityRule] = useState(false);
+
   useEffect(() => {
     setLoadingSecurityRules(true);
     axios
@@ -33,6 +46,35 @@ const AddSecurityRuleDialog = ({
         setLoadingSecurityRules(false);
       });
   }, []);
+
+  const handleAddSecurityRule = (e) => {
+    e.preventDefault();
+
+    setLoadingAddSecurityRule(true);
+    axios
+      .post(`${PYTHON_BACKEND_URL}/azure/security-rules`, {
+        name,
+        priority,
+        direction,
+        source,
+        destination,
+        protocol,
+        access,
+        description,
+        sourcePortRange,
+        destinationPortRange,
+      })
+      .then((response) => {
+        toast.success(response.data);
+        setOpenAddSecurityRuleDialog(false);
+      })
+      .catch((error) => {
+        toast.error(error.message);
+      })
+      .finally(() => {
+        setLoadingAddSecurityRule(false);
+      });
+  };
 
   return (
     <Dialog
@@ -70,13 +112,14 @@ const AddSecurityRuleDialog = ({
                   <th>Source</th>
                   <th>Destination</th>
                   <th>Protocol</th>
+                  <th>Access</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Display firstly inbound rules */}
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     style={{ textAlign: "center", fontWeight: "bold" }}
                   >
                     Inbound
@@ -99,12 +142,13 @@ const AddSecurityRuleDialog = ({
                           rule.destination_port_range}
                       </td>
                       <td>{rule.protocol}</td>
+                      <td>{rule.access}</td>
                     </tr>
                   ))}
                 {/* Display secondly outbound rules */}
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     style={{ textAlign: "center", fontWeight: "bold" }}
                   >
                     Outbound
@@ -127,6 +171,7 @@ const AddSecurityRuleDialog = ({
                           rule.destination_port_range}
                       </td>
                       <td>{rule.protocol}</td>
+                      <td>{rule.access}</td>
                     </tr>
                   ))}
               </tbody>
@@ -151,6 +196,7 @@ const AddSecurityRuleDialog = ({
               className="form-control"
               id="name"
               placeholder="Enter rule name"
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="mb-3">
@@ -162,13 +208,18 @@ const AddSecurityRuleDialog = ({
               className="form-control"
               id="priority"
               placeholder="Enter priority"
+              onChange={(e) => setPriority(e.target.value)}
             />
           </div>
           <div className="mb-3">
             <label htmlFor="direction" className="form-label">
               Direction
             </label>
-            <select className="form-select" id="direction">
+            <select
+              className="form-select"
+              id="direction"
+              onChange={(e) => setDirection(e.target.value)}
+            >
               <option value="Inbound">Inbound</option>
               <option value="Outbound">Outbound</option>
             </select>
@@ -182,6 +233,7 @@ const AddSecurityRuleDialog = ({
               className="form-control"
               id="source"
               placeholder="Enter source"
+              onChange={(e) => setSource(e.target.value)}
             />
           </div>
           <div className="mb-3">
@@ -193,13 +245,18 @@ const AddSecurityRuleDialog = ({
               className="form-control"
               id="destination"
               placeholder="Enter destination"
+              onChange={(e) => setDestination(e.target.value)}
             />
           </div>
           <div className="mb-3">
             <label htmlFor="protocol" className="form-label">
               Protocol
             </label>
-            <select className="form-select" id="protocol">
+            <select
+              className="form-select"
+              id="protocol"
+              onChange={(e) => setProtocol(e.target.value)}
+            >
               <option value="ANY">ANY</option>
               <option value="TCP">TCP</option>
               <option value="UDP">UDP</option>
@@ -215,6 +272,7 @@ const AddSecurityRuleDialog = ({
               className="form-control"
               id="source_port_range"
               placeholder="Enter source port range"
+              onChange={(e) => setSourcePortRange(e.target.value)}
             />
           </div>
           <div className="mb-3">
@@ -226,7 +284,33 @@ const AddSecurityRuleDialog = ({
               className="form-control"
               id="destination_port_range"
               placeholder="Enter destination port range"
+              onChange={(e) => setDestinationPortRange(e.target.value)}
             />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="access" className="form-label">
+              Access
+            </label>
+            <select
+              className="form-select"
+              id="access"
+              onChange={(e) => setAccess(e.target.value)}
+            >
+              <option value="Allow">Allow</option>
+              <option value="Deny">Deny</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="description" className="form-label">
+              Description
+            </label>
+            <textarea
+              className="form-control"
+              id="description"
+              rows="3"
+              placeholder="Enter description"
+              onChange={(e) => setDescription(e.target.value)}
+            ></textarea>
           </div>
         </form>
       </DialogContent>
@@ -237,10 +321,7 @@ const AddSecurityRuleDialog = ({
         >
           Cancel
         </Button>
-        <Button
-          onClick={() => setOpenAddSecurityRuleDialog(false)}
-          color="primary"
-        >
+        <Button onClick={handleAddSecurityRule} color="primary">
           Add
         </Button>
       </DialogActions>
