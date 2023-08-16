@@ -209,29 +209,6 @@ def get_subnet_id(credentials, subscription_id: str, resource_group: str, vnet_n
     return subnet.id
 
 
-def add_rule_to_nsg(credentials, subscription_id: str, resource_group: str, nsg_name: str, rule_name: str,
-                    priority: int, source_address_prefix: str, destination_address_prefix: str,
-                    destination_port_range: str,
-                    access: str, protocol: str):
-    # Get the subnet ID
-    network_client = NetworkManagementClient(credentials, subscription_id)
-    nsg = network_client.network_security_groups.get(resource_group, nsg_name)
-
-    # Add the rule to the NSG
-    nsg.security_rules.append({
-        "name": rule_name,
-        "priority": priority,
-        "source_address_prefix": source_address_prefix,
-        "destination_address_prefix": destination_address_prefix,
-        "destination_port_range": destination_port_range,
-        "access": access,
-        "protocol": protocol
-    })
-
-    # Update the NSG
-    network_client.network_security_groups.create_or_update(resource_group, nsg_name, nsg)
-
-
 def get_nsg_rules(credentials, subscription_id: str, resource_group: str, nsg_name: str):
     network_client = NetworkManagementClient(credentials, subscription_id)
     nsg = network_client.network_security_groups.get(resource_group, nsg_name)
@@ -255,7 +232,34 @@ def get_nsg_rules(credentials, subscription_id: str, resource_group: str, nsg_na
         security_rule["direction"] = rule.direction
         security_rule["description"] = rule.description
         security_rule["provisioning_state"] = rule.provisioning_state
+        security_rule["access"] = rule.access
 
         output.append(security_rule)
 
     return output
+
+
+def add_rule_to_nsg(credentials, subscription_id: str, resource_group: str, nsg_name: str,
+                    rule_name: str, priority: int, direction: str,
+                    source: str, source_port_range: str,
+                    destination: str, destination_port_range: str,
+                    access: str, protocol: str, description: str):
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    nsg = network_client.network_security_groups.get(resource_group, nsg_name)
+
+    # Add the rule to the NSG
+    nsg.security_rules.append({
+        "name": rule_name,
+        "priority": priority,
+        "direction": direction,
+        "source_address_prefix": source,
+        "source_port_range": source_port_range,
+        "destination_address_prefix": destination,
+        "destination_port_range": destination_port_range,
+        "access": access,
+        "protocol": protocol,
+        "description": description
+    })
+
+    # Update the NSG
+    network_client.network_security_groups.create_or_update(resource_group, nsg_name, nsg)

@@ -378,6 +378,36 @@ def get_nsg_rules():
         return f"Failed to get nsg rules: {e}", 500
 
 
+# listener to add a nsg rule
+@app.route('/azure/security-rules', methods=['POST'])
+def add_nsg_rule():
+    try:
+        data = request.get_json()
+
+        nsg_rule = azure_client.add_rule_to_nsg(
+            credentials=app.azure_credentials,
+            subscription_id=app.azure_subscription_id,
+            resource_group=app.app_config.get("azure", "resource_group"),
+            nsg_name=app.app_config.get("azure", "nsg_name"),
+            rule_name=data.get("rule_name"),
+            access=data.get("action"),
+            source=data.get("source"),
+            priority=data.get("priority"),
+            protocol=data.get("protocol"),
+            direction=data.get("direction"),
+            description=data.get("description"),
+            destination=data.get("destination"),
+            source_port_range=data.get("source_port_range"),
+            destination_port_range=data.get("destination_port_range")
+        )
+
+        return jsonify(nsg_rule), 200
+
+    except Exception as e:
+        logger.error(f"Failed to add nsg rule", e)
+        return f"Failed to add nsg rule: {e}", 500
+
+
 if __name__ == '__main__':
     # Load the configuration
     app_config = config_loader.load_config(os.path.abspath(__file__))
