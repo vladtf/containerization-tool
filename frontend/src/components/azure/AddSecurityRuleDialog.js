@@ -14,7 +14,6 @@ import { PYTHON_BACKEND_URL } from "../../config/BackendConfiguration";
 const AddSecurityRuleDialog = ({
   openAddSecurityRuleDialog,
   setOpenAddSecurityRuleDialog,
-  container,
 }) => {
   const [securityRules, setSecurityRules] = useState([]);
   const [loadingSecurityRules, setLoadingSecurityRules] = useState(false);
@@ -45,7 +44,7 @@ const AddSecurityRuleDialog = ({
       .finally(() => {
         setLoadingSecurityRules(false);
       });
-  }, []);
+  }, [openAddSecurityRuleDialog, setOpenAddSecurityRuleDialog]);
 
   const handleAddSecurityRule = (e) => {
     e.preventDefault();
@@ -69,7 +68,8 @@ const AddSecurityRuleDialog = ({
         setOpenAddSecurityRuleDialog(false);
       })
       .catch((error) => {
-        toast.error(error.message);
+        console.log(error);
+        toast.error(error.response.data || error.message);
       })
       .finally(() => {
         setLoadingAddSecurityRule(false);
@@ -317,12 +317,22 @@ const AddSecurityRuleDialog = ({
       <DialogActions>
         <Button
           onClick={() => setOpenAddSecurityRuleDialog(false)}
-          color="primary"
+          variant="danger"
         >
           Cancel
         </Button>
-        <Button onClick={handleAddSecurityRule} color="primary">
-          Add
+        <Button
+          onClick={handleAddSecurityRule}
+          variant="success"
+          disabled={loadingAddSecurityRule}
+        >
+          Add Security Rule
+          {loadingAddSecurityRule && (
+            <>
+              {" "}
+              <Spinner animation="border" size="sm" />
+            </>
+          )}
         </Button>
       </DialogActions>
     </Dialog>
