@@ -262,4 +262,4 @@ def add_rule_to_nsg(credentials, subscription_id: str, resource_group: str, nsg_
     })
 
     # Update the NSG
-    network_client.network_security_groups.create_or_update(resource_group, nsg_name, nsg)
+    network_client.network_security_groups.begin_create_or_update(resource_group, nsg_name, nsg)

@@ -24,7 +24,7 @@ const AddSecurityRuleDialog = ({
   const [direction, setDirection] = useState("Inbound");
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
-  const [protocol, setProtocol] = useState("");
+  const [protocol, setProtocol] = useState("*");
   const [access, setAccess] = useState("Allow");
   const [description, setDescription] = useState("");
   const [sourcePortRange, setSourcePortRange] = useState("");
@@ -257,7 +257,7 @@ const AddSecurityRuleDialog = ({
               id="protocol"
               onChange={(e) => setProtocol(e.target.value)}
             >
-              <option value="ANY">ANY</option>
+              <option value="*">ANY</option>
               <option value="TCP">TCP</option>
               <option value="UDP">UDP</option>
               <option value="ICMP">ICMP</option>
