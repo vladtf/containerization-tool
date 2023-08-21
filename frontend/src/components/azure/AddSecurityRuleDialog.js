@@ -58,11 +58,38 @@ const AddSecurityRuleDialog = ({
   useEffect(() => {
     setLoadingTrafficMessages(true);
 
+    if (!container) return;
+
     console.log("container: ", container);
     axios
       .get(`${BACKEND_URL}/messages/container/${container.name}`)
       .then((response) => {
-        setTrafficMessages(response.data);
+        const messages = response.data;
+
+        // group messages by source-destination pair
+        const groupedMessages = messages.reduce((acc, message) => {
+          const key = `${message.src_ip}-${message.dst_ip}`;
+
+          if (!acc[key]) {
+            acc[key] = {
+              src_ip: message.src_ip,
+              dst_ip: message.dst_ip,
+              src_port: message.src_port,
+              dst_port: message.dst_port,
+              protocol: message.protocol,
+              count: 1,
+            };
+          } else {
+            acc[key].count++;
+          }
+
+          return acc;
+        }, {});
+
+        // convert object to array
+        const responseArray = Object.values(groupedMessages);
+
+        setTrafficMessages(responseArray);
       })
       .catch((error) => {
         toast.error(error.message);
@@ -372,7 +399,6 @@ const AddSecurityRuleDialog = ({
       <Dialog
         open={openTrafficReportDialog}
         onClose={() => setOpenTrafficReportDialog(false)}
-        fullScreen
       >
         <DialogTitle>
           Traffic Report
@@ -388,12 +414,6 @@ const AddSecurityRuleDialog = ({
         </DialogTitle>
 
         <DialogContent>
-          <DialogContentText>
-            To view traffic report, please enter the following information here.
-          </DialogContentText>
-        </DialogContent>
-
-        <DialogContent>
           {/* Display existing security rules */}
           {loadingTrafficMessages ? (
             <Spinner animation="border" variant="success" size="sm" />
@@ -403,21 +423,25 @@ const AddSecurityRuleDialog = ({
               <Table striped bordered hover responsive>
                 <thead>
                   <tr>
-                    <th>Time</th>
+                    <th>Protocol</th>
                     <th>Source</th>
                     <th>Destination</th>
-                    <th>Protocol</th>
-                    <th>Access</th>
+                    <th>Count</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {trafficMessages.map((message) => (
-                    <tr key={message.time}>
-                      <td>{message.time}</td>
-                      <td>{message.source}</td>
-                      <td>{message.destination}</td>
+                  {trafficMessages.map((message, index) => (
+                    <tr key={index}>
                       <td>{message.protocol}</td>
-                      <td>{message.access}</td>
+                      <td>
+                        {message.src_ip}
+                        {message.src_port && `(${message.src_port})`}
+                      </td>
+                      <td>
+                        {message.dst_ip}
+                        {message.dst_port && `(${message.dst_port})`}
+                      </td>
+                      <td>{message.count}</td>
                     </tr>
                   ))}
                 </tbody>
