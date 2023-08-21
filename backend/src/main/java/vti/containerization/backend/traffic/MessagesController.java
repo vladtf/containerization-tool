@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vti.containerization.backend.containers.ContainerDataModel;
@@ -20,6 +21,11 @@ public class MessagesController {
     @GetMapping("/all")
     public List<TrafficMessagesResponse> getAllMessages() {
         return messagesService.getAllMessages();
+    }
+
+    @GetMapping("/container/{containerName}")
+    public List<MessageModel> getMessagesByContainerName(@PathVariable String containerName) {
+        return messagesService.getMessagesByContainerName(containerName);
     }
 
 

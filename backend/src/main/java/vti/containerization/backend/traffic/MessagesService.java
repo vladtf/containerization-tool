@@ -44,6 +44,24 @@ public class MessagesService {
         return response;
     }
 
+    public List<MessageModel> getMessagesByContainerName(String containerName) {
+        List<MessageModel> messages = kafkaMonitoringConsumer.getMessages();
+        List<ContainerDataModel> allContainers = containersService.getAllContainers();
+
+        ContainerDataModel container = allContainers.stream()
+                .filter(c -> c.getName().equals(containerName))
+                .findFirst()
+                .orElse(null);
+
+        if (container == null) {
+            return new ArrayList<>();
+        }
+
+        return messages.stream()
+                .filter(message -> message.getSource().equals(container.getIp()) || message.getDestination().equals(container.getIp()))
+                .toList();
+    }
+
     private MessagesController.TrafficMessagesResponse getMessagesRelatedToContainer(ContainerDataModel container, List<MessageModel> messages) {
         List<MessageModel> filteredMessages = messages.stream()
                 .filter(message -> message.getSource().equals(container.getIp()) || message.getDestination().equals(container.getIp()))
