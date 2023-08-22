@@ -419,6 +419,22 @@ def add_nsg_rule():
         logger.error(f"Failed to add nsg rule", e)
         return f"Failed to add nsg rule: {e}", 500
 
+# route to get container instance logs
+@app.route('/azure/logs/<instance_name>', methods=['GET'])
+def get_container_instance_logs(instance_name):
+    try:
+        logs = azure_client.get_container_instance_logs(
+            credentials=app.azure_credentials,
+            subscription_id=app.azure_subscription_id,
+            resource_group=app.app_config.get("azure", "resource_group"),
+            instance_name=instance_name
+        )
+
+        return jsonify(logs), 200
+
+    except Exception as e:
+        logger.error(f"Failed to get container instance logs", e)
+        return f"Failed to get container instance logs: {e}", 500
 
 if __name__ == '__main__':
     # Load the configuration

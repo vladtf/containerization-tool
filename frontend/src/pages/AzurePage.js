@@ -1,6 +1,13 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { Button, Card, Container, Spinner, Table } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
+import {
+  Button,
+  Card,
+  Container,
+  Modal,
+  Spinner,
+  Table,
+} from "react-bootstrap";
 import { IoCubeOutline } from "react-icons/io5";
 import { ToastContainer, toast } from "react-toastify";
 import CustomFooter from "../components/CustomFooter";
@@ -44,6 +51,38 @@ const AzurePage = () => {
 
   const [openAddSecurityRuleDialog, setOpenAddSecurityRuleDialog] =
     useState(false);
+
+  const [instanceLogs, setInstanceLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [openLogsDialog, setOpenLogsDialog] = useState(false);
+
+  useEffect(() => {
+    if (!openLogsDialog) {
+      return;
+    }
+
+    if (!selectedContainer) {
+      return;
+    }
+
+    console.log("Fetching container logs:", selectedContainer);
+
+    setLoadingLogs(true);
+    axios
+      .get(`${PYTHON_BACKEND_URL}/azure/logs/${selectedContainer}`)
+      .then((response) => {
+        console.log(response);
+        setInstanceLogs(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to fetch container logs: " + error.response.data);
+      })
+      .finally(() => {
+        setLoadingLogs(false);
+        setOpenLogsDialog(true);
+      });
+  }, [openLogsDialog, setOpenLogsDialog]);
 
   useEffect(() => {
     fetchContainers();
@@ -189,11 +228,6 @@ const AzurePage = () => {
       });
 
     toast.success("Sent request to deploy container to Azure");
-  };
-
-  const fetchContainerLogs = async (container) => {
-    console.log("Fetching container logs:", container);
-    toast.success("TODO: Fetch container logs: " + container);
   };
 
   const container = containers.find(
@@ -549,7 +583,7 @@ const AzurePage = () => {
             )}
           </Button>
           <Button
-            onClick={() => fetchContainerLogs(container)}
+            onClick={() => setOpenLogsDialog(true)}
             variant="outline-primary"
             style={{ borderRadius: "20px", marginLeft: "10px" }}
           >
@@ -563,6 +597,42 @@ const AzurePage = () => {
           >
             Add Security Rule
           </Button>
+
+          {/* Modal to show logs */}
+          <Modal
+            show={openLogsDialog}
+            onHide={() => setOpenLogsDialog(false)}
+            size="xl"
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Instance Logs</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Body>
+              {loadingLogs ? (
+                <Spinner animation="border" variant="primary" size="md" />
+              ) : (
+                <pre
+                  style={{
+                    background: "#f1f1f1",
+                    padding: "1rem",
+                    overflow: "auto",
+                    maxHeight: "70vh",
+                  }}
+                >
+                  {instanceLogs.map((log, index) => (
+                    <React.Fragment key={index}>
+                      <span style={{ display: "inline-block" }}>
+                        {index + 1}.
+                      </span>
+                      {log}
+                      <br />
+                    </React.Fragment>
+                  ))}
+                </pre>
+              )}
+            </Modal.Body>
+          </Modal>
         </>
       );
 

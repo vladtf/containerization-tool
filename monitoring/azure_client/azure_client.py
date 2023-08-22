@@ -120,6 +120,28 @@ def get_subscription_id(subscription_name, credentials):
     # Return None if the subscription with the given name is not found
     return None
 
+def assign_owner_role_to_current_user(subscription_id, resource_group, acr_server, credentials):
+    # Create a ResourceManagementClient to assign the owner role to the current user
+    resource_client = ResourceManagementClient(credentials, subscription_id)
+
+    # Get the current user's object ID
+    cmd = "az ad signed-in-user show --output json"
+    result = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+    if result.returncode == 0:
+        user_output = json.loads(result.stdout)
+        user_object_id = user_output["objectId"]
+    else:
+        raise Exception(f"Failed to get the current user's object ID. Error: {result.stderr}")
+
+    # Assign the owner role to the current user
+    resource_client.role_assignments.create(
+        scope=f"/subscriptions/{subscription_id}/resourceGroups/{resource_group}/providers/Microsoft.ContainerRegistry/registries/{acr_server}",
+        role_definition_id="/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c",
+        principal_id=user_object_id
+    )
+
+    logger.info(f"Assigned the owner role to the current user for ACR {acr_server}.")
+
 
 def get_acr_url(subscription_id, resource_group, acr_server, credentials, location):
     acr_client = ContainerRegistryManagementClient(credentials, subscription_id)
@@ -144,12 +166,16 @@ def get_acr_url(subscription_id, resource_group, acr_server, credentials, locati
             resource_group,
             acr_server,
             create_params
-        ).result()  # TODO: after create still is required to add current user as the admin
+        ).result()
+
+        # TODO: after create of the ACR, it is required to assign owner role to the current user
+        # assign_owner_role_to_current_user(subscription_id, resource_group, acr_server, credentials)
 
         acr = acr_client.registries.get(resource_group, acr_server)
 
         logger.info(f"Container registry '{acr_server}' created in the Azure subscription.")
         return acr.login_server
+
 
 
 def get_azure_instance_data(azure_container: AzureContainer, subscription_id: str, resource_group: str,
@@ -357,3 +383,13 @@ def check_if_resource_group_exists(credentials, subscription_id, resource_group)
 def create_resource_group(credentials, subscription_id, resource_group, location):
     resource_client = ResourceManagementClient(credentials, subscription_id)
     resource_client.resource_groups.create_or_update(resource_group, {"location": location})
+
+
+def get_container_instance_logs(credentials, subscription_id, resource_group, instance_name):
+    container_client = ContainerInstanceManagementClient(credentials, subscription_id)
+    logs = container_client.containers.list_logs(resource_group, instance_name, instance_name)
+
+    # split the logs into a list of lines
+    logs = logs.content.split("\n")
+
+    return logs
