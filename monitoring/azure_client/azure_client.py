@@ -10,6 +10,8 @@ from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerinstance.models import ContainerGroupSubnetId
 from azure.mgmt.containerregistry import ContainerRegistryManagementClient
 from azure.mgmt.network import NetworkManagementClient
+from azure.mgmt.network.models import VirtualNetwork, Subnet, Delegation
+from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 
 from kafka.kafka_client import DataClassEncoder
@@ -119,16 +121,35 @@ def get_subscription_id(subscription_name, credentials):
     return None
 
 
-def get_acr_url(subscription_id, resource_group, acr_server, credentials):
+def get_acr_url(subscription_id, resource_group, acr_server, credentials, location):
     acr_client = ContainerRegistryManagementClient(credentials, subscription_id)
 
     try:
         acr = acr_client.registries.get(resource_group, acr_server)
-        logger.info(f"Container registry '{acr_server}' exists in the Azure subscription.")
+        logger.debug(f"Container registry '{acr_server}' exists in the Azure subscription.")
         return acr.login_server
     except ResourceNotFoundError:
         logger.warning(f"Container registry '{acr_server}' not found in the Azure subscription.")
-        return None
+
+        create_params = {
+            "location": location,
+            "sku": {
+                "name": "Standard"
+            },
+            "admin_user_enabled": True
+        }
+
+        # Create the container registry
+        registry = acr_client.registries.begin_create(
+            resource_group,
+            acr_server,
+            create_params
+        ).result()  # TODO: after create still is required to add current user as the admin
+
+        acr = acr_client.registries.get(resource_group, acr_server)
+
+        logger.info(f"Container registry '{acr_server}' created in the Azure subscription.")
+        return acr.login_server
 
 
 def get_azure_instance_data(azure_container: AzureContainer, subscription_id: str, resource_group: str,
@@ -169,9 +190,10 @@ def get_all_azure_container_instances(credentials, subscription_id: str) -> list
     return azure_instances
 
 
-def get_all_azure_repositories(credentials, subscription_id: str, registry_name: str, resource_group: str) -> list:
+def get_all_azure_repositories(credentials, subscription_id: str, registry_name: str, resource_group: str,
+                               location: str):
     # Get acr url
-    acr_url = get_acr_url(subscription_id, resource_group, registry_name, credentials)
+    acr_url = get_acr_url(subscription_id, resource_group, registry_name, credentials, location)
 
     with ContainerRegistryClient(acr_url, credentials) as client:
         repositories = client.list_repository_names()
@@ -207,6 +229,68 @@ def get_subnet_id(credentials, subscription_id: str, resource_group: str, vnet_n
     subnet = network_client.subnets.get(resource_group, vnet_name, subnet_name)
 
     return subnet.id
+
+
+# create vnet and subnet if not exists
+def create_vnet_and_subnet(credentials, subscription_id: str, resource_group: str, vnet_name: str,
+                           location: str, subnet_name: str, nsg_name: str):
+    # Create an Azure Network Management client
+    network_client = NetworkManagementClient(credentials, subscription_id)
+
+    # Check if the vnet exists
+    vnet_exists = False
+    vnets = network_client.virtual_networks.list(resource_group)
+    for vnet in vnets:
+        if vnet.name == vnet_name:
+            vnet_exists = True
+            break
+
+    # Create the vnet if it does not exist
+    if not vnet_exists:
+        logger.info(f"Creating vnet '{vnet_name}' in resource group '{resource_group}'...")
+        vnet_params = {"location": location, "address_space": {"address_prefixes": ["10.0.0.0/16"]}}
+        async_vnet_creation = network_client.virtual_networks.begin_create_or_update(resource_group, vnet_name,
+                                                                                     vnet_params)
+        async_vnet_creation.wait()
+
+    # Check if the subnet exists
+    subnet_exists = False
+    subnets = network_client.subnets.list(resource_group, vnet_name)
+    for subnet in subnets:
+        if subnet.name == subnet_name:
+            subnet_exists = True
+            break
+
+    # Create the subnet if it does not exist
+    if not subnet_exists:
+        logger.info(f"Creating subnet '{subnet_name}' in resource group '{resource_group}'...")
+
+        delegation = Delegation(name="ContainerInstance", service_name="Microsoft.ContainerInstance/containerGroups")
+
+        subnet_params = {"address_prefix": "10.0.0.0/24", "delegations": [delegation]}
+        async_subnet_creation = network_client.subnets.begin_create_or_update(resource_group, vnet_name, subnet_name,
+                                                                              subnet_params)
+        async_subnet_creation.wait()
+
+    # Create the nsg if it does not exist
+    nsg_exists = False
+    nsgs = network_client.network_security_groups.list(resource_group)
+    for nsg in nsgs:
+        if nsg.name == nsg_name:
+            nsg_exists = True
+            break
+
+    if not nsg_exists:
+        logger.info(f"Creating nsg '{nsg_name}' in resource group '{resource_group}'...")
+        nsg_params = {"location": location}
+        async_nsg_creation = network_client.network_security_groups.begin_create_or_update(resource_group, nsg_name,
+                                                                                           nsg_params)
+        async_nsg_creation.wait()
+
+    # Get the subnet ID
+    subnet_id = get_subnet_id(credentials, subscription_id, resource_group, vnet_name, subnet_name)
+
+    return subnet_id
 
 
 def get_nsg_rules(credentials, subscription_id: str, resource_group: str, nsg_name: str):
@@ -263,3 +347,13 @@ def add_rule_to_nsg(credentials, subscription_id: str, resource_group: str, nsg_
 
     # Update the NSG
     network_client.network_security_groups.begin_create_or_update(resource_group, nsg_name, nsg)
+
+
+def check_if_resource_group_exists(credentials, subscription_id, resource_group):
+    resource_client = ResourceManagementClient(credentials, subscription_id)
+    return resource_client.resource_groups.check_existence(resource_group)
+
+
+def create_resource_group(credentials, subscription_id, resource_group, location):
+    resource_client = ResourceManagementClient(credentials, subscription_id)
+    resource_client.resource_groups.create_or_update(resource_group, {"location": location})

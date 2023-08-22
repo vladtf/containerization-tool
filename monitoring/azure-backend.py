@@ -69,7 +69,8 @@ def get_all_azure_repositories():
             credentials=app.azure_credentials,
             subscription_id=app.azure_subscription_id,
             registry_name=app.app_config.get("azure", "acr_name"),
-            resource_group=app.app_config.get("azure", "resource_group")
+            resource_group=app.app_config.get("azure", "resource_group"),
+            location=app.app_config.get("azure", "location"),
         )
 
         return jsonify(azure_repositories), 200
@@ -124,7 +125,7 @@ def deploy_to_azure():
         logger.info("Deploying container: %s", container_data)
 
         # Get the ACR URL
-        acr_url = get_acr_url(app.azure_subscription_id, resource_group, acr_name, app.azure_credentials)
+        acr_url = get_acr_url(app.azure_subscription_id, resource_group, acr_name, app.azure_credentials, location)
         if acr_url is None:
             return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
 
@@ -152,6 +153,17 @@ def deploy_to_azure():
         #     ports=[Port(protocol=ContainerGroupNetworkProtocol.tcp, port=8080)],
         #     type=ContainerGroupIpAddressType.public
         # )
+
+        # Create vnet if it doesn't exist
+        azure_client.create_vnet_and_subnet(
+            credentials=app.azure_credentials,
+            vnet_name=config.get("azure", "vnet_name"),
+            subscription_id=app.azure_subscription_id,
+            subnet_name=config.get("azure", "subnet_name"),
+            resource_group=resource_group,
+            location=location,
+            nsg_name=config.get("azure", "nsg_name"),
+        )
 
         # Configure subnet
         subnet_id = azure_client.get_subnet_id(
@@ -433,4 +445,12 @@ if __name__ == '__main__':
         raise Exception(f"Could not find a subscription with the name: {subscription_name}")
     app.azure_subscription_id = subscription_id
 
+    # Check if the resource group exists, if not create it
+    resource_group = app_config.get("azure", "resource_group")
+    if not azure_client.check_if_resource_group_exists(credentials, subscription_id, resource_group):
+        logger.info(f"Creating resource group {resource_group}")
+        azure_client.create_resource_group(credentials, subscription_id, resource_group,
+                                           app_config.get("azure", "location"))
+
+    logger.info("Starting Flask server")
     app.run(debug=True)

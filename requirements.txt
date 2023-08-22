@@ -7,6 +7,7 @@ azure-mgmt-containerinstance==10.1.0
 azure-mgmt-containerregistry==10.1.0
 azure-mgmt-core==1.4.0
 azure-mgmt-network==24.0.0
+azure-mgmt-resource==23.0.1
 azure-mgmt-subscription==3.1.1
 blinker==1.6.2
 cachelib==0.9.0
