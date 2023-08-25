@@ -19,3 +19,4 @@
 * to test azure keyvault and to add it to the tool
 * to add port selection when deploying container to azure
 * to fix creation of the acr from python script (the required owner role is not assigned)
+* to add delete button for nsg rules

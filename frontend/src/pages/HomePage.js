@@ -10,6 +10,7 @@ import {
   IoUnlink,
 } from "react-icons/io5";
 import CustomFooter from "../components/CustomFooter";
+import { FaCloud } from "react-icons/fa";
 
 const HomePage = () => {
   const navbarLinks = [
@@ -26,9 +27,9 @@ const HomePage = () => {
       icon: <IoCube size={40} />,
     },
     {
-      path: "/",
-      label: "Upcoming...",
-      icon: <IoUnlink size={40} />,
+      path: "/azure",
+      label: "Azure",
+      icon: <FaCloud size={40} />,
     },
     {
       path: "/",
