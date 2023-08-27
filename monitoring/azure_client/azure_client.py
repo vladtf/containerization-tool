@@ -120,6 +120,7 @@ def get_subscription_id(subscription_name, credentials):
     # Return None if the subscription with the given name is not found
     return None
 
+
 def assign_owner_role_to_current_user(subscription_id, resource_group, acr_server, credentials):
     # Create a ResourceManagementClient to assign the owner role to the current user
     resource_client = ResourceManagementClient(credentials, subscription_id)
@@ -175,7 +176,6 @@ def get_acr_url(subscription_id, resource_group, acr_server, credentials, locati
 
         logger.info(f"Container registry '{acr_server}' created in the Azure subscription.")
         return acr.login_server
-
 
 
 def get_azure_instance_data(azure_container: AzureContainer, subscription_id: str, resource_group: str,
@@ -393,3 +393,14 @@ def get_container_instance_logs(credentials, subscription_id, resource_group, in
     logs = logs.content.split("\n")
 
     return logs
+
+
+def delete_nsg_rule(credentials, subscription_id, resource_group, nsg_name, rule_name):
+    network_client = NetworkManagementClient(credentials, subscription_id)
+    nsg = network_client.network_security_groups.get(resource_group, nsg_name)
+
+    # Remove the rule from the NSG
+    nsg.security_rules = [rule for rule in nsg.security_rules if rule.name != rule_name]
+
+    # Update the NSG
+    network_client.network_security_groups.begin_create_or_update(resource_group, nsg_name, nsg)

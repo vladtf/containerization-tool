@@ -129,6 +129,18 @@ const AddSecurityRuleDialog = ({
       });
   };
 
+  const handleDeleteRule = (ruleName) => {
+    axios
+      .delete(`${PYTHON_BACKEND_URL}/azure/security-rules/${ruleName}`)
+      .then((response) => {
+        toast.success(response.data);
+        setOpenAddSecurityRuleDialog(false);
+      })
+      .catch((error) => {
+        toast.error(error.message);
+      });
+  };
+
   return (
     <>
       <Dialog
@@ -167,13 +179,14 @@ const AddSecurityRuleDialog = ({
                     <th>Destination</th>
                     <th>Protocol</th>
                     <th>Access</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {/* Display firstly inbound rules */}
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="7"
                       style={{ textAlign: "center", fontWeight: "bold" }}
                     >
                       Inbound
@@ -197,12 +210,22 @@ const AddSecurityRuleDialog = ({
                         </td>
                         <td>{rule.protocol}</td>
                         <td>{rule.access}</td>
+                        <td>
+                          <Button
+                            variant="danger"
+                            onClick={() => {
+                              handleDeleteRule(rule.name);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   {/* Display secondly outbound rules */}
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="7"
                       style={{ textAlign: "center", fontWeight: "bold" }}
                     >
                       Outbound
@@ -226,6 +249,16 @@ const AddSecurityRuleDialog = ({
                         </td>
                         <td>{rule.protocol}</td>
                         <td>{rule.access}</td>
+                        <td>
+                          <Button
+                            variant="danger"
+                            onClick={() => {
+                              handleDeleteRule(rule.name);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                 </tbody>

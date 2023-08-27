@@ -440,6 +440,25 @@ def get_container_instance_logs(instance_name):
         return f"Failed to get container instance logs: {e}", 500
 
 
+# route to delete nsg rule by name
+@app.route('/azure/security-rules/<rule_name>', methods=['DELETE'])
+def delete_nsg_rule(rule_name):
+    try:
+        azure_client.delete_nsg_rule(
+            credentials=app.azure_credentials,
+            subscription_id=app.azure_subscription_id,
+            resource_group=app.app_config.get("azure", "resource_group"),
+            nsg_name=app.app_config.get("azure", "nsg_name"),
+            rule_name=rule_name
+        )
+
+        return f"Rule with name {rule_name} deleted successfully", 200
+
+    except Exception as e:
+        logger.error(f"Failed to delete rule with name {rule_name}", e)
+        return f"Failed to delete rule with name {rule_name}: {e}", 500
+
+
 # route to delete docker container by id
 @app.route('/docker/<container_id>', methods=['DELETE'])
 def delete_docker_container(container_id):
@@ -450,6 +469,7 @@ def delete_docker_container(container_id):
     except Exception as e:
         logger.error(f"Failed to delete container with id {container_id}", e)
         return f"Failed to delete container with id {container_id}: {e}", 500
+
 
 # route to list all docker containers
 @app.route('/docker', methods=['GET'])
@@ -463,6 +483,7 @@ def list_docker_containers():
     except Exception as e:
         logger.error(f"Failed to list docker containers", e)
         return f"Failed to list docker containers: {e}", 500
+
 
 if __name__ == '__main__':
     # Load the configuration
