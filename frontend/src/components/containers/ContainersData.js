@@ -17,6 +17,8 @@ const ContainersData = () => {
   const [containerId, setContainerId] = useState(null); // Container ID
   const [pageSize, setPageSize] = useState(30); // Number of logs per page
 
+  const [loadingDelete, setLoadingDelete] = useState(false);
+
   useEffect(() => {
     fetchFeedbackMessages();
     fetchContainers();
@@ -31,25 +33,37 @@ const ContainersData = () => {
     };
   }, []);
 
-  const handleDeleteContainer = async (containerId) => {
+  const handleDeleteContainer = (containerId) => {
     console.log("Deleting container:", containerId);
-    try {
-      await axios.delete(`${BACKEND_URL}/containers/${containerId}`);
-      toast.success("Sent request to delete container");
-      fetchContainers();
-    } catch (error) {
-      toast.error("Failed to delete the container. Please try again later.");
-    }
+    setLoadingDelete(true);
+    axios
+      .delete(`${PYTHON_BACKEND_URL}/docker/${containerId}`)
+      .then((response) => {
+        console.log(response);
+        toast.success("Deleted container: " + containerId);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to delete container: " + error.response.data);
+      })
+      .finally(() => {
+        setLoadingDelete(false);
+      });
+
+    toast.success("Sent request to delete container: " + containerId);
   };
 
-  const fetchContainers = async () => {
-    try {
-      const response = await axios.get(`${BACKEND_URL}/containers`);
-      setContainers(response.data);
-    } catch (error) {
-      console.error("Failed to fetch containers:", error);
-      toast.error("Failed to fetch containers. Please try again later.");
-    }
+  const fetchContainers =  () => {
+    axios
+      .get(`${PYTHON_BACKEND_URL}/docker`)
+      .then((response) => {
+        console.log(response);
+        setContainers(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to fetch containers: " + error.response.data);
+      });
   };
 
   // This function fetches errors from the backend
@@ -163,7 +177,7 @@ const ContainersData = () => {
                     variant="outline-danger"
                     style={{ borderRadius: "20px" }}
                   >
-                    Delete Container
+                    Delete Container {loadingDelete && <Spinner animation="border" variant="danger" size="sm" />}
                   </Button>
 
                   <Button

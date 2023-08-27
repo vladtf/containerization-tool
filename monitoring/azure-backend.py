@@ -2,6 +2,7 @@ import logging
 import os
 from time import sleep
 
+import docker
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
@@ -13,6 +14,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_mysqldb import MySQL
 
+import containers.docker_client
 import mysql_client.mysql_client
 from azure_client import azure_client
 from azure_client.azure_client import get_acr_access_token, get_subscription_id, AzureContainer, \
@@ -419,6 +421,7 @@ def add_nsg_rule():
         logger.error(f"Failed to add nsg rule", e)
         return f"Failed to add nsg rule: {e}", 500
 
+
 # route to get container instance logs
 @app.route('/azure/logs/<instance_name>', methods=['GET'])
 def get_container_instance_logs(instance_name):
@@ -435,6 +438,31 @@ def get_container_instance_logs(instance_name):
     except Exception as e:
         logger.error(f"Failed to get container instance logs", e)
         return f"Failed to get container instance logs: {e}", 500
+
+
+# route to delete docker container by id
+@app.route('/docker/<container_id>', methods=['DELETE'])
+def delete_docker_container(container_id):
+    try:
+        containers.docker_client.delete_docker_container(container_id)
+        return f"Container with id {container_id} deleted successfully", 200
+
+    except Exception as e:
+        logger.error(f"Failed to delete container with id {container_id}", e)
+        return f"Failed to delete container with id {container_id}: {e}", 500
+
+# route to list all docker containers
+@app.route('/docker', methods=['GET'])
+def list_docker_containers():
+    try:
+        containers_data = containers.docker_client.list_containers_on_network(
+            network_name=app.app_config.get("docker", "network_name")
+        )
+        return jsonify([container.to_dict() for container in containers_data]), 200
+
+    except Exception as e:
+        logger.error(f"Failed to list docker containers", e)
+        return f"Failed to list docker containers: {e}", 500
 
 if __name__ == '__main__':
     # Load the configuration
