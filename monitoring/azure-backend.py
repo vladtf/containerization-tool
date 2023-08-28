@@ -132,6 +132,7 @@ def deploy_to_azure():
             return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
 
         # Push the image to the ACR
+        logger.info("Pushing image to ACR")
         acr_image_name = push_image_to_acr(container_data, acr_url)
 
         # Configure the container properties
@@ -157,6 +158,7 @@ def deploy_to_azure():
         # )
 
         # Create vnet if it doesn't exist
+        logger.info("Checking network configuration")
         azure_client.create_vnet_and_subnet(
             credentials=app.azure_credentials,
             vnet_name=config.get("azure", "vnet_name"),
@@ -168,6 +170,7 @@ def deploy_to_azure():
         )
 
         # Configure subnet
+        logger.info("Getting subnet ID")
         subnet_id = azure_client.get_subnet_id(
             credentials=app.azure_credentials,
             resource_group=resource_group,
@@ -191,6 +194,7 @@ def deploy_to_azure():
         )
 
         # Create the Azure Container Instance
+        logger.info("Creating container instance")
         container_client = ContainerInstanceManagementClient(credentials, subscription_id)
         deploy_response = container_client.container_groups.begin_create_or_update(
             resource_group,
@@ -198,6 +202,8 @@ def deploy_to_azure():
             container_group
         ).result()
 
+        # Getting the container instance data
+        logger.info("Getting container instance data")
         azure_container = mysql_client.mysql_client.get_azure_container_by_name(
             mysql=app.mysql,
             container_name=container_data.name)
@@ -206,6 +212,8 @@ def deploy_to_azure():
         azure_container.instance_id = deploy_response.id
         azure_container.instance_name = deploy_response.name
 
+        # Update the container instance data in the database
+        logger.info("Updating container instance data in the database")
         mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
 
         # For example, let's just return a success message for demonstration purposes

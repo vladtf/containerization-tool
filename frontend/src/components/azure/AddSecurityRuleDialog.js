@@ -130,6 +130,8 @@ const AddSecurityRuleDialog = ({
   };
 
   const handleDeleteRule = (ruleName) => {
+    toast.info("Deleting security rule: " + ruleName);
+    
     axios
       .delete(`${PYTHON_BACKEND_URL}/azure/security-rules/${ruleName}`)
       .then((response) => {

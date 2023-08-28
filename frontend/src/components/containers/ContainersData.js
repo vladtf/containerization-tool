@@ -176,6 +176,7 @@ const ContainersData = () => {
                     onClick={() => handleDeleteContainer(container.id)}
                     variant="outline-danger"
                     style={{ borderRadius: "20px" }}
+                    disabled={loadingDelete}
                   >
                     Delete Container {loadingDelete && <Spinner animation="border" variant="danger" size="sm" />}
                   </Button>

@@ -258,6 +258,24 @@ def get_subnet_id(credentials, subscription_id: str, resource_group: str, vnet_n
 
 
 # create vnet and subnet if not exists
+def associate_nsg_with_subnet(resource_group, vnet_name, subnet_name, nsg_name, subscription_id):
+    # set default subscription
+    cmd = f"az account set --subscription {subscription_id}"
+    result = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+
+    if result.returncode != 0:
+        raise Exception(f"Failed to set default subscription. Error: {result.stderr}")
+
+    cmd = f"az network vnet subnet update --resource-group {resource_group} --vnet-name {vnet_name} --name {subnet_name} --network-security-group {nsg_name}"
+
+    result = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+
+    if result.returncode != 0:
+        raise Exception(f"Failed to associate nsg with subnet. Error: {result.stderr}")
+    else:
+        logger.info(f"Associated nsg '{nsg_name}' with subnet '{subnet_name}'.")
+
+
 def create_vnet_and_subnet(credentials, subscription_id: str, resource_group: str, vnet_name: str,
                            location: str, subnet_name: str, nsg_name: str):
     # Create an Azure Network Management client
@@ -312,6 +330,9 @@ def create_vnet_and_subnet(credentials, subscription_id: str, resource_group: st
         async_nsg_creation = network_client.network_security_groups.begin_create_or_update(resource_group, nsg_name,
                                                                                            nsg_params)
         async_nsg_creation.wait()
+
+        # associate nsg with subnet
+        associate_nsg_with_subnet(resource_group, vnet_name, subnet_name, nsg_name, subscription_id)
 
     # Get the subnet ID
     subnet_id = get_subnet_id(credentials, subscription_id, resource_group, vnet_name, subnet_name)
