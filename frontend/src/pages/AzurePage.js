@@ -214,7 +214,7 @@ const AzurePage = () => {
 
         // TODO: to show the info about deploy here
         toast.success("Container deployed successfully: " + response.data);
-        fetchAzureContainerData(container.id);
+        fetchAzureContainerData(container.name);
       })
       .catch((error) => {
         console.error(error);
@@ -592,7 +592,7 @@ const AzurePage = () => {
           {/* Button to add Azure Network Security Group Rule */}
           <Button
             onClick={() => setOpenAddSecurityRuleDialog(true)}
-            variant="outline-secondary"
+            variant="outline-primary"
             style={{ borderRadius: "20px", marginLeft: "10px" }}
           >
             Add Security Rule

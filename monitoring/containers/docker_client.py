@@ -179,3 +179,17 @@ def delete_docker_container(container_id: str):
     except Exception as e:
         raise DockerClientException(
             f"Failed to delete container {container_id}: {e}")
+
+
+def restart_docker_container(container_id):
+    try:
+        if not check_container_exists(container_id):
+            logger.info("Container '%s' does not exist", container_id)
+            return
+
+        client = docker.from_env()
+        container = client.containers.get(container_id)
+        container.restart()
+    except Exception as e:
+        raise DockerClientException(
+            f"Failed to restart container {container_id}: {e}")

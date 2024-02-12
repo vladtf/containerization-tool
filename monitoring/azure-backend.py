@@ -492,6 +492,16 @@ def list_docker_containers():
         logger.error(f"Failed to list docker containers", e)
         return f"Failed to list docker containers: {e}", 500
 
+# route to restart a container
+@app.route('/docker/<container_id>/restart', methods=['POST'])
+def restart_docker_container(container_id):
+    try:
+        containers.docker_client.restart_docker_container(container_id)
+        return f"Container with id {container_id} restarted successfully", 200
+
+    except Exception as e:
+        logger.error(f"Failed to restart container with id {container_id}", e)
+        return f"Failed to restart container with id {container_id}: {e}", 500
 
 if __name__ == '__main__':
     # Load the configuration

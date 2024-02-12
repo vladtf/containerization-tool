@@ -19,6 +19,8 @@ const ContainersData = () => {
 
   const [loadingDelete, setLoadingDelete] = useState(false);
 
+  const [loadingRestart, setLoadingRestart] = useState(false);
+
   useEffect(() => {
     fetchFeedbackMessages();
     fetchContainers();
@@ -53,7 +55,7 @@ const ContainersData = () => {
     toast.success("Sent request to delete container: " + containerId);
   };
 
-  const fetchContainers =  () => {
+  const fetchContainers = () => {
     axios
       .get(`${PYTHON_BACKEND_URL}/docker`)
       .then((response) => {
@@ -111,6 +113,27 @@ const ContainersData = () => {
     }
   };
 
+  const handleRestartContainer = (containerId) => {
+    console.log("Restarting container:", containerId);
+
+    setLoadingRestart(true);
+    axios
+      .post(`${PYTHON_BACKEND_URL}/docker/${containerId}/restart`)
+      .then((response) => {
+        console.log(response);
+        toast.success("Restarted container: " + containerId);
+      })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Failed to restart container: " + error.response.data);
+      })
+      .finally(() => {
+        setLoadingRestart(false);
+      });
+
+    toast.info("Sent request to restart container: " + containerId);
+  };
+
   const handleDeployToAzure = async (container) => {
     console.log("Deploying container:", container);
 
@@ -136,7 +159,7 @@ const ContainersData = () => {
         setLoading(false);
       });
 
-    toast.success("Sent request to deploy container to Azure");
+    toast.info("Sent request to deploy container to Azure");
   };
 
   return (
@@ -171,6 +194,18 @@ const ContainersData = () => {
                   >
                     See Logs
                   </Button>
+                  {/* Button to restart the container */}
+                  <Button
+                    onClick={() => handleRestartContainer(container.id)}
+                    variant="outline-primary"
+                    style={{ borderRadius: "20px", marginRight: "10px" }}
+                    disabled={loadingRestart}
+                  >
+                    Restart Container{" "}
+                    {loadingRestart && (
+                      <Spinner animation="border" variant="primary" size="sm" />
+                    )}
+                  </Button>
 
                   <Button
                     onClick={() => handleDeleteContainer(container.id)}
@@ -178,7 +213,10 @@ const ContainersData = () => {
                     style={{ borderRadius: "20px" }}
                     disabled={loadingDelete}
                   >
-                    Delete Container {loadingDelete && <Spinner animation="border" variant="danger" size="sm" />}
+                    Delete Container{" "}
+                    {loadingDelete && (
+                      <Spinner animation="border" variant="danger" size="sm" />
+                    )}
                   </Button>
 
                   <Button

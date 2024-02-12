@@ -20,3 +20,6 @@
 * to add port selection when deploying container to azure
 * to fix creation of the acr from python script (the required owner role is not assigned)
 * to add delete button for nsg rules
+* to continue searching about similar tools
+* to describe an e2e flow that is hard to follow practically (possible issues and how the tool can help)
+* to complete the design document

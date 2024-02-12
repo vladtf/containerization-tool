@@ -425,7 +425,7 @@ const AddSecurityRuleDialog = ({
           </Button>
           <Button
             onClick={() => setOpenTrafficReportDialog(true)}
-            variant="secondary"
+            variant="primary"
           >
             Traffic Report
           </Button>

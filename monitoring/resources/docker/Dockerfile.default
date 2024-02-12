@@ -1,5 +1,8 @@
 FROM containerization-tool-base-image:latest
 
+# Install mysql client
+RUN apt-get update && apt-get install -y mysql-client
+
 COPY ./entrypoint.bin /usr/local/bin/entrypoint.bin
 RUN chmod +x /usr/local/bin/entrypoint.bin
 
