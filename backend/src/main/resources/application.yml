@@ -21,4 +21,4 @@ spring:
 
 containerization-tool:
   upload:
-    directory: /home/vladtf/repos/containerization-tool/backend/target/upload
+    directory: /home/vladtf/repos/containerization-tool/backend/target/upload # TODO: change this to relative path
