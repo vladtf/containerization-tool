@@ -24,6 +24,11 @@ from containers.docker_client import ContainerData
 
 # Configure flask and CORS
 app = Flask(__name__)
+
+# Load the configuration
+app_config = config_loader.load_config(os.path.abspath(__file__))
+app.app_config = app_config
+
 CORS(app)  # TODO: be more restrictive
 app.logger.setLevel(logging.INFO)  # Set the desired logging level
 
@@ -39,7 +44,8 @@ azure_logger.setLevel(logging.WARNING)
 @app.route('/azure/pre-deploy', methods=['POST'])
 def pre_deploy_to_azure():
     try:
-        container_data: ContainerData = ContainerData.from_dict(request.get_json())
+        container_data: ContainerData = ContainerData.from_dict(
+            request.get_json())
         logger.info(f"Starting pre-deployment of container {container_data}")
 
         # Check if the name is already in use
@@ -56,7 +62,8 @@ def pre_deploy_to_azure():
             id=-1
         )
 
-        mysql_client.mysql_client.insert_azure_container(mysql=app.mysql, azure_container=azure_container)
+        mysql_client.mysql_client.insert_azure_container(
+            mysql=app.mysql, azure_container=azure_container)
 
         return "Container pre-deployed successfully", 200
     except Exception as e:
@@ -121,13 +128,15 @@ def deploy_to_azure():
     acr_name = config.get("azure", "acr_name")
 
     try:
-        container_data: AzureContainer = AzureContainer.from_dict(request.get_json())
+        container_data: AzureContainer = AzureContainer.from_dict(
+            request.get_json())
         logger.info(f"Starting deployment of container {container_data}")
 
         logger.info("Deploying container: %s", container_data)
 
         # Get the ACR URL
-        acr_url = get_acr_url(app.azure_subscription_id, resource_group, acr_name, app.azure_credentials, location)
+        acr_url = get_acr_url(app.azure_subscription_id, resource_group,
+                              acr_name, app.azure_credentials, location)
         if acr_url is None:
             return f"Could not find an Azure Container Registry with the name: {acr_name}", 400
 
@@ -140,7 +149,8 @@ def deploy_to_azure():
         container = Container(
             name=container_group_name,
             image=acr_image_name,
-            resources=ResourceRequirements(requests={"cpu": "1.0", "memoryInGB": "1.5"}),  # TODO: get from frontend
+            resources=ResourceRequirements(
+                requests={"cpu": "1.0", "memoryInGB": "1.5"}),  # TODO: get from frontend
             ports=[ContainerPort(port=8080)],
         )
 
@@ -195,7 +205,8 @@ def deploy_to_azure():
 
         # Create the Azure Container Instance
         logger.info("Creating container instance")
-        container_client = ContainerInstanceManagementClient(credentials, subscription_id)
+        container_client = ContainerInstanceManagementClient(
+            credentials, subscription_id)
         deploy_response = container_client.container_groups.begin_create_or_update(
             resource_group,
             container_group_name,
@@ -214,7 +225,8 @@ def deploy_to_azure():
 
         # Update the container instance data in the database
         logger.info("Updating container instance data in the database")
-        mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
+        mysql_client.mysql_client.update_azure_container(
+            mysql=app.mysql, azure_container=azure_container)
 
         # For example, let's just return a success message for demonstration purposes
         return 'Container deployed successfully to Azure', 200
@@ -246,7 +258,8 @@ def undeploy_from_azure(container_id):
             subscription_id=app.azure_subscription_id
         )
 
-        container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
+        container_group = container_client.container_groups.get(
+            resource_group, azure_container.instance_name)
 
         # Delete the container instance
         response = container_client.container_groups.begin_delete(resource_group,
@@ -255,10 +268,12 @@ def undeploy_from_azure(container_id):
         # Wait for the container to be deleted
         try:
             while container_group.containers[0].instance_view.current_state.state != "Terminated":
-                container_group = container_client.container_groups.get(resource_group, azure_container.instance_name)
+                container_group = container_client.container_groups.get(
+                    resource_group, azure_container.instance_name)
                 sleep(1)
         except Exception as e:  # TODO: to properly check the deletion status
-            logger.error("An error occurred while waiting for the container to be deleted", e)
+            logger.error(
+                "An error occurred while waiting for the container to be deleted", e)
 
         # TODO: check if the container was deleted successfully
 
@@ -273,7 +288,8 @@ def undeploy_from_azure(container_id):
         azure_container.instance_id = None
         azure_container.instance_name = None
 
-        mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
+        mysql_client.mysql_client.update_azure_container(
+            mysql=app.mysql, azure_container=azure_container)
 
         # For example, let's just return a success message for demonstration purposes
         return 'Container undeployed successfully from Azure', 200
@@ -290,7 +306,8 @@ def undeploy_from_azure(container_id):
         azure_container.instance_id = None
         azure_container.instance_name = None
 
-        mysql_client.mysql_client.update_azure_container(mysql=app.mysql, azure_container=azure_container)
+        mysql_client.mysql_client.update_azure_container(
+            mysql=app.mysql, azure_container=azure_container)
 
         return f"Could not find the container instance: {e}", 404
     except Exception as e:
@@ -359,7 +376,8 @@ def delete_repository(repository_name):
         return f"Repository with name {repository_name} deleted successfully", 200
 
     except Exception as e:
-        logger.error(f"Failed to delete repository with name {repository_name}", e)
+        logger.error(
+            f"Failed to delete repository with name {repository_name}", e)
         return f"Failed to delete repository with name {repository_name}: {e}", 500
 
 
@@ -378,7 +396,8 @@ def delete_azure_instance(instance_name):
         return f"Container instance with name {instance_name} deleted successfully", 200
 
     except Exception as e:
-        logger.error(f"Failed to delete container instance with name {instance_name}", e)
+        logger.error(
+            f"Failed to delete container instance with name {instance_name}", e)
         return f"Failed to delete container instance with name {instance_name}: {e}", 500
 
 
@@ -483,8 +502,9 @@ def delete_docker_container(container_id):
 @app.route('/docker', methods=['GET'])
 def list_docker_containers():
     try:
+        network_name = app.app_config.get("docker", "network_name")
         containers_data = containers.docker_client.list_containers_on_network(
-            network_name=app.app_config.get("docker", "network_name")
+            network_name=network_name
         )
         return jsonify([container.to_dict() for container in containers_data]), 200
 
@@ -503,11 +523,9 @@ def restart_docker_container(container_id):
         logger.error(f"Failed to restart container with id {container_id}", e)
         return f"Failed to restart container with id {container_id}: {e}", 500
 
-if __name__ == '__main__':
-    # Load the configuration
-    app_config = config_loader.load_config(os.path.abspath(__file__))
 
-    app.app_config = app_config
+if __name__ == '__main__':
+
 
     app.config['MYSQL_HOST'] = app_config.get("mysql", "host")
     app.config['MYSQL_USER'] = app_config.get("mysql", "user")
@@ -525,7 +543,8 @@ if __name__ == '__main__':
     subscription_name = app_config.get("azure", "subscription_name")
     subscription_id = get_subscription_id(subscription_name, credentials)
     if subscription_id is None:
-        raise Exception(f"Could not find a subscription with the name: {subscription_name}")
+        raise Exception(
+            f"Could not find a subscription with the name: {subscription_name}")
     app.azure_subscription_id = subscription_id
 
     # Check if the resource group exists, if not create it
