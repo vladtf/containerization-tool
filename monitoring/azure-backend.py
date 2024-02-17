@@ -29,6 +29,27 @@ app = Flask(__name__)
 app_config = config_loader.load_config(os.path.abspath(__file__))
 app.app_config = app_config
 
+app.config['MYSQL_HOST'] = app_config.get("mysql", "host")
+app.config['MYSQL_USER'] = app_config.get("mysql", "user")
+app.config['MYSQL_PASSWORD'] = app_config.get("mysql", "password")
+app.config['MYSQL_DB'] = app_config.get("mysql", "database")
+
+# Init Azure Credentials
+credentials = DefaultAzureCredential()
+app.azure_credentials = credentials
+
+# Init MySQL
+mysql = MySQL(app)
+app.mysql = mysql
+
+# Get Azure Subscription ID
+subscription_name = app_config.get("azure", "subscription_name")
+subscription_id = get_subscription_id(subscription_name, credentials)
+if subscription_id is None:
+    raise Exception(
+        f"Could not find a subscription with the name: {subscription_name}")
+app.azure_subscription_id = subscription_id
+
 CORS(app)  # TODO: be more restrictive
 app.logger.setLevel(logging.INFO)  # Set the desired logging level
 
@@ -525,28 +546,6 @@ def restart_docker_container(container_id):
 
 
 if __name__ == '__main__':
-
-
-    app.config['MYSQL_HOST'] = app_config.get("mysql", "host")
-    app.config['MYSQL_USER'] = app_config.get("mysql", "user")
-    app.config['MYSQL_PASSWORD'] = app_config.get("mysql", "password")
-    app.config['MYSQL_DB'] = app_config.get("mysql", "database")
-
-    mysql = MySQL(app)
-    app.mysql = mysql
-
-    # Init Azure Credentials
-    credentials = DefaultAzureCredential()
-    app.azure_credentials = credentials
-
-    # Get Azure Subscription ID
-    subscription_name = app_config.get("azure", "subscription_name")
-    subscription_id = get_subscription_id(subscription_name, credentials)
-    if subscription_id is None:
-        raise Exception(
-            f"Could not find a subscription with the name: {subscription_name}")
-    app.azure_subscription_id = subscription_id
-
     # Check if the resource group exists, if not create it
     resource_group = app_config.get("azure", "resource_group")
     if not azure_client.check_if_resource_group_exists(credentials, subscription_id, resource_group):
