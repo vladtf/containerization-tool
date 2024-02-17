@@ -112,6 +112,10 @@ services:
       dockerfile: ./monitoring/Dockerfile.azure
     container_name: python_backend
     restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 5000:5000
     networks:
       - tool_network
     environment:
