@@ -61,7 +61,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: java_backend
     restart: always
     ports:
       - 8180:8180
@@ -70,8 +70,27 @@ services:
       - kafka
     networks:
       - tool_network
+    volumes:
+      - upload_volume:/upload
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/localdb?useSSL=false&serverTimezone=UTC
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      containerization_tool_upload_directory: /upload
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - java_backend
+    networks:
+      - tool_network
+    environment:
+      REACT_APP_BACKEND_URL: http://localhost:8180
+      REACT_APP_PYTHON_BACKEND_URL: http://localhost:5000
 
 networks:
   tool_network:

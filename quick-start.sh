@@ -5,7 +5,7 @@
 BIN_DIR=$(dirname "$0")
 
 # Script variables
-kafka_compose_file="$BIN_DIR/docker-compose.yaml"
+docker_compose_file_path="$BIN_DIR/docker-compose.yaml"
 test_container_name="my-ubuntu"
 test_network_name="mynetwork"
 
@@ -14,7 +14,6 @@ test_network_name="mynetwork"
 ###############################################
 
 # Paths
-kafka_compose_file_path="$BIN_DIR/docker-compose.yaml"
 test_container_path="$BIN_DIR/test/ubuntu"
 test_container_dockerfile_path="$test_container_path/Dockerfile"
 
@@ -36,13 +35,13 @@ fi
 log_info "Starting script"
 
 # Check if Kafka is running
-log_info "Checking Kafka status"
-if ! docker-compose -f "$kafka_compose_file_path" ps kafka | grep "Up" >/dev/null 2>&1; then
+log_info "Checking Compose status"
+if ! docker-compose -f "$docker_compose_file_path" ps kafka | grep "Up" >/dev/null 2>&1; then
     # Start Kafka
-    log_info "Starting Kafka"
-    docker-compose -f "$kafka_compose_file_path" up -d
+    log_info "Starting Compose"
+    docker-compose -f "$docker_compose_file_path" up -d
 else
-    log_success "Kafka is already running"
+    log_success "Compose is already running"
 fi
 
 # Check if the test network exists
