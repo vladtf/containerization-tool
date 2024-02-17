@@ -120,6 +120,15 @@ def get_subscription_id(subscription_name, credentials):
     # Return None if the subscription with the given name is not found
     return None
 
+def get_all_subscriptions(credentials):
+    # Create a SubscriptionClient to get the subscription ID
+    subscription_client = SubscriptionClient(credentials)
+
+    # Get a list of subscriptions associated with the identity
+    subscriptions = list(subscription_client.subscriptions.list())
+
+    return subscriptions
+
 
 def assign_owner_role_to_current_user(subscription_id, resource_group, acr_server, credentials):
     # Create a ResourceManagementClient to assign the owner role to the current user

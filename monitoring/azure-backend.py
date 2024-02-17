@@ -29,10 +29,10 @@ app = Flask(__name__)
 app_config = config_loader.load_config(os.path.abspath(__file__))
 app.app_config = app_config
 
-app.config['MYSQL_HOST'] = app_config.get("mysql", "host")
-app.config['MYSQL_USER'] = app_config.get("mysql", "user")
-app.config['MYSQL_PASSWORD'] = app_config.get("mysql", "password")
-app.config['MYSQL_DB'] = app_config.get("mysql", "database")
+app.config['MYSQL_HOST'] = os.environ.get("MYSQL_HOST") or app_config.get("mysql", "host")
+app.config['MYSQL_USER'] = os.environ.get("MYSQL_USER") or app_config.get("mysql", "user")
+app.config['MYSQL_PASSWORD'] = os.environ.get("MYSQL_PASSWORD") or app_config.get("mysql", "password")
+app.config['MYSQL_DB'] = os.environ.get("MYSQL_DB") or app_config.get("mysql", "database")
 
 # Init Azure Credentials
 credentials = DefaultAzureCredential()
@@ -41,14 +41,6 @@ app.azure_credentials = credentials
 # Init MySQL
 mysql = MySQL(app)
 app.mysql = mysql
-
-# Get Azure Subscription ID
-subscription_name = app_config.get("azure", "subscription_name")
-subscription_id = get_subscription_id(subscription_name, credentials)
-if subscription_id is None:
-    raise Exception(
-        f"Could not find a subscription with the name: {subscription_name}")
-app.azure_subscription_id = subscription_id
 
 CORS(app)  # TODO: be more restrictive
 app.logger.setLevel(logging.INFO)  # Set the desired logging level
@@ -60,6 +52,22 @@ logger = logging.getLogger(__name__)
 # Disable the Azure SDK logging for HTTP requests
 azure_logger = logging.getLogger('azure')
 azure_logger.setLevel(logging.WARNING)
+
+
+# Get Azure Subscription ID
+subscription_name = os.environ.get(
+    "AZURE_SUBSCRIPTION_NAME") or app_config.get("azure", "subscription_name")
+subscription_id = azure_client.get_subscription_id(subscription_name, credentials)
+if subscription_id is None:
+    # list all subscriptions
+    subscriptions = azure_client.get_all_subscriptions(credentials)
+    logger.error(
+        f"Could not find a subscription with the name: {subscription_name}. Please run again generation of the service principal and make sure the subscription name is correct and you provided the right credentials.")
+    
+    raise Exception(f"Could not find a subscription with the name: {subscription_name}")
+
+app.azure_subscription_id = subscription_id
+    
 
 
 @app.route('/azure/pre-deploy', methods=['POST'])
@@ -534,6 +542,8 @@ def list_docker_containers():
         return f"Failed to list docker containers: {e}", 500
 
 # route to restart a container
+
+
 @app.route('/docker/<container_id>/restart', methods=['POST'])
 def restart_docker_container(container_id):
     try:

@@ -76,21 +76,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/localdb?useSSL=false&serverTimezone=UTC
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       containerization_tool_upload_directory: /upload
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    restart: always
-    ports:
-      - 3000:3000
-    depends_on:
-      - java_backend
-    networks:
-      - tool_network
-    environment:
-      REACT_APP_BACKEND_URL: http://localhost:8180
-      REACT_APP_PYTHON_BACKEND_URL: http://localhost:5000
+  
   container_manager:
     build:
       context: ./
@@ -120,7 +106,43 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: localhost:29092
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+  python_backend:
+    build:
+      context: ./
+      dockerfile: ./monitoring/Dockerfile.azure
+    container_name: python_backend
+    restart: always
+    networks:
+      - tool_network
+    environment:
+      AZURE_SUBSCRIPTION_NAME: Azure for Students
+      MYSQL_HOST: db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: abc@123
+      MYSQL_DATABASE: localdb
+      AZURE_CLIENT_ID: bcdc47fd-b461-4de8-82c4-6600cc44f470
+      AZURE_TENANT_ID: a0867c7c-7aeb-44cb-96ed-32fa642ebe73
+      AZURE_CLIENT_SECRET: kly8Q~8BKeDnJ8mjvRbHu5CK2OMS0K_cmVYuTaeR
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - java_backend
+      - python_backend
+    networks:
+      - tool_network
+    volumes:
+      - ~/.azure:/root/.azure
+    environment:
+      REACT_APP_BACKEND_URL: http://localhost:8180
+      REACT_APP_PYTHON_BACKEND_URL: http://localhost:5000
+    
 networks:
   tool_network:
     driver: bridge

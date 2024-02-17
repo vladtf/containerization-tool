@@ -1,0 +1,23 @@
+FROM python:3.11.4
+
+WORKDIR /usr/src/app
+
+# Install necessary tools and azure-cli
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# copy the requirements from ../requirements.txt to the current directory
+COPY requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./monitoring/ ./
+
+CMD ["python", "./azure-backend.py"]
+
