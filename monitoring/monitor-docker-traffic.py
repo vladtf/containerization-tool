@@ -138,7 +138,7 @@ def monitor_traffic_task(docker_network_name: str, traffic_producer: Producer):
 def main():
     # Load the configuration
     config = config_loader.load_config(os.path.abspath(__file__))
-    kafka_url = config.get('kafka', 'bootstrap_servers')
+    kafka_url = os.environ.get('KAFKA_BOOTSTRAP_SERVERS') or config.get('kafka', 'bootstrap_servers')
     docker_network_name = config.get('docker', 'network_name')
 
     monitoring_interval = 5

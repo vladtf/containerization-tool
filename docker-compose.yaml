@@ -91,6 +91,35 @@ services:
     environment:
       REACT_APP_BACKEND_URL: http://localhost:8180
       REACT_APP_PYTHON_BACKEND_URL: http://localhost:5000
+  container_manager:
+    build:
+      context: ./
+      dockerfile: ./monitoring/Dockerfile.container
+    container_name: container_manager
+    restart: always
+    depends_on:
+      - kafka
+      - db
+    networks:
+      - tool_network
+    environment:
+     KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  traffic_monitor:
+    build:
+      context: ./
+      dockerfile: ./monitoring/Dockerfile.traffic
+    container_name: traffic_monitor
+    restart: always
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    network_mode: host
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: localhost:29092
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
   tool_network:

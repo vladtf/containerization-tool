@@ -197,7 +197,7 @@ def delete_container_task(delete_container_consumer: Consumer, containers_data_p
 def main():
     # Load the configuration
     config = config_loader.load_config(os.path.abspath(__file__))
-    kafka_url = config.get('kafka', 'bootstrap_servers')
+    kafka_url = os.getenv('KAFKA_BOOTSTRAP_SERVERS',config.get('kafka', 'bootstrap_servers'))
     network_name = config.get('docker', 'network_name')
     base_image_path = config.get('docker', 'base_image_path')
     fluentd_address = config.get('fluentd', 'address')

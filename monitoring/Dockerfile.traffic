@@ -1,0 +1,17 @@
+FROM python:3.11.4
+
+WORKDIR /usr/src/app
+
+# Install necessary tools and tshark
+RUN apt-get update && apt-get install -y tshark
+
+# copy the requirements from ../requirements.txt to the current directory
+COPY requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./monitoring/ ./
+
+CMD ["python", "./monitor-docker-traffic.py"]
+
