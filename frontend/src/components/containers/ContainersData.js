@@ -224,7 +224,7 @@ const ContainersData = () => {
                     variant="outline-success"
                     style={{ borderRadius: "20px", marginLeft: "10px" }}
                   >
-                    Deploy to Azure{" "}
+                    Start Deploy to Azure{" "}
                     {loading && (
                       <Spinner animation="border" variant="success" size="sm" />
                     )}

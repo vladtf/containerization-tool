@@ -44,6 +44,17 @@ class AzureContainer:
     def from_dict(cls, param):
         return cls(**param)
 
+def login_to_azure_as_service_principal(tenant_id, client_id, client_secret):
+    # Login to Azure using the service principal
+    cmd = f"az login --service-principal --username {client_id} --password {client_secret} --tenant {tenant_id}"
+    result = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+    
+    if result.returncode != 0:
+        raise Exception(f"Failed to login to Azure using the service principal. Error: {result.stderr}")
+    
+    logger.info("Logged in to Azure using the service principal.")
+    
+    return result.stdout
 
 def get_acr_access_token(acr_name):
     cmd = f"az acr login --name {acr_name} --expose-token --output json"
@@ -171,6 +182,8 @@ def get_acr_url(subscription_id, resource_group, acr_server, credentials, locati
             "admin_user_enabled": True
         }
 
+        logger.info(f"Creating container registry '{acr_server}' in the Azure subscription...")
+
         # Create the container registry
         registry = acr_client.registries.begin_create(
             resource_group,
@@ -215,10 +228,17 @@ def get_all_azure_container_instances(credentials, subscription_id: str) -> list
     # Get the container instances
     azure_instances = []
     for container_group in container_groups:
+        group_expanded = container_client.container_groups.get(container_group.id.split("/")[4], container_group.name)
+        
         azure_instance = {}
         azure_instance["id"] = container_group.id
         azure_instance["name"] = container_group.name
         azure_instance["image"] = container_group.containers[0].image
+        
+        if group_expanded.containers[0] is not None:
+            azure_instance["status"] = group_expanded.containers[0].instance_view.current_state.state
+        else:
+            azure_instance["status"] = "Unknown"
 
         azure_instances.append(azure_instance)
 

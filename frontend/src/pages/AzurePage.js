@@ -387,6 +387,7 @@ const AzurePage = () => {
                   {/* <th>Instance ID</th> */}
                   <th>Instance Name</th>
                   <th>Instance Image</th>
+                  <th>Instance Status</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -396,6 +397,7 @@ const AzurePage = () => {
                     {/* <td>{instance.id}</td> */}
                     <td>{instance.name}</td>
                     <td>{instance.image}</td>
+                    <td>{instance.status}</td>
                     <td>
                       <Button
                         onClick={() => {

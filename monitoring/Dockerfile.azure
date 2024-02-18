@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
     lsb-release \
+    docker.io \
     && curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # copy the requirements from ../requirements.txt to the current directory

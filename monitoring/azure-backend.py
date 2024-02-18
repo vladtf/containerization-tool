@@ -562,6 +562,16 @@ if __name__ == '__main__':
         logger.info(f"Creating resource group {resource_group}")
         azure_client.create_resource_group(credentials, subscription_id, resource_group,
                                            app_config.get("azure", "location"))
+    
+    tenant_id = os.environ.get("AZURE_TENANT_ID")
+    client_id = os.environ.get("AZURE_CLIENT_ID")
+    client_secret = os.environ.get("AZURE_CLIENT_SECRET")
+    
+    if tenant_id is None or client_id is None or client_secret is None:
+        logger.error("Please provide the Azure credentials as environment variables")
+        raise Exception("Please provide the Azure credentials as environment variables")
+    
+    azure_client.login_to_azure_as_service_principal(tenant_id, client_id, client_secret)
 
     logger.info("Starting Flask server")
     app.run(host='0.0.0.0', port=5000, debug=True)
