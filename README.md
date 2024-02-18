@@ -168,3 +168,7 @@ Forwarding Rules Page:
 Messages Page:
 
 <img src="documentation/screenshots/messages-page.jpeg" width="50%">
+
+Azure Page:
+
+<img src="documentation/screenshots/azure_page.png" width="50%">
