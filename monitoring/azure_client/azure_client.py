@@ -235,7 +235,7 @@ def get_all_azure_container_instances(credentials, subscription_id: str) -> list
         azure_instance["name"] = container_group.name
         azure_instance["image"] = container_group.containers[0].image
         
-        if group_expanded.containers[0] is not None:
+        if group_expanded.containers[0].instance_view is not None:
             azure_instance["status"] = group_expanded.containers[0].instance_view.current_state.state
         else:
             azure_instance["status"] = "Unknown"

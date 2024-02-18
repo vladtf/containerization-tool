@@ -11,6 +11,9 @@ BIN_DIR=$(dirname "$0")
 compose_file="$BIN_DIR/docker-compose.yaml"
 test_network_name="mynetwork"
 
+servicePrincipalName="containerization_backend"
+subscriptionName="Azure for Students"
+
 ###############################################
 # Do not modify anything below this line
 ###############################################
@@ -66,6 +69,10 @@ docker network rm "$test_network_name" >/dev/null 2>&1
 # Stop and remove docker-compose services
 log_info "Stopping and removing Kafka and database"
 docker-compose -f "$compose_file_path" down -v
+
+# Delete service principal from Azure
+log_info "Deleting service principal from Azure"
+az sp delete --id $(az ad sp list --display-name $servicePrincipalName --query "[].appId" --output tsv)
 
 # Log clean-up completion
 log_success "Clean-up completed"

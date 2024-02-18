@@ -396,7 +396,7 @@ const AzurePage = () => {
                   <tr key={instance.id}>
                     {/* <td>{instance.id}</td> */}
                     <td>{instance.name}</td>
-                    <td>{instance.image}</td>ImageImage
+                    <td>{instance.image}</td>
                     <td>{instance.status}</td>
                     <td>
                       <Button

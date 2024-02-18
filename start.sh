@@ -97,4 +97,4 @@ else
 fi
 
 # Log script end
-log_success "Quick start script completed successfully. Have fun!"
+log_success "Quick start script completed successfully. You can now access the page at http://localhost:3000"
