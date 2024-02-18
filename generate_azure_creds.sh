@@ -15,7 +15,7 @@ BIN_DIR=$(dirname "$0")
 log_script_path="$BIN_DIR/scripts/logs.sh"
 
 # Source logging script
-log_info "Sourcing logging script: $log_script_path"
+echo "Sourcing logging script: $log_script_path"
 source "$log_script_path"
 
 
