@@ -57,7 +57,6 @@ docker-compose version 1.29.2, build unknown
   - create a first test container in that network
 
 - generate_azure_creds.sh:
-
   - generate an azure service principal
   - user is prompted whether to replace the credentials in compose file
 

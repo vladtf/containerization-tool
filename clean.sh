@@ -67,12 +67,12 @@ log_info "Removing the test network"
 docker network rm "$test_network_name" >/dev/null 2>&1
 
 # Stop and remove docker-compose services
-log_info "Stopping and removing Kafka and database"
+log_info "Stopping and removing containers using docker-compose"
 docker-compose -f "$compose_file_path" down -v
 
 # Delete service principal from Azure
 log_info "Deleting service principal from Azure"
-az sp delete --id $(az ad sp list --display-name $servicePrincipalName --query "[].appId" --output tsv)
+az ad sp delete --id $(az ad sp list --display-name $servicePrincipalName --query "[].appId" --output tsv)
 
 # Log clean-up completion
 log_success "Clean-up completed"
