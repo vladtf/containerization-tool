@@ -1,4 +1,8 @@
 #!/bin/bash
+# Description: This script cleans up the test environment
+# 
+# Usage: ./clean.sh
+#
 
 # Save current directory
 BIN_DIR=$(dirname "$0")
@@ -32,25 +36,6 @@ fi
 # Log script start
 log_info "Starting clean-up script"
 
-# Stop python scripts
-log_info "Stopping python scripts"
-kill_python_script(){
-    script_name=$1
-    for pid in $(ps aux | grep "$script_name" | grep -v grep | awk '{print $2}'); do
-        log_info "Stopping monitoring (PID: $pid)"
-        kill "$pid"
-    done
-}
-
-kill_python_script "containers-manager.py"
-kill_python_script "monitor-docker-traffic.py"
-kill_python_script "monitor-forwarding-rules.py"
-
-# Kill tmux sessions
-log_info "Killing tmux sessions"
-tmux kill-session -t "monitoring-session" >/dev/null 2>&1
-
-
 # Stop and remove the test container
 log_info "Stopping and removing the test containers"
 container_ids=$(docker ps -a --filter "network=$test_network_name" -q)
@@ -79,34 +64,13 @@ done
 # Wait for all containers to be stopped and removed
 wait
 
-
 # Remove the test network
 log_info "Removing the test network"
 docker network rm "$test_network_name" >/dev/null 2>&1
 
-
-# Stop backend
-log_info "Stopping backend"
-backend_pid=$(ps aux | grep "containerization-tool/backend" | grep -v grep | awk '{print $2}')
-for pid in $backend_pid; do
-    log_info "Stopping backend (PID: $pid)"
-    kill "$pid"
-done
-
-
-# Stop frontend
-log_info "Stopping frontend"
-frontend_pid=$(ps aux | grep "containerization-tool/frontend" | grep -v grep | awk '{print $2}')
-for pid in $frontend_pid; do
-    log_info "Stopping frontend (PID: $pid)"
-    kill "$pid"
-done
-
-
-# Stop and remove Kafka
+# Stop and remove docker-compose services
 log_info "Stopping and removing Kafka and database"
 docker-compose -f "$compose_file_path" down -v
-
 
 # Log clean-up completion
 log_success "Clean-up completed"

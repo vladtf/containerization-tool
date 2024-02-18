@@ -1,5 +1,8 @@
 #!/bin/bash
 # Description: This script starts environment required for monitoring
+#
+# Usage: ./quick-start.sh
+#
 
 # Save current directory
 BIN_DIR=$(dirname "$0")
