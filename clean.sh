@@ -16,20 +16,15 @@ test_network_name="mynetwork"
 ###############################################
 
 # Paths
-prepare_script_path="$BIN_DIR/prepare.sh"
+logging_script_path="$BIN_DIR/scripts/logs.sh"
 compose_file_path="$BIN_DIR/docker-compose.yaml"
 
-# Check if prepare.sh was sourced
-if [ -z "$PREPARE_SH_SOURCED" ]; then
-    echo "prepare.sh must be sourced before running this script"
-    exit 1
-fi
 
 # Source prepare.sh
-echo "Sourcing prepare.sh"
-source "$prepare_script_path"
+echo "Sourcing logging script: $logging_script_path"
+source "$logging_script_path"
 if [ $? -ne 0 ]; then
-    echo "Failed to source prepare.sh"
+    echo "Failed to source logging script: $logging_script_path"
     exit 1
 fi
 

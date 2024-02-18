@@ -79,8 +79,8 @@ services:
   
   container_manager:
     build:
-      context: ./
-      dockerfile: ./monitoring/Dockerfile.container
+      context: ./monitoring
+      dockerfile: Dockerfile.container
     container_name: container_manager
     restart: always
     depends_on:
@@ -95,8 +95,8 @@ services:
       - upload_volume:/upload
   traffic_monitor:
     build:
-      context: ./
-      dockerfile: ./monitoring/Dockerfile.traffic
+      context: ./monitoring
+      dockerfile: Dockerfile.traffic
     container_name: traffic_monitor
     restart: always
     cap_add:
@@ -109,8 +109,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
   forwarding_monitor:
     build:
-      context: ./
-      dockerfile: ./monitoring/Dockerfile.forwarding
+      context: ./monitoring
+      dockerfile: Dockerfile.forwarding
     container_name: forwarding_monitor
     restart: always
     network_mode: host
@@ -121,8 +121,8 @@ services:
 
   python_backend:
     build:
-      context: ./
-      dockerfile: ./monitoring/Dockerfile.azure
+      context: ./monitoring
+      dockerfile: Dockerfile.azure
     container_name: python_backend
     restart: always
     volumes:
@@ -139,7 +139,7 @@ services:
       MYSQL_DATABASE: localdb
       AZURE_CLIENT_ID: bcdc47fd-b461-4de8-82c4-6600cc44f470
       AZURE_TENANT_ID: a0867c7c-7aeb-44cb-96ed-32fa642ebe73
-      AZURE_CLIENT_SECRET: IJ.8Q~RYjpYaQqbMWLHVRLKxp-RYih4APpCd6cnB
+      AZURE_CLIENT_SECRET: Ibt8Q~oIssD6W62Wty0lJP~8iP6-2.x0-AIjMdB.
 
   frontend:
     build:

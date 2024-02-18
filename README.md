@@ -48,22 +48,11 @@ The developer can see the report in an web interface and decide how to map the n
 ❯ python --version
 Python 3.11.2
 ```
-4. Python: [requirements.txt](requirements.txt) (does not require manual installation, handled by [prepare.sh](prepare.sh))
-
-5. Java:
-```bash
-❯ mvn --version
-Apache Maven 3.8.7
-Maven home: /usr/share/maven
-Java version: 17.0.7, vendor: Private Build, runtime: /usr/lib/jvm/java-17-openjdk-amd64
-Default locale: en_US, platform encoding: UTF-8
-OS name: "linux", version: "6.2.0-26-generic", arch: "amd64", family: "unix"
-```
 
 6. Docker:
 ```bash
 ❯ docker --version
-Docker version 24.0.4, build 3713ee1
+Docker version 25.0.2, build 29cf629
 
 ❯ docker-compose --version
 docker-compose version 1.29.2, build unknown

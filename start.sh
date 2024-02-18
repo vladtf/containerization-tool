@@ -19,18 +19,13 @@ test_network_name="mynetwork"
 # Paths
 test_container_path="$BIN_DIR/test/ubuntu"
 test_container_dockerfile_path="$test_container_path/Dockerfile"
+logs_script_path="$BIN_DIR/scripts/logs.sh"
 
-# Check if prepare.sh was sourced
-if [ -z "$PREPARE_SH_SOURCED" ]; then
-    echo "prepare.sh must be sourced before running this script"
-    exit 1
-fi
-
-# Source prepare.sh
-echo "Sourcing prepare.sh"
-source "$PREPARE_FILE"
+# Source logging script
+echo "Sourcing logging script: $logs_script_path"
+source "$logs_script_path"
 if [ $? -ne 0 ]; then
-    echo "Failed to source prepare.sh"
+    echo "Failed to source logging script: $logs_script_path"
     exit 1
 fi
 

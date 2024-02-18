@@ -11,13 +11,20 @@ pathToDockerCompose="docker-compose.yaml"
 ##############################
 # DO NOT EDIT BELOW THIS LINE
 ##############################
+BIN_DIR=$(dirname "$0")
+log_script_path="$BIN_DIR/scripts/logs.sh"
+
+# Source logging script
+log_info "Sourcing logging script: $log_script_path"
+source "$log_script_path"
+
 
 az login
 
 # check if service principal already exists and if so, delete it
 spExists=$(az ad sp list --display-name $servicePrincipalName --query "[?displayName=='$servicePrincipalName'].appId" --output tsv)
 if [ -n "$spExists" ]; then
-    echo "Service principal already exists, deleting it..."
+    log_warning "Service principal already exists, deleting it..."
     az ad sp delete --id $spExists
 fi
 
@@ -26,26 +33,26 @@ subscriptionId=$(az account list --query "[?name=='$subscriptionName'].id" --out
 
 # if subscription id is not found list all subscriptions and exit
 if [ -z "$subscriptionId" ]; then
-    echo "Subscription not found, listing all subscriptions..."
+    log_warning "Subscription not found, listing all subscriptions..."
     subscriptions=$(az account list --query "[].{name:name, subscriptionId:id}" --output table)
-    echo "\n\e[33mPlease restart the script and provide one of the following subscription names:\e[0m"
-    echo "$subscriptions"
+    log_warning "Please restart the script and provide one of the following subscription names:"
+    log_warning "$subscriptions"
     exit 1
 fi
 
-echo "Creating service principal for subscription $subscriptionName with name $servicePrincipalName"
+log_info "Creating service principal for subscription $subscriptionName with name $servicePrincipalName"
 
 principal=$(az ad sp create-for-rbac --name $servicePrincipalName --role Contributor --scopes /subscriptions/$subscriptionId)
 
-echo -e "\e[32mService principal created successfully with the following details:\e[0m"
+log_info "Service principal created successfully with the following details:"
 echo $principal | jq
 
-echo -e "\e[35mDo you want the credentials to be replaced in $pathToDockerCompose? (y/n)\e[0m"
+log_info "Do you want the credentials to be replaced in $pathToDockerCompose? (y/n)"
 read replaceInDockerCompose
 if [ "$replaceInDockerCompose" == "y" ]; then
     # check if docker-compose.yml exists
     if [ ! -f "$pathToDockerCompose" ]; then
-        echo "$pathToDockerCompose not found, please make sure you are in the correct directory"
+        log_error "$pathToDockerCompose not found, please make sure you are in the correct directory"
         exit 1
     fi
 
@@ -58,9 +65,9 @@ if [ "$replaceInDockerCompose" == "y" ]; then
 
     # check if credentials were replaced successfully (check if secret is in the file)
     if ! grep -q $clientSecret $pathToDockerCompose; then
-        echo -e "\e[31mCredentials were not replaced in $pathToDockerCompose\e[0m"
+        log_error "Credentials were not replaced in $pathToDockerCompose"
         exit 1
     fi
 
-    echo -e "\e[32mCredentials replaced in $pathToDockerCompose. You can now run docker-compose up\e[0m"
+    log_info "Credentials replaced in $pathToDockerCompose. You can now run docker-compose up"
 fi
