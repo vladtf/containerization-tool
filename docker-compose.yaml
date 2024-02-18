@@ -107,6 +107,18 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: localhost:29092
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+  forwarding_monitor:
+    build:
+      context: ./
+      dockerfile: ./monitoring/Dockerfile.forwarding
+    container_name: forwarding_monitor
+    restart: always
+    network_mode: host
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: localhost:29092
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
   python_backend:
     build:
       context: ./
@@ -125,9 +137,9 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: abc@123
       MYSQL_DATABASE: localdb
-      AZURE_CLIENT_ID: TBD
-      AZURE_TENANT_ID: TBD
-      AZURE_CLIENT_SECRET: TBD
+      AZURE_CLIENT_ID: bcdc47fd-b461-4de8-82c4-6600cc44f470
+      AZURE_TENANT_ID: a0867c7c-7aeb-44cb-96ed-32fa642ebe73
+      AZURE_CLIENT_SECRET: IJ.8Q~RYjpYaQqbMWLHVRLKxp-RYih4APpCd6cnB
 
   frontend:
     build:
