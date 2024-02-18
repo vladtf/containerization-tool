@@ -13,6 +13,7 @@
       - [Start-up steps](#start-up-steps)
       - [Start the tool in Docker](#start-the-tool-in-docker)
   - [Utils](#utils)
+  - [Application Structure](#application-structure)
   - [Screenshots](#screenshots)
 
 ## Description
@@ -145,6 +146,9 @@ TODO: to create a single docker compose file that will start all the containers 
 
 Directory [util](util) contains some useful scripts that can be used to see how some features of the tool work.
 
+## Application Structure
+
+<img src="documentation/svg/containerization-tool-design.drawio.svg" width="100%">
 
 ## Screenshots
 
