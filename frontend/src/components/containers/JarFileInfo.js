@@ -5,16 +5,15 @@ import { BACKEND_URL } from "../../config/BackendConfiguration";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const JarFileInfo = ({
-  displayJarInfo,
-  setDisplayJarInfo,
+const FileInfo = ({
+  displayFileInfo,
+  setDisplayFileInfo,
   file,
   fetchUploadedFiles,
 }) => {
-  const [jarFile, setJarFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const [jarInfo, setJarInfo] = useState({
+  const [fileInfo, setFileInfo] = useState({
     classesWithMainMethod: [],
     mainClassName: "",
     mainMethodInManifest: false,
@@ -23,15 +22,7 @@ const JarFileInfo = ({
   useEffect(() => {
     if (!file) {
       toast.error("Please select a file to upload");
-      setDisplayJarInfo(false);
-      return;
-    }
-
-    const fileExtension = file.name.split(".").pop();
-
-    if (fileExtension !== "jar") {
-      toast.error("Please select a .jar file");
-      setDisplayJarInfo(false);
+      setDisplayFileInfo(false);
       return;
     }
 
@@ -46,12 +37,12 @@ const JarFileInfo = ({
         },
       })
       .then((response) => {
-        setJarInfo(response.data);
+        setFileInfo(response.data);
       })
       .catch((error) => {
         console.error(error);
         toast.error("Error getting jar file info");
-        setDisplayJarInfo(false);
+        setDisplayFileInfo(false);
       })
       .finally(() => {
         setLoading(false);
@@ -80,20 +71,20 @@ const JarFileInfo = ({
       })
       .finally(() => {
         setLoading(false);
-        setDisplayJarInfo(false);
+        setDisplayFileInfo(false);
       });
   };
 
   // Destructure for easier readability
-  const { mainClassName, classesWithMainMethod } = jarInfo;
+  const { mainClassName, classesWithMainMethod } = fileInfo;
 
   return (
     <>
       <ToastContainer />
 
       <Modal
-        show={displayJarInfo}
-        onHide={() => setDisplayJarInfo(false)}
+        show={displayFileInfo}
+        onHide={() => setDisplayFileInfo(false)}
         size="lg"
         centered
       >
@@ -103,7 +94,7 @@ const JarFileInfo = ({
         <Modal.Body>
           {loading ? (
             <Spinner animation="border" variant="primary" />
-          ) : !jarInfo ? (
+          ) : !fileInfo ? (
             <Alert variant="danger">No info available</Alert>
           ) : (
             <>
@@ -144,7 +135,7 @@ const JarFileInfo = ({
         </Modal.Body>
         <Modal.Footer>
           <Button
-            onClick={() => setDisplayJarInfo(false)}
+            onClick={() => setDisplayFileInfo(false)}
             variant="outline-primary"
             className="rounded-pill"
           >
@@ -156,4 +147,4 @@ const JarFileInfo = ({
   );
 };
 
-export default JarFileInfo;
+export default FileInfo;

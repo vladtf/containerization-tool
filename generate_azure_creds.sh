@@ -1,10 +1,16 @@
 #!/bin/bash
-# Description: TODO
-
+# Description: This script creates an Azure service principal and replaces the credentials in a docker-compose file
+#
+# Usage: ./generate_azure_creds.sh
+#
 
 servicePrincipalName="containerization_backend"
 subscriptionName="Azure for Students"
 pathToDockerCompose="docker-compose.yaml"
+
+##############################
+# DO NOT EDIT BELOW THIS LINE
+##############################
 
 az login
 
@@ -14,7 +20,6 @@ if [ -n "$spExists" ]; then
     echo "Service principal already exists, deleting it..."
     az ad sp delete --id $spExists
 fi
-
 
 # get subscription id by name
 subscriptionId=$(az account list --query "[?name=='$subscriptionName'].id" --output tsv)

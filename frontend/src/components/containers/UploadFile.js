@@ -9,7 +9,7 @@ const UploadFile = () => {
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
-  const [displayJarInfo, setDisplayJarInfo] = useState(false);
+  const [displayFileInfo, setDisplayFileInfo] = useState(false);
 
   const acceptedFileTypes = [".jar", ".war", ".sh", ".py"];
 
@@ -50,7 +50,7 @@ const UploadFile = () => {
     }
 
     if (fileExtension === "jar") {
-      setDisplayJarInfo(true);
+      setDisplayFileInfo(true);
       return;
     }
 
@@ -173,8 +173,8 @@ const UploadFile = () => {
       </Card>
 
       <JarFileInfo
-        displayJarInfo={displayJarInfo}
-        setDisplayJarInfo={setDisplayJarInfo}
+        displayFileInfo={displayFileInfo}
+        setDisplayFileInfo={setDisplayFileInfo}
         file={file}
         fetchUploadedFiles={fetchUploadedFiles}
       />
