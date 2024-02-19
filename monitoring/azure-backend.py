@@ -42,7 +42,7 @@ app.azure_credentials = credentials
 mysql = MySQL(app)
 app.mysql = mysql
 
-CORS(app)  # TODO: be more restrictive
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 app.logger.setLevel(logging.INFO)  # Set the desired logging level
 
 # Configure the logger

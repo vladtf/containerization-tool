@@ -1,6 +1,8 @@
 
 LOG_FILE="logs/$(date +"%Y-%m-%d").log"
 
+mkdir -p logs
+
 # Color codes
 GREEN='\033[0;32m'
 RED='\033[0;31m'

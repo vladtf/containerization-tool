@@ -18,8 +18,10 @@ log_script_path="$BIN_DIR/scripts/logs.sh"
 echo "Sourcing logging script: $log_script_path"
 source "$log_script_path"
 
+log_info "Logging in to Azure CLI..."
 
-az login
+# put the tenant id here if needed
+az login # --tenant <tenant-id>
 
 # check if service principal already exists and if so, delete it
 spExists=$(az ad sp list --display-name $servicePrincipalName --query "[?displayName=='$servicePrincipalName'].appId" --output tsv)
