@@ -23,3 +23,4 @@
 * to continue searching about similar tools
 * to describe an e2e flow that is hard to follow practically (possible issues and how the tool can help)
 * to complete the design document
+* to write a selenium test for the tool
