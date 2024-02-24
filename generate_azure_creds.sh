@@ -49,7 +49,7 @@ principal=$(az ad sp create-for-rbac --name $servicePrincipalName --role Contrib
 log_info "Service principal created successfully with the following details:"
 echo $principal | jq
 
-log_info "Do you want the credentials to be replaced in $pathToDockerCompose? (y/n)"
+log_success "Do you want the credentials to be replaced in $pathToDockerCompose? (y/n)"
 read replaceInDockerCompose
 if [ "$replaceInDockerCompose" == "y" ]; then
     # check if docker-compose.yml exists

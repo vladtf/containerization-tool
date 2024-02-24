@@ -554,6 +554,17 @@ def restart_docker_container(container_id):
         logger.error(f"Failed to restart container with id {container_id}", e)
         return f"Failed to restart container with id {container_id}: {e}", 500
 
+# rout to get folder containing the dockfiles
+@app.route('/docker/folder', methods=['GET'])
+def get_docker_folder():
+    try:
+        path = app_config.get('docker', 'base_image_path')
+        return jsonify(path), 200
+    
+    except Exception as e:
+        logger.error(f"Failed to get docker folder", e)
+        return f"Failed to get docker folder: {e}", 500
+
 
 if __name__ == '__main__':
     # Check if the resource group exists, if not create it

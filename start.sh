@@ -9,6 +9,7 @@ BIN_DIR=$(dirname "$0")
 
 # Script variables
 docker_compose_file_path="$BIN_DIR/docker-compose.yaml"
+generate_credentials_script_path="$BIN_DIR/generate_azure_creds.sh"
 test_container_name="my-ubuntu"
 test_network_name="mynetwork"
 
@@ -31,6 +32,15 @@ fi
 
 # Log script start
 log_info "Starting script"
+
+# Check if credentials in the compose file are set
+log_info "Checking Compose file for credentials"
+if grep -q "AZURE_CLIENT_SECRET:.*TBD" "$docker_compose_file_path"; then
+    log_error "Running the script to generate credentials"
+    "$generate_credentials_script_path"
+else
+    log_success "Credentials are set"
+fi
 
 # Check if Kafka is running
 log_info "Checking Compose status"

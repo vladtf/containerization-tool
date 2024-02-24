@@ -2,14 +2,18 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Button, Card, Form } from "react-bootstrap";
 import { ToastContainer, toast } from "react-toastify";
-import { BACKEND_URL } from "../../config/BackendConfiguration";
+import { BACKEND_URL, PYTHON_BACKEND_URL } from "../../config/BackendConfiguration";
 import JarFileInfo from "./JarFileInfo";
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 
 const UploadFile = () => {
   const [file, setFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const [displayFileInfo, setDisplayFileInfo] = useState(false);
+
+  const [openCustomizeDockerFilesDialog, setOpenCustomizeDockerFilesDialog] = useState(false);
+  const [dockerFilesDirectory, setDockerFilesDirectory] = useState("");
 
   const acceptedFileTypes = [".jar", ".war", ".sh", ".py"];
 
@@ -24,6 +28,22 @@ const UploadFile = () => {
       clearInterval(refreshInterval);
     };
   }, []);
+
+  // when the customeze modal is opened, fetch the folder containing the docker files
+  useEffect(() => {
+    if (openCustomizeDockerFilesDialog) {
+      const fetchDockerFilesDirectory = async () => {
+        try {
+          const response = await axios.get(`${PYTHON_BACKEND_URL}/docker/folder`);
+          setDockerFilesDirectory(response.data);
+        } catch (error) {
+          console.error("Failed to fetch the folder containing the Docker files:", error);
+        }
+      };
+
+      fetchDockerFilesDirectory();
+    }
+  }, [openCustomizeDockerFilesDialog]);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -44,7 +64,7 @@ const UploadFile = () => {
     if (!acceptedFileTypes.includes(`.${fileExtension}`)) {
       toast.error(
         "Please select a file with one of the following extensions: " +
-          acceptedFileTypes.join(", ")
+        acceptedFileTypes.join(", ")
       );
       return;
     }
@@ -104,6 +124,15 @@ const UploadFile = () => {
     }
   };
 
+  const handleOpenDockerFilesFolder = async () => {
+    try {
+      await axios.get(`${PYTHON_BACKEND_URL}/docker/folder`);
+      toast.success("Opened the folder containing the Docker files");
+    } catch (error) {
+      toast.error("Failed to open the folder containing the Docker files");
+    }
+  }
+
   return (
     <>
       <ToastContainer />
@@ -151,7 +180,7 @@ const UploadFile = () => {
               </Card.Body>
               <Card.Footer>
                 <Button
-                  className="mt-3 mr-2"
+                  className="my-1 mr-2"
                   onClick={() => handleCreateContainer(file.name, file.type)}
                   variant="outline-primary"
                   style={{ borderRadius: "20px" }}
@@ -159,7 +188,7 @@ const UploadFile = () => {
                   Create Container
                 </Button>
                 <Button
-                  className="mt-3"
+                  className="my-1"
                   onClick={() => handleDeleteFile(file.name)}
                   variant="outline-danger"
                   style={{ borderRadius: "20px", marginLeft: "10px" }}
@@ -170,6 +199,18 @@ const UploadFile = () => {
             </Card>
           ))}
         </Card.Body>
+
+        {/* Footer that will open a modal to open the folder containing docker files to customize */}
+        <Card.Footer>
+          <Button
+            className="my-1"
+            variant="outline-primary"
+            style={{ borderRadius: "20px" }}
+            onClick={() => setOpenCustomizeDockerFilesDialog(true)}
+          >
+            Customize Docker Files
+          </Button>
+        </Card.Footer>
       </Card>
 
       <JarFileInfo
@@ -178,6 +219,39 @@ const UploadFile = () => {
         file={file}
         fetchUploadedFiles={fetchUploadedFiles}
       />
+
+      <Dialog
+        open={openCustomizeDockerFilesDialog}
+        onClose={() => setOpenCustomizeDockerFilesDialog(false)}
+        style={{ width: 'auto', whiteSpace: 'nowrap' }}
+        maxWidth="lg" // Set maximum width to large
+        fullWidth={true} // Make the dialog full width
+      >
+        <DialogTitle>Customize Docker Files</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            To customize the Docker files, open the following folder in your file explorer: 
+            <strong>  {dockerFilesDirectory}</strong>
+            <br />
+            <strong>Tip:</strong> You can use the following command to connect to the Docker container and open the folder:
+            <br />
+            <code>docker exec -it python_backend /bin/bash</code>
+            <br />
+            <code>cd {dockerFilesDirectory}</code>
+            <br />
+            <br />
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            variant="primary"
+            onClick={() => setOpenCustomizeDockerFilesDialog(false)}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
