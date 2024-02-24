@@ -224,7 +224,7 @@ const UploadFile = () => {
         open={openCustomizeDockerFilesDialog}
         onClose={() => setOpenCustomizeDockerFilesDialog(false)}
         style={{ width: 'auto', whiteSpace: 'nowrap' }}
-        maxWidth="lg" // Set maximum width to large
+        maxWidth="md" // Set maximum width to large
         fullWidth={true} // Make the dialog full width
       >
         <DialogTitle>Customize Docker Files</DialogTitle>
@@ -239,7 +239,7 @@ const UploadFile = () => {
             <br />
             <code>cd {dockerFilesDirectory}</code>
             <br />
-            <br />
+            <strong>Note:</strong> The changes are not persistent, so you need to copy the files to the host machine
           </DialogContentText>
         </DialogContent>
 
