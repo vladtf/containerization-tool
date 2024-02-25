@@ -264,9 +264,9 @@ def get_all_azure_repositories(credentials, subscription_id: str, registry_name:
 
 
 def delete_azure_repository(credentials, subscription_id: str, registry_name: str, resource_group: str,
-                            repository_name: str):
+                            repository_name: str, location: str):
     # Get acr url
-    acr_url = get_acr_url(subscription_id, resource_group, registry_name, credentials)
+    acr_url = get_acr_url(subscription_id, resource_group, registry_name, credentials, location)
 
     with ContainerRegistryClient(acr_url, credentials) as client:
         client.delete_repository(repository_name)

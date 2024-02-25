@@ -393,13 +393,15 @@ def delete_repository(repository_name):
         config = app.app_config
         resource_group = config.get("azure", "resource_group")
         acr_name = config.get("azure", "acr_name")
+        location = config.get("azure", "location")
 
         azure_client.delete_azure_repository(
             credentials=app.azure_credentials,
             subscription_id=app.azure_subscription_id,
             registry_name=acr_name,
             resource_group=resource_group,
-            repository_name=repository_name
+            repository_name=repository_name,
+            location=location
         )
 
         return f"Repository with name {repository_name} deleted successfully", 200

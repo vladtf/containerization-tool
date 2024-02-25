@@ -49,27 +49,25 @@ principal=$(az ad sp create-for-rbac --name $servicePrincipalName --role Contrib
 log_info "Service principal created successfully with the following details:"
 echo $principal | jq
 
-log_success "Do you want the credentials to be replaced in $pathToDockerCompose? (y/n)"
-read replaceInDockerCompose
-if [ "$replaceInDockerCompose" == "y" ]; then
-    # check if docker-compose.yml exists
-    if [ ! -f "$pathToDockerCompose" ]; then
-        log_error "$pathToDockerCompose not found, please make sure you are in the correct directory"
-        exit 1
-    fi
+log_success "Replacing credentials in $pathToDockerCompose..."
 
-    clientId=$(echo $principal | jq -r '.appId')
-    clientSecret=$(echo $principal | jq -r '.password')
-    tenantId=$(echo $principal | jq -r '.tenant')
-    sed -i "s/AZURE_CLIENT_ID:.*/AZURE_CLIENT_ID: $clientId/" $pathToDockerCompose
-    sed -i "s/AZURE_CLIENT_SECRET:.*/AZURE_CLIENT_SECRET: $clientSecret/" $pathToDockerCompose
-    sed -i "s/AZURE_TENANT_ID:.*/AZURE_TENANT_ID: $tenantId/" $pathToDockerCompose
-
-    # check if credentials were replaced successfully (check if secret is in the file)
-    if ! grep -q $clientSecret $pathToDockerCompose; then
-        log_error "Credentials were not replaced in $pathToDockerCompose"
-        exit 1
-    fi
-
-    log_info "Credentials replaced in $pathToDockerCompose. You can now run docker-compose up"
+# check if docker-compose.yml exists
+if [ ! -f "$pathToDockerCompose" ]; then
+    log_error "$pathToDockerCompose not found, please make sure you are in the correct directory"
+    exit 1
 fi
+
+clientId=$(echo $principal | jq -r '.appId')
+clientSecret=$(echo $principal | jq -r '.password')
+tenantId=$(echo $principal | jq -r '.tenant')
+sed -i "s/AZURE_CLIENT_ID:.*/AZURE_CLIENT_ID: $clientId/" $pathToDockerCompose
+sed -i "s/AZURE_CLIENT_SECRET:.*/AZURE_CLIENT_SECRET: $clientSecret/" $pathToDockerCompose
+sed -i "s/AZURE_TENANT_ID:.*/AZURE_TENANT_ID: $tenantId/" $pathToDockerCompose
+
+# check if credentials were replaced successfully (check if secret is in the file)
+if ! grep -q $clientSecret $pathToDockerCompose; then
+    log_error "Credentials were not replaced in $pathToDockerCompose"
+    exit 1
+fi
+
+log_info "Credentials replaced in $pathToDockerCompose. You can now run docker-compose up"

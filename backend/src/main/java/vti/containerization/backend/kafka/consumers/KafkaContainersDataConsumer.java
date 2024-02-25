@@ -36,6 +36,14 @@ public class KafkaContainersDataConsumer {
     }
 
     private void saveToDatabase(List<ContainerDataModel> containersData) {
+        // go through existing containers and if they are not in the new list, delete them
+        containerDataRepository.findAll().forEach(container -> {
+            if (containersData.stream().noneMatch(c -> c.getId().equals(container.getId()))) {
+                log.info("The container " + container.getId() + " is not in the new list, deleting it");
+                containerDataRepository.delete(container);
+            }
+        });
+
         containerDataRepository.saveAll(containersData);
     }
 

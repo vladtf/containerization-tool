@@ -47,7 +47,7 @@ log_info "Checking Compose status"
 if ! docker-compose -f "$docker_compose_file_path" ps kafka | grep "Up" >/dev/null 2>&1; then
     # Start Kafka
     log_info "Starting Compose"
-    docker-compose -f "$docker_compose_file_path" up -d
+    docker-compose -f "$docker_compose_file_path" up -d --build
 else
     log_success "Compose is already running"
 fi
