@@ -298,7 +298,7 @@ const AzurePage = () => {
               <strong>Name:</strong> {container.name}
             </p>
             <p>
-              <strong>Status:</strong> {container.status}
+              <strong>Status:</strong> {container.status} {container.status === 'deploying' && <Spinner animation="border" variant="primary" size="sm" />}
             </p>
             <p>
               <strong>Image:</strong> {container.image}

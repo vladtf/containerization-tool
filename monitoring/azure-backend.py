@@ -163,6 +163,12 @@ def deploy_to_azure():
 
         logger.info("Deploying container: %s", container_data)
 
+
+        # Update the container status in the database to 'deploying'
+        container_data.status = "deploying"
+        mysql_client.mysql_client.update_azure_container(
+            mysql=app.mysql, azure_container=container_data)
+
         # Get the ACR URL
         acr_url = get_acr_url(app.azure_subscription_id, resource_group,
                               acr_name, app.azure_credentials, location)
