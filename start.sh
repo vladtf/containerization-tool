@@ -35,7 +35,7 @@ log_info "Starting script"
 
 # Check if credentials in the compose file are set
 log_info "Checking Compose file for credentials"
-if grep -q "AZURE_CLIENT_SECRET:.*TBD" "$docker_compose_file_path"; then
+if grep -q "AZURE_CLIENT_SECRET:.*CHANGEME" "$docker_compose_file_path"; then
     log_error "Running the script to generate credentials"
     "$generate_credentials_script_path"
 else

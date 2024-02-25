@@ -74,5 +74,11 @@ docker-compose -f "$compose_file_path" down -v
 log_info "Deleting service principal from Azure"
 az ad sp delete --id $(az ad sp list --display-name $servicePrincipalName --query "[].appId" --output tsv)
 
+# Removing credentials form docker compose file
+log_info "Removing credentials from docker-compose file"
+sed -i 's/AZURE_CLIENT_ID:.*/AZURE_CLIENT_ID: CHANGEME/' $compose_file_path
+sed -i 's/AZURE_CLIENT_SECRET:.*/AZURE_CLIENT_SECRET: CHANGEME/' $compose_file_path
+sed -i 's/AZURE_TENANT_ID:.*/AZURE_TENANT_ID: CHANGEME/' $compose_file_path
+
 # Log clean-up completion
 log_success "Clean-up completed"
