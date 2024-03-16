@@ -1,20 +1,16 @@
-# Use an official Node.js runtime as the parent image
-FROM node:14
-
-# Set the working directory in the container
+# Build stage
+FROM node:18 as build
 WORKDIR /app
-
-# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
-
-# Install project dependencies
 RUN npm install
+COPY . ./
+RUN npm run build
 
-# Copy the rest of your project's files into the container
-COPY . .
+# Serve stage
+FROM node:18
+WORKDIR /app
+COPY --from=build /app/build .
+RUN npm install -g serve
+CMD ["serve", "-s", "."]
 
-# Make port 3000 available outside this container
 EXPOSE 3000
-
-# Run the app using npm start
-CMD ["npm", "start"]
