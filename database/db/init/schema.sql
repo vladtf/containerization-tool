@@ -29,8 +29,8 @@ CREATE TABLE
         pid INT,
         msgid VARCHAR(255),
         extradata VARCHAR(255),
-        message TEXT,
-        FOREIGN KEY (ident) REFERENCES containers (id) ON DELETE CASCADE
+        message TEXT
+        -- FOREIGN KEY (ident) REFERENCES containers (id) ON DELETE CASCADE
     );
 
 # A procedure to insert a container if it doesn't exist 

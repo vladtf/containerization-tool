@@ -130,6 +130,7 @@ const ForwardingRulesPage = () => {
 
   const chainNames = ["OUTPUT", "INPUT", "FORWARD"];
   const protocols = ["tcp", "udp", "icmp"];
+  const targets = ["DNAT", "SNAT", "ACCEPT", "DROP"];
 
   const filteredData = selectedContainer
     ? data.filter((container) => container.containerId === selectedContainer)
@@ -229,7 +230,7 @@ const ForwardingRulesPage = () => {
             <Form.Group controlId="target">
               <Form.Label>Target</Form.Label>
               <Form.Control
-                type="text"
+                as="select"
                 name="target"
                 value={newRule.rule.target}
                 onChange={(e) =>
@@ -238,7 +239,14 @@ const ForwardingRulesPage = () => {
                     rule: { ...newRule.rule, target: e.target.value },
                   })
                 }
-              />
+              >
+                <option value="">Select Target</option>
+                {targets.map((target) => (
+                  <option key={target} value={target}>
+                    {target}
+                  </option>
+                ))}
+              </Form.Control>
             </Form.Group>
             <Form.Group controlId="protocol">
               <Form.Label>Protocol</Form.Label>
