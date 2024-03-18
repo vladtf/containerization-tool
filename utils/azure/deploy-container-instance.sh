@@ -3,6 +3,9 @@
 # login to azure
 az login
 
+# create resource group
+az group create --name containerization-tool --location uksouth
+
 # create repository
 az acr create --name containerizationtool --resource-group containerization-tool --sku Standard
 
@@ -11,16 +14,16 @@ password="password"
 echo "${password}" | docker login -u containerizationtool --password-stdin containerizationtool.azurecr.io
 
 # tag docker image
-docker tag "container-test-ping.sh_image" "containerizationtool.azurecr.io/container-test-ping.sh_image:latest"
+docker tag "manual-test" "containerizationtool.azurecr.io/manual-test:latest"
 
 # push docker image
-docker push "containerizationtool.azurecr.io/container-test-ping.sh_image:latest"
+docker push "containerizationtool.azurecr.io/manual-test:latest"
 
 # create container instance
 az container create \
   --resource-group "containerization-tool" \
   --name "container-test-ping-sh" \
-  --image "containerizationtool.azurecr.io/container-test-ping.sh_image:latest" \
+  --image "containerizationtool.azurecr.io/manual-test:latest" \
   --registry-username "containerizationtool" \
   --registry-password "${password}" \
   --ports 80
