@@ -14,8 +14,8 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
   datasource:
-    url: jdbc:mysql://localhost:3306/localdb?useSSL=false&serverTimezone=UTC
-    username: root
+    url: jdbc:mysql://localhost:3306/localdb?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: containerization_tool
     password: abc@123
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
