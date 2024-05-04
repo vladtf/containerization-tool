@@ -21,7 +21,7 @@ source "$log_script_path"
 log_info "Logging in to Azure CLI..."
 
 # put the tenant id here if needed
-az login # --tenant <tenant-id>
+az login az login --use-device-code # --tenant <tenant-id>
 
 # check if service principal already exists and if so, delete it
 spExists=$(az ad sp list --display-name $servicePrincipalName --query "[?displayName=='$servicePrincipalName'].appId" --output tsv)
