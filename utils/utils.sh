@@ -41,3 +41,5 @@ docker run \
     --log-opt syslog-address=tcp://localhost:5140 \
     test_image
 
+# remove images that contains word http-server
+docker rmi $(docker images | grep http-server | awk '{print $3}')
