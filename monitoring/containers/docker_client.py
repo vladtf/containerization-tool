@@ -119,6 +119,10 @@ def create_docker_container(create_request: dict,
             log_config=log_config
         )
 
+        logger.info("Container '%s' created successfully: %s",
+                    container_name, container.id)
+
+        return container.id
     except Exception as e:
         raise DockerClientException(
             f"Failed to create Docker container with name {container_name}: {e}")

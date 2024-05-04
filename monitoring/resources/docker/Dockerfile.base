@@ -1,4 +1,7 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
+
+# Set environment variable to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install basic tools
 RUN apt-get update && \
