@@ -22,6 +22,10 @@ log_info "Logging in to Azure CLI..."
 
 # put the tenant id here if needed
 az login --use-device-code # --tenant <tenant-id>
+if [ $? -ne 0 ]; then
+    log_error "Failed to login to Azure CLI"
+    exit 1
+fi
 
 # check if service principal already exists and if so, delete it
 spExists=$(az ad sp list --display-name $servicePrincipalName --query "[?displayName=='$servicePrincipalName'].appId" --output tsv)
@@ -45,6 +49,10 @@ fi
 log_info "Creating service principal for subscription $subscriptionName with name $servicePrincipalName"
 
 principal=$(az ad sp create-for-rbac --name $servicePrincipalName --role Contributor --scopes /subscriptions/$subscriptionId)
+if [ $? -ne 0 ]; then
+    log_error "Failed to create service principal"
+    exit 1
+fi
 
 log_info "Service principal created successfully with the following details:"
 echo $principal | jq
