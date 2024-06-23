@@ -92,6 +92,10 @@ cd containerization-tool
 ./start.sh
 ```
 
+> [!NOTE]
+> The tool will be available at `http://localhost:3000`
+> If you're using WSL2 to start the tool, use following command `google-chrome --disable-gpu` to start the browser.
+
 ## Utils
 
 Directory [util](util) contains some useful scripts that can be used to see how some features of the tool work.
