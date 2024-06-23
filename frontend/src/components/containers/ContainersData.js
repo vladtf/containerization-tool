@@ -59,12 +59,12 @@ const ContainersData = () => {
     axios
       .get(`${PYTHON_BACKEND_URL}/docker`)
       .then((response) => {
-        console.log(response);
+        console.log("Error response: ", response);
         setContainers(response.data);
       })
       .catch((error) => {
         console.error(error);
-        toast.error("Failed to fetch containers: " + error.response.data);
+        toast.error("Failed to fetch containers: " + error.response);
       });
   };
 
