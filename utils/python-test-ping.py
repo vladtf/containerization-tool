@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-
-
 import socket
 import time
+import sys
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
+
+print("Starting the ping test...")
 
 def ping_google_dns():
     target_host = "8.8.8.8"
